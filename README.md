@@ -1,178 +1,199 @@
-binon
+BinON
 =====
 
-Implements a JSON-like object notation in a typically more condensed
-binary format.
+BinON is a JSON-like object notation that uses a more condensed binary format.
 
-Multi-byte elements always follow a big-endian byte ordering,
-where a "byte" must be exactly 8 bits.
+This is a self-contained repository implementing a complete codec in Python 3,
+as well as a somewhat limited (but presumably faster) implementation
+in C++17.
 
-The format is currently supported in 2 languages:
+Data Format
+-----------
 
-1. Python 3 or later (py3 directory).
-2. C++17 or later (cpp17 directory).
+At a basic level, the data format consists of a single byte type ID followed by
+zero or more bytes of object data. Here, a "byte" is defined as 8 bits.
 
-Python currently implements the entirety of the data format,
-while C++17 is restricted to a subset.
+Multi-byte values within the object data use a big-endian byte ordering.
 
-Data Types
-__________
+Data Type IDs
+-------------
 
-The first byte in any value encoding signifies the data type.
-Here is a list of type IDs and what they represent.
-For example, a 0x03 byte would represent an integer.
+BinON supports 12 data types, each with a unique ID.
 
-0. null
-1. false
-2. true
-3. [integer][int] (C++ up to 64-bit signed/unsigned, Python unlimited)
-4. [floating-point number][float]
-5. [byte buffer][bytes]
-6. [string][str]
-7. [simple list][slist]
-8. [general list][list]
-9. [simple dictionary][sdict]
-10. [simple key dictionary][skdict]
-11. [general dictionary][dict] (Python only)
+### Scalars ###
 
-Type Data Formats
-_________________
+0. [null](#null)
+1. [false](#null)
+2. [true](#null)
+3. [integer](#int) (up to 64-bit in C++, unlimited in Python)
+4. [float](#float)
 
-### null, false, true ###
+### Buffers ###
 
-These are the only types requiring only a single byte to encode.
-In Python, they correspond to None, False, and True,
-encoding as 0x00, 0x01, and 0x02, respectively.
+16. [byte buffer](#bytes)
+17. [string](#str)
 
-### [int]:integer ###
+### Vector Containers ###
 
-Integers have the most complex data format in binon.
-After the initial 0x03 byte signifying integer, they use a
-variable-length encoding somewhat reminiscent of UTF-8.
+32. [simple list](#slist)
+33. [general list](#list)
 
-	| From  | To     | Bits                |
-	| ----: | -----: | :------------------ |
-	|  -2^6 |  2^6-1 | 0sssssss            |
-	| -2^13 | 2^13-1 | 10ssssss ssssssss   |
-	| -2^28 | 2^28-1 | 110sssss ssssssss*3 |
-	| -2^59 | 2^59-1 | 1110ssss ssssssss*7 |
-	| -2^63 | 2^63-1 | 11111100 ssssssss*8 |
-	|     0 | 2^64-1 | 11111101 uuuuuuuu*8 |
+### Associative Containers ###
 
-Here, the s bits signify the integer's value in two's complement form.
-There is clearly some overlap in these ranges, and technically, there is
-no reason you could not encode the value 1 in 9 bytes. But the encoding
-algorithm implemented here will always work down the above table
-and go with the first option that can handle the value.
+48. [simple dictionary](#sdict)
+49. [simple key dictionary](#skdict)
+50. [general dictionary](#dict) (Python only)
 
-You can see in the last 2 cases that the first byte is a fixed code
-not containing any s data bits. In that byte, all but the least-significant
-2 bits are set. The 2 bits are flags, with the lower one indicating whether
-the integer should be considered unsigned.
+Data Type Encoding
+------------------
 
-The table shows all the possible integer encodings for C++, but Python 3
-can handle big integers > 64 bits. For these, we switch to an arbitrary length
-encoding like this:
+<a name="null"></a>
+### null (id=0x00), false (id=0x01), true (id=0x02) ###
 
-	11111110 <INT> ssssssss*(<INT>+9)
-	11111111 <INT> uuuuuuuu*(<INT>+9)
+These 3 data types are entirely expressed by their type IDs alone.
+Python's `None`, `False`, and `True` values encode as 0x00, 0x01, and 0x02,
+respectively.
 
-The 2nd-least-significant bit in the code byte signals big integer mode.
-After the code byte comes a recursively-encoded integer indicating how many
-bytes of actual integer data are to follow less 9 (since we wouldn't need
-need this encoding for <= 8 bytes). (Note that <INT> here does not include
-the 0x03 byte specifying that it is an int, since that is rather implied.)
-For example, the value 2^128-1 would look like this in hex:
+<a name="int"></a>
+### integer (id=0x03) ###
+
+Integers use a variable-length encoding somewhat reminiscent of UTF-8.
+After the initial 0x03 type ID code, the number of bytes of object data depends
+on what range the integer lies within.
+
+| From  | To     | Bit Representation    |
+| ----: | -----: | :-------------------- |
+|  -2^6 |  2^6-1 | `0sssssss`            |
+| -2^13 | 2^13-1 | `10ssssss ssssssss`   |
+| -2^28 | 2^28-1 | `110sssss ssssssss*3` |
+| -2^59 | 2^59-1 | `1110ssss ssssssss*7` |
+| -2^63 | 2^63-1 | `11111100 ssssssss*8` |
+|     0 | 2^64-1 | `11111101 uuuuuuuu*8` |
+
+Here, the `s` bits signify the signed integer value in two's complement form.
+For example, -1000 (0xfffffc18 as a 32-bit int) would encode to 0xbc18.
+To decode, you would need to sign-extend from bit 13 past the `10` bits.
+
+The last 2 entries in the table deal with cases approaching the limit of 2^64.
+At this point, the first byte turns into a fixed code with no `s` data bits
+in it. The least-significant 2 bits within the byte are treated as flags.
+Bit 0 indicates whether the integer is unsigned.
+
+Bit 1 puts the decoder in **big integer mode**:
+
+	0b11111110 iiiiiiii*M ssssssss*(N+9)
+	0b11111111 iiiiiiii*M uuuuuuuu*(N+9)
+
+The `i` bits represent the integer N, encoded by calling the integer encoder
+recursively. N is the number of bytes of data to follow less 9 (since there
+would be no point in using a big integer representation if we didn't have > 8
+bytes to follow). (Note that the `i` bits do *not* include the 0x03 type ID,
+as it is self-evident from the context that we are dealing with an integer.)
+
+For example, here is a full encoding (including the type ID) of the value
+2^128-1 in hexadecimal:
 
 	03FF07FF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFF
 
-So we have 0x03 = int, 0xFF = unsigned big int, 0x07 + 9 = 16 data bytes,
-and finally the 16 0xFF bytes themselves.
+That's 3 bytes of metadata followed by 16 bytes of integer.
 
-### [float]:floating-point number ###
+<a name="float"></a>
+### float (id=0x04) ###
 
-This is the code 0x04 followed by a length byte and an IEEE 754-encoded
-floating-point value. Currently, 32- and 64-bit floats are supported.
-For example, a 32-bit 1.0 would encode as hex:
+Floating-point numbers have an object data representation like this:
 
-	043F8000 00
+	0b00000100 ffffffff*4
+	0b00001000 ffffffff*8
 
-### [bytes]:byte buffer ###
+In other words, the first byte (following the 0x04 type ID) is the length of
+the number in bytes: 4 or 8 for 32- or 64-bit floats, respectively.
+(At this point, those are the only 2 lengths supported.)
+The `f` bits are the floating-point value in IEEE 754 format.
 
-After the initial 0x05 byte, we encode an integer N followed by N data
-bytes from the buffer. The integer uses out integer encoding format
-(without the 0x03 byte).
+<a name="bytes"></a>
+### byte buffer (id=0x10) ###
 
-Example:
-
-	0504DEAD BEEF
-
-### [str]:string ###
-
-This is really nothing more than a [byte buffer][bytes] containing a
-UTF8-encoded string. In Python 3, this will decode to a str (rather than
-bytes) object. (Note that the encoded length is the number of bytes
-after converting to UTF8 and *not* the number of unicode code points.)
-
-### [slist]:simple list ###
-
-A simple list is a container in which all elements are of the same type.
-Compared to a general list, it can encode smaller because it does not
-need to store type info for every element. The encoding looks like this:
-
-	0x07 0xTT <INT> <ELEM>*<INT>
-
-The 0x07 indicates this is a simple list. The 0xTT byte contains the
-data type code for all the elements. This is followed by an integer
-specifying the number of elements, and finally the elements themselves
-encoding without their preceeding type codes.
-
-Say you wrote a simple list of 4 integers: 2, 1, 0, -1
-In hex, you would get:
-
-	07040201 003F
-
-### [list]:general list ###
-
-In a general list, the elements can have different types and encode
+A byte buffer is a variable-length sequence of bytes whose object data looks
 like this:
 
-	0x08 <INT> (0xTT <ELEM>)*<INT>
+	0biiiiiiii*M dddddddd*N
 
-If you had a list containing integer 1 and 32-bit float 1.0, you would get:
+Here, the `M` bytes of `i` bits represent an integer `N`, and the `d` bits are
+`N` bytes worth of data. `N` is encoded using the [integer](#int) format
+(without the 0x03 type ID).
 
-	08020301 04043F80 0000
+<a name="str"></a>
+### string (id=0x11) ###
 
-### [sdict]:simple dictionary ###
+A string is essentially just a [byte buffer](#bytes) with text encoded in UTF-8.
+(The encoded length, therefore, is simply the number of bytes rather than the
+number of code points.)
 
-A dictionary (a.k.a. a hash table) is an unordered associative container
-matching keys to values. In a simple dictionary, the keys all need to be
-of the same data type and the values also need to be of the same data type
-(which may be different from that of the keys).
+<a name="slist"></a>
+### simple list (id=0x20) ###
 
-The encoding looks like this:
+A simple list is a vector in which all values share the same type.
+The type ID, therefore, need only be encoded once.
 
-	0x09 0xKK 0xVV <INT> (<KEY> <VAL>)*<INT>
+The object data takes the form:
 
-0xKK is the data type code for all keys
-0xVV is the data type code for all values
-<INT> is the number of elements in the dictionary (encoding using our
-variable length integer format).
-<KEY> is each key encoded without its type ID
-<VAL> is each corresponding value encoded without its type ID
+	0btttttttt iiiiiiii*M (dddddddd*T)*N
 
-### [skdict]:simple key dictionary ###
+where:
 
-This is like a [simple dictionary][sdict] except the values can differ in
-data type. The encoding changes to this:
+- The `t` bits indicate the data type ID of list elements.
+- The `i` bits encode the integer N (see [byte buffer](#bytes)).
+- The `d` bits represent T bytes of data for each element.
 
-	0x0A 0xKK <INT> (<KEY> 0xVV <VAL>)*<INT>
+<a name="list"></a>
+### general list (id=0x21) ###
 
-### [dict]: dictionary ###
+In a general list, each element can be of a different data type.
 
-In this most-general form of a dictionary, both the keys and values have
-variable data types. This really only works in Python and encodes to:
+In this case, the object data must place this type together with each element.
 
-	0x0B <INT> (0xKK <KEY> 0xVV <VAL>)*<INT>
+	0biiiiiiii*M (tttttttt dddddddd*T)*N
 
-(See [simple dictionary][sdict] for an explanation of how to read this.)
+See [simple list](#slist) for an explanation of what `i`, `t`, etc. mean.
+
+<a name="sdict"></a>
+### simple dictionary (id=0x30) ###
+
+In a simple dictionary, all the keys must be of the same data type and
+all the values must also be of the same data type.
+(The value type need not match the key type, however.)
+The object data look like this:
+
+	0bkkkkkkkk vvvvvvvv iiiiiiii*M (cccccccc*K dddddddd*V)*N
+
+where:
+
+- The `k` bits are the key data type ID.
+- The `v` bits are the value data type ID.
+- The `i` bits encode the integer N (see [byte buffer](#bytes)).
+- The `c` bits represent `K` bytes of data for each key.
+- The `d` bits represent `V` bytes of the corresponding value.
+
+<a name="skdict"></a>
+### simple key dictionary (id=0x31) ###
+
+In simple key dictionaries, all the keys must be of the same data type,
+but the values may differ in data type.
+In this case, the object data take the form:
+
+	0bkkkkkkkk iiiiiiii*M (cccccccc*K vvvvvvvv dddddddd*V)*N
+
+See [simple dictionary](#sdict) for info on what these symbols mean.
+
+<a name="skdict"></a>
+### general dictionary (id=0x32) ###
+
+The most flexible of dictionary allows keys to have differing data types
+as well as values. This data type, however, is not supported by C++ at
+this time.
+
+The object data take the form:
+
+	0biiiiiiii*M (kkkkkkkk cccccccc*K vvvvvvvv dddddddd*V)*N
+
+See [simple dictionary](#sdict) for info on what these symbols mean.
