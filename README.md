@@ -81,53 +81,55 @@ Bit 0 indicates whether the integer is unsigned.
 
 Bit 1 puts the decoder in **big integer mode**:
 
-	0b11111110 iiiiiiii*M ssssssss*(N+9)
-	0b11111111 iiiiiiii*M uuuuuuuu*(N+9)
+	11111110 N=iiiiiiii*M ssssssss*(N+9)
+	11111111 N=iiiiiiii*M uuuuuuuu*(N+9)
 
-The `i` bits represent the integer N, encoded by calling the integer encoder
-recursively. N is the number of bytes of data to follow less 9 (since there
-would be no point in using a big integer representation if we didn't have > 8
-bytes to follow). (Note that the `i` bits do *not* include the 0x03 type ID,
-as it is self-evident from the context that we are dealing with an integer.)
+Here, the `M` bytes of `i` bits represent the integer `N`, encoded by calling
+the integer encoder recursively. `N` is the number of bytes of data to follow
+less 9 (since there would be no point in using a big integer representation if
+we didn't have > 8 bytes to follow). (Note that the `i` bits do *not* include
+a 0x03 type ID, as it is self-evident from the context that we are dealing with
+an integer.)
 
 For example, here is a full encoding (including the type ID) of the value
 2^128-1 in hexadecimal:
 
 	03FF07FF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFF
 
-That's 3 bytes of metadata followed by 16 bytes of integer.
+That's 3 bytes of metadata followed by 16 bytes of integer data.
 
 <a name="float"></a>
 ### float (id=0x04) ###
 
-Floating-point numbers have an object data representation like this:
+Floating-point numbers have an bit-level object data representation like this:
 
-	0b00000100 ffffffff*4
-	0b00001000 ffffffff*8
+	00000100 ffffffff*4
+	00001000 ffffffff*8
 
-In other words, the first byte (following the 0x04 type ID) is the length of
-the number in bytes: 4 or 8 for 32- or 64-bit floats, respectively.
+where the `f` bits represent an IEEE 754-encoded float.
+
+In other words, the first byte (following the 0x04 type ID) gives the length of
+the float data in bytes: 4 or 8 for 32- or 64-bit floats, respectively.
 (At this point, those are the only 2 lengths supported.)
-The `f` bits are the floating-point value in IEEE 754 format.
 
 <a name="bytes"></a>
 ### byte buffer (id=0x10) ###
 
-A byte buffer is a variable-length sequence of bytes whose object data looks
-like this:
+A byte buffer is a variable-length sequence of bytes with a bit-level
+object data representation like this:
 
-	0biiiiiiii*M dddddddd*N
+	N=iiiiiiii*M dddddddd*N
 
-Here, the `M` bytes of `i` bits represent an integer `N`, and the `d` bits are
-`N` bytes worth of data. `N` is encoded using the [integer](#int) format
-(without the 0x03 type ID).
+Here, the `M` bytes of `i` bits represent an integer `N`, encoded using
+the [integer](#int) format (without the 0x03 type ID).
+
+Following this are the `N` bytes of buffer data.
 
 <a name="str"></a>
 ### string (id=0x11) ###
 
-A string is essentially just a [byte buffer](#bytes) with text encoded in UTF-8.
-(The encoded length, therefore, is simply the number of bytes rather than the
-number of code points.)
+Strings are essentially just [byte buffers](#bytes) of UTF-8-encoded text,
+differing only in their type ID.
 
 <a name="slist"></a>
 ### simple list (id=0x20) ###
@@ -135,65 +137,84 @@ number of code points.)
 A simple list is a vector in which all values share the same type.
 The type ID, therefore, need only be encoded once.
 
-The object data takes the form:
+The most data types, the object data take the bit-level form:
 
-	0btttttttt iiiiiiii*M (dddddddd*T)*N
+	N=iiiiiiii*M tttttttt (dddddddd*T)*N
 
 where:
 
-- The `t` bits indicate the data type ID of list elements.
-- The `i` bits encode the integer N (see [byte buffer](#bytes)).
-- The `d` bits represent T bytes of data for each element.
+- The `i` bits encode the integer `N` (see [byte buffer](#bytes)).
+- The `t` bits encode the data type ID of the list elements.
+- The `d` bits represent `T` bytes of data for each element.
+
+Note that with simple lists, there are special cases for dealing with data types
+in which the value is typically encoded into the type ID itself, which would not
+make sense here.
+
+- For a list of **boolean**, the `t` bits may encode either 0x01 (false) or
+0x02 (true), while the `d` bits in this case would be the boolean values
+packed 8 to a byte with zero-padding in the least-signficant bits of
+the final byte if necessary (in keeping with the big-endian formatting
+principle).
+- For a list of **null**, the `t` bits would encode 0x00 as you would expect,
+but there would be no `d` bits following these.
 
 <a name="list"></a>
 ### general list (id=0x21) ###
 
-In a general list, each element can be of a different data type.
+In a general list, each element can be of a different data type, so compared
+to a [simple list](#slist), the object data take the form:
 
-In this case, the object data must place this type together with each element.
+	N=iiiiiiii*M (tttttttt dddddddd*T)*N
 
-	0biiiiiiii*M (tttttttt dddddddd*T)*N
-
-See [simple list](#slist) for an explanation of what `i`, `t`, etc. mean.
+In other words, we are encoding `N` type-value pairs.
 
 <a name="sdict"></a>
 ### simple dictionary (id=0x30) ###
 
-In a simple dictionary, all the keys must be of the same data type and
-all the values must also be of the same data type.
-(The value type need not match the key type, however.)
-The object data look like this:
+Dictionaries are essentially encoded as two lists: one for the keys and one for
+the corresponding values. But since both lists are the same length, the integer
+indicating this length need only be encoded once at the beginning of the
+object data.
 
-	0bkkkkkkkk vvvvvvvv iiiiiiii*M (cccccccc*K dddddddd*V)*N
+In a simple dictionary, all keys share the same data type. All values also
+share the same data type (though it may differ from that of the keys).
+
+This means the object data are nothing more than two [simple lists](#slist)
+sharing a length:
+	
+	N=iiiiiiii*M kkkkkkkk (cccccccc*K)*N vvvvvvvv (dddddddd*V)*N
 
 where:
 
+- The `i` bits encode the integer N (see [byte buffer](#bytes)).
 - The `k` bits are the key data type ID.
 - The `v` bits are the value data type ID.
-- The `i` bits encode the integer N (see [byte buffer](#bytes)).
 - The `c` bits represent `K` bytes of data for each key.
-- The `d` bits represent `V` bytes of the corresponding value.
+- The `d` bits represent `V` bytes of corresponding value data.
+
+See also [simple list](#slist) for notes on the special cases of how
+boolean and null values get encoded.
 
 <a name="skdict"></a>
 ### simple key dictionary (id=0x31) ###
 
-In simple key dictionaries, all the keys must be of the same data type,
-but the values may differ in data type.
-In this case, the object data take the form:
+A simple key dictionary differs from a [simple dictionary](#sdict) in that
+while the keys must all share the same data type, the values may differ from
+one another in data type.
 
-	0bkkkkkkkk iiiiiiii*M (cccccccc*K vvvvvvvv dddddddd*V)*N
+Rather than combining two simple lists, then, we need a simple list and a
+general list.
 
-See [simple dictionary](#sdict) for info on what these symbols mean.
+	N=iiiiiiii*M kkkkkkkk (cccccccc*K)*N (vvvvvvvv dddddddd*V)*N
 
 <a name="skdict"></a>
 ### general dictionary (id=0x32) ###
 
-The most flexible of dictionary allows keys to have differing data types
-as well as values. This data type, however, is not supported by C++ at
-this time.
+In a general dictionary, both the keys and the values may have varying data
+types. The C++ implementation does not currently support this type of
+dictionary.
 
-The object data take the form:
+The object data combine two [general lists](#list) sharing a length:
 
-	0biiiiiiii*M (kkkkkkkk cccccccc*K vvvvvvvv dddddddd*V)*N
-
-See [simple dictionary](#sdict) for info on what these symbols mean.
+	N=iiiiiiii*M (kkkkkkkk cccccccc*K)*N (vvvvvvvv dddddddd*V)*N
