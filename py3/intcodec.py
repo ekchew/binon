@@ -1,9 +1,12 @@
 from .ioutil import MustRead
+from .typecodec import TypeCodec
 
 import struct
 
-class IntCodec:
+class IntCodec(TypeCodec):
 	kTypeID = 0x03
+	kTypes = [int]
+	
 	_kStructs = [struct.Struct(f">{c}") for c in "BHIQ"]
 	_kStructS64 = struct.Struct(">q")
 	_kStructBS64 = struct.Struct(">Bq")
@@ -12,7 +15,6 @@ class IntCodec:
 	@classmethod
 	def Encode(cls, value, outFile):
 		mag = value = -1 - value if value < 0 else value
-		
 		iStruct = 0
 		sigBitsB = 6
 		magLimit = 1 << 6
@@ -22,7 +24,6 @@ class IntCodec:
 			sigBitsB <<= 1
 			sigBitsB += iStruct
 			magLimit <<= sigBitsB - sigBitsA
-		
 		try:
 			structI = cls._kStructs[iStruct]
 		except IndexError:
@@ -51,7 +52,6 @@ class IntCodec:
 			value &= (magLimit << 1) - 1
 			value |= (1 << i) - 1 << sigBitsB + 2
 			outFile.write(structI.pack(value))
-	
 	@classmethod
 	def Decode(cls, inFile):
 		data = bytearray(MustRead(inFile, 1))
