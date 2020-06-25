@@ -1,8 +1,20 @@
-from .typecodec import TypeCodec
+from .codec import Codec
 
-class NullCodec(TypeCodec):
-	kValues = [None]
+class NullCodec(Codec):
+	kCodecID = Codec.kNullID
 	
-	@staticmethod
-	def EncodeMultiple(self, values, outFile):
+	@classmethod
+	def _Init(cls):
+		cls._gTypeCodec[type(None)] = cls
+		cls._gIDCodec[cls.kCodecID] = cls
+	@classmethod
+	def _EncodeData(cls, value, outF):
 		pass
+	@classmethod
+	def _EncodeDataList(cls, lst, outF):
+		pass
+	@classmethod
+	def _DecodeData(cls, inF):
+		pass
+
+NullCodec._Init()

@@ -1,36 +1,42 @@
+from .codec import Codec, CodeByte
 from .ioutil import MustRead
-from .typecodec import TypeCodec
 
-class BoolCodec(TypeCodec):
-	kTypeID = 0x01
-	kValues = [False]
+class BoolCodec(Codec):
+	kCodecID = Codec.kBoolID
 	
-	@staticmethod
-	def Decode(inFile):
-		return False
-	@staticmethod
-	def EncodeMultiple(values, outFile):
+	@classmethod
+	def Init(cls):
+		cls._gTypeCodec[bool] = cls
+		cls._gIDCodec[cls.kCodecID] = cls
+	@classmethod
+	def _EncodeObj(cls, value, outF):
+		CodeByte(cls.kCodecID, 0x01 if value else 0x00).write(outF)
+	@classmethod
+	def _EncodeDataList(cls, lst, outF):
 		nBits = 0
 		byte = 0x00
-		for value in values:
+		for value in lst:
 			byte <<= 1
 			if value:
 				byte |= 0x01
 			nBits += 1
 			if nBits == 8:
-				outFile.write(bytes((byte,)))
+				outF.write(bytes([byte]))
 				byte = 0x00
 				nBits = 0
 		if nBits:
-			outFile.write(bytes((byte << 8 - nBits,)))
-	@staticmethod
-	def DecodeMultiple(inFile, count):
-		data = MustRead(count + 7 >> 3)
+			outF.write(bytes([byte << 8 - nBits]))
+	@classmethod
+	def _DecodeObj(cls, codeByte, inF):
+		return codeByte.data != 0x0
+	@classmethod
+	def _DecodeDataList(cls, inF, size):
+		data = MustRead(inF, size + 7 >> 3)
 		byteIter = iter(data)
 		byte = next(byteIter)
 		nBits = 8
 		values = []
-		for i in range(count):
+		for i in range(size):
 			values.append(True if byte & 0x80 else False)
 			nBits -= 1
 			if nBits:
@@ -39,10 +45,5 @@ class BoolCodec(TypeCodec):
 				byte = next(byteIter)
 				nBits = 8
 		return values
-class TrueCodec(BoolCodec):
-	kTypeID = 0x02
-	kValues = [True]
-	
-	@staticmethod
-	def Decode(inFile):
-		return True
+
+BoolCodec.Init()
