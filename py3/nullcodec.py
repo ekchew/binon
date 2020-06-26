@@ -1,20 +1,20 @@
 from .codec import Codec
 
 class NullCodec(Codec):
-	kCodecID = Codec.kNullID
+	_kCodecID = Codec._kNullID
 	
 	@classmethod
 	def _Init(cls):
 		cls._gTypeCodec[type(None)] = cls
-		cls._gIDCodec[cls.kCodecID] = cls
+		cls._gIDCodec[cls._kCodecID] = cls
 	@classmethod
-	def _EncodeData(cls, value, outF):
+	def EncodeData(cls, value, outF):
 		pass
 	@classmethod
-	def _EncodeDataList(cls, lst, outF):
+	def EncodeDataList(cls, lst, outF):
 		pass
 	@classmethod
-	def _DecodeData(cls, inF):
+	def DecodeData(cls, inF):
 		pass
 
 NullCodec._Init()

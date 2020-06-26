@@ -2,17 +2,17 @@ from .codec import Codec, CodeByte
 from .ioutil import MustRead
 
 class BoolCodec(Codec):
-	kCodecID = Codec.kBoolID
+	_kCodecID = Codec._kBoolID
 	
 	@classmethod
-	def Init(cls):
+	def _Init(cls):
 		cls._gTypeCodec[bool] = cls
-		cls._gIDCodec[cls.kCodecID] = cls
+		cls._gIDCodec[cls._kCodecID] = cls
 	@classmethod
-	def _EncodeObj(cls, value, outF):
-		CodeByte(cls.kCodecID, 0x01 if value else 0x00).write(outF)
+	def EncodeObj(cls, value, outF):
+		CodeByte(cls._kCodecID, 0x01 if value else 0x00).write(outF)
 	@classmethod
-	def _EncodeDataList(cls, lst, outF):
+	def EncodeDataList(cls, lst, outF):
 		nBits = 0
 		byte = 0x00
 		for value in lst:
@@ -27,10 +27,10 @@ class BoolCodec(Codec):
 		if nBits:
 			outF.write(bytes([byte << 8 - nBits]))
 	@classmethod
-	def _DecodeObj(cls, codeByte, inF):
-		return codeByte.data != 0x0
+	def DecodeObj(cls, inF, codeByte=None):
+		return cls._CheckCodeByte(codeByte, inF).data != 0x0
 	@classmethod
-	def _DecodeDataList(cls, inF, size):
+	def DecodeDataList(cls, inF, size):
 		data = MustRead(inF, size + 7 >> 3)
 		byteIter = iter(data)
 		byte = next(byteIter)
@@ -46,4 +46,4 @@ class BoolCodec(Codec):
 				nBits = 8
 		return values
 
-BoolCodec.Init()
+BoolCodec._Init()
