@@ -29,6 +29,7 @@ class FloatCls:
 		"""
 		float32 = value == cls._kFStuct.unpack(cls._kFStuct.pack(value))[0]
 		return Float32(value) if float32 else Float64(value)
+	
 	def __init__(self, value):
 		self.value = value
 	def _encodeInCodeByte(self, outF):
