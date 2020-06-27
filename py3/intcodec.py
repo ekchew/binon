@@ -1,85 +1,90 @@
+from .codec import Codec, CodeByte
 from .ioutil import MustRead
-from .typecodec import TypeCodec
+from struct import Struct
 
-import struct
-
-class IntCodec(TypeCodec):
-	kTypeID = 0x03
-	kTypes = [int]
-	
-	_kStructs = [struct.Struct(f">{c}") for c in "BHIQ"]
-	_kStructS64 = struct.Struct(">q")
-	_kStructBS64 = struct.Struct(">Bq")
-	_kStructBU64 = struct.Struct(">BQ")
+class IntCls:
+	_kFormatChrs = "BHIQ"
+	_kIStructs = {Struct(f">{c}") for c in _kFormatChrs}
+	_kBIStructs = {Struct(f">B{c}") for c in _kFormatChrs}
 	
 	@classmethod
-	def Encode(cls, value, outFile):
-		mag = value = -1 - value if value < 0 else value
-		iStruct = 0
-		sigBitsB = 6
-		magLimit = 1 << 6
-		while mag >= magLimit:
-			iStruct += 1
-			sigBitsA = sigBitsB
-			sigBitsB <<= 1
-			sigBitsB += iStruct
-			magLimit <<= sigBitsB - sigBitsA
-		try:
-			structI = cls._kStructs[iStruct]
-		except IndexError:
-			if mag < 1 << 63:
-				outFile.write(cls._kStructBS64.pack(0xfc, value))
-			elif value >= 0 and mag < 1 << 64:
-				outFile.write(cls._kStructBU64.pack(0xfd, value))
-			else:
-				code = 0xfe if value < 0 else 0xff
-				outfile.write(bytes((code,)))
-				while sigBitsA != sigBitsB:
-					sigBitsM = sigBitsA + sigBitsB >> 1
-					if mag > 1 << sigBitsM:
-						sigBitsA = sigBitsM
-					else:
-						sigBitsB = sigBitsM
-				nBits = sigBitsA + 1 if value < 0 else sigBitsA
-				value &= (1 << nBits) - 1
-				nBytes = nBits + 7 >> 3
-				cls.Encode(nBytes - 9, outFile)
-				outFile.write(bytes(
-					value >> i & 0xff
-						for i in range((nBytes << 3) - 8, -8, -8)
-				))
+	def FromInt(cls, value):
+		return SInt(value) if value < 0 else UInt(value)
+	
+	def __init__(self, value):
+		self.value = value
+class SInt(IntCls):
+	def __init__(self, value):
+		super().__init__(value)
+class UInt(IntCls):
+	def __init__(self, value):
+		super().__init__(value)
+	def encodeObj(self, outF):
+		i = self._objEncoding()
+		if i < 0:
+			CodeByte(UIntCodec._kCodecID, self.value).write(outF)
+		elif i <= 8:
+			codeByte = CodeByte(cls._kCodecID, 0x8 | i)
+			data = self._kBIStructs.pack(codeByte.asByte(), value)
+			outF.write(data)
 		else:
-			value &= (magLimit << 1) - 1
-			value |= (1 << i) - 1 << sigBitsB + 2
-			outFile.write(structI.pack(value))
+			CodeByte(UIntCodec._kCodecID, 0xF).write(outF)
+			self._writeBigInt(i, outF)
+	def encodeData(self, outF):
+		i = self._dataEncoding()
+		if i < 0:
+			outF.write(self._kBIStructs[3].pack(b"\xF7", self.value))
+		elif i <= 8:
+			v = self.value | (1 << i) - 1 << (8 << i) - i
+			outF.write(self._kIStructs[i].pack(v))
+		else:
+			outF.write(b"\xFF")
+			self._writeBigInt(i, outF)
+	def _dataEncoding(self):
+		for i in range(4):
+			if 1 << (8 << i) - i - 1 > self.value:
+				return i
+		if self.value < 1 << 64:
+			return -1
+		i = 4
+		while 1 << (8 << i) <= self.value:
+			i += 1
+		return self._numBytes(i)
+	def _objEncoding(self):
+		if self.value < 8:
+			return -1
+		i = 0
+		while 1 << (8 << i) <= self.value:
+			i += 1
+		return self._numBytes(i)
+	def _numBytes(self, i):
+		iB = 1 << i
+		iA = iB >> 1
+		iM = iA + iB >> 1
+		while iM > iA:
+			if 1 << (iM << 3) <= self.value:
+				iA = iM
+			else:
+				iB = iM
+			iM = iA + iB >> 1
+		return iA
+	def _writeBigInt(self, nBytes, outF):
+		type(self)(nBytes - 9).encodeData(outF)
+		for i in range(1 << (nBytes - 1 << 3), -8, -8):
+			outF.write(bytes([self.value >> i & 0xFF]))
+
+class SIntCodec(Codec):
+	_kCodecID = Codec._kSIntID
+	
 	@classmethod
-	def Decode(cls, inFile):
-		data = bytearray(MustRead(inFile, 1))
-		code = data[0]
-		for iStruct in range(len(cls._kStructs)):
-			n = (1 << iStruct) - 1
-			if code >> 7 - iStruct == n << 1:
-				if n:
-					data.extend(MustRead(inFile, n))
-				value = cls._kStructs[iStruct].unpack(data)
-				limit = 1 << (8 << iStruct) - iStruct - 1
-				value &= limit - 1
-				break
-		else:
-			if code & 0x02:
-				n = cls.Decode(inFile)
-				data = MustRead(inFile, n)
-				value = 0
-				for byte in data:
-					value <<= 8
-					value |= byte
-				if code & 0x01:
-					return value
-				limit = 8 << n
-			else:
-				data = MustRead(inFile, 8)
-				st = cls._kStructs[3] if code & 0x01 else cls._kStructS64
-				return st.unpack(data)
-		if value > limit >> 1:
-			value -= limit
-		return value
+	def _Init(cls):
+		for typ in (int, SInt):
+			cls._gTypeCodec[typ] = cls
+		cls._gIDCodec[cls._kCodecID] = cls
+class UIntCodec(Codec):
+	_kCodecID = Codec._kUIntID
+	
+	@classmethod
+	def _Init(cls):
+		cls._gTypeCodec[UInt] = cls
+		cls._gIDCodec[cls._kCodecID] = cls
