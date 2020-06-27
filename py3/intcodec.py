@@ -16,6 +16,13 @@ class IntCls:
 class SInt(IntCls):
 	def __init__(self, value):
 		super().__init__(value)
+	def encodeObj(self, outF):
+		mag = (-1 - self.value if self.value < 0 else self.value) << 1
+		i = UInt(mag)._objEncoding()
+		if i < 0:
+			CodeByte(SIntCodec._kCodecID, self.value & 0x7).write(outF)
+		elif i <= 8:
+			
 class UInt(IntCls):
 	def __init__(self, value):
 		super().__init__(value)
@@ -81,6 +88,12 @@ class SIntCodec(Codec):
 		for typ in (int, SInt):
 			cls._gTypeCodec[typ] = cls
 		cls._gIDCodec[cls._kCodecID] = cls
+	@classmethod
+	def EncodeObj(cls, value, outF):
+		try:
+			value.encodeObj(outF)
+		except AttributeError:
+			IntCls.FromInt(value).encodeObj(outF)
 class UIntCodec(Codec):
 	_kCodecID = Codec._kUIntID
 	
@@ -88,3 +101,51 @@ class UIntCodec(Codec):
 	def _Init(cls):
 		cls._gTypeCodec[UInt] = cls
 		cls._gIDCodec[cls._kCodecID] = cls
+	@classmethod
+	def EncodeObj(cls, value, outF):
+		try:
+			value.encodeObj(outF)
+		except AttributeError:
+			UInt(value).encodeObj(outF)
+	@classmethod
+	def EncodeData(cls, value, outF):
+		UInt(value).encodeData(outF)
+	@classmethod
+	def DecodeObj(cls, inF, codeByte=None):
+		return cls._DecodeObj(inF, cls._CheckCodeByte(codeByte, inF))[0]
+	@classmethod
+	def DecodeData(cls, inF):
+		return cls._DecodeData(inF)[0]
+		
+	@classmethod
+	def _DecodeObj(cls, inF, codeByte):
+		if codeByte.data < 8:
+			return codeByte.data, 3
+		i = codeByte.data & 0x7
+		if i < 7:
+			data = MustRead(inF, 1 << i)
+			try:
+				return IntCls._kIStructs[i].unpack(data), 8 << i
+			except IndexError:
+				codeByte.raiseParseErr()
+		return cls._ReadBigInt(inF)
+	@classmethod
+	def _DecodeData(cls, inF):
+		data = bytearray(MustRead(inF, 1))
+		byte = data[0]
+		for i in range(4):
+			if byte & 0x80 >> i == 0:
+				n = (1 << i) - 1
+				if n:
+					data.extend(MustRead(inF, n))
+				value = IntCls._kIStructs[i].unpack(data)
+				mask = (1 << (8 << i) = i - 1) - 1
+				return value & mask, 8 << i
+		return cls._ReadBigInt(inF)
+	@classmethod
+	def _ReadBigInt(cls, inF)
+		nBytes = self.DecodeData(inF) + 9
+		value = 0
+		for i in range(1 << (nBytes - 1 << 3), -8, -8):
+			value |= MustRead(inF, 1) << i
+		return value, nBytes << 3
