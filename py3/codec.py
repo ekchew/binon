@@ -64,14 +64,25 @@ class Codec:
 	"""
 	This class encodes/decodes to/from binary file objects in the BinON format.
 	
-	You need never instantiate it, since all of its methods are class methods.
-	You may call Codec.Encode() and Codec.Decode() directly on the Codec base
-	class.
+	Note that in addition to the object encoding and decoding methods you see
+	here, there are EncodeData() and DecodeData() methods implemented in every
+	subclass of Codec. EncodeData() can omit the code byte identifying the
+	codec used to encode any data that follows.
 	
-	WARNING:
-		All other methods must be called on a subclass of Codec instead.
-		For example, you may call FloatCodec.EncodeObj() but NEVER
-		Codec.EncodeObj().
+	For example, say you wanted to use the variable-length integer encoding in
+	some context outside of BinON. You could go:
+	
+		>>> outF = io.BytesIO()
+		>>> UIntCodec.EncodeData(1000, outF)
+		>>> outF.getvalue()
+		b'\xe8\x83'
+		>>> inF = io.BytesIO(outF.getValue())
+		>>> UIntCodec.DecodeData(inF)
+		1000
+	
+	You need to know enough to call the right DecodeData() method (in this case,
+	UIntCodec.DecodeData()), of course, since this information would not be
+	stored as it is by EncodeObj().
 	"""
 	
 	class ParseErr(RuntimeError):
@@ -84,34 +95,35 @@ class Codec:
 	_kBoolID = 1
 	_kSIntID = 2
 	_kUIntID = 3
-	_kFloatID = 4
-	_kBytesID = 5
-	_kStrID = 6
-	_kSListID = 8
-	_kGListID = 9
-	_kSDictID = 10
-	_kSKDictID = 11
-	_kGDictID = 12
+	_kFloat16ID = 4
+	_kFloat32ID = 5
+	_kFloat64ID = 6
+	_kBytesID = 7
+	_kStrID = 8
+	_kSListID = 9
+	_kGListID = 10
+	_kSDictID = 11
+	_kSKDictID = 12
+	_kGDictID = 13
 	
 	_gTypeCodec = {}
 	_gIDCodec = {}
-	
+		
 	@classmethod
-	def Encode(cls, value, outF):
+	def EncodeObj(cls, value, outF):
 		"""
-		Serializes an input value and writes it to an output stream in
-		BinON format.
+		This function writes a code byte followed the value data (if any).
+		
+		If you already know the data type of value, you can call the EncodeObj()
+		implementation for the appropriate codec directly. For example, you
+		could call StrCodec.EncodeObj("Hello, world!", outF). This would be
+		marginally faster than Codec.EncodeObj("Hello, world!", outF), since it
+		would forego the need to look up StrCodec by examining the data type of
+		"Hello, world!".
 		
 		Args:
-			value (object): a value of type compatible with BinON
+			value (object): a value of type matching what the codec expects
 			outF (file object): a binary output stream
-				This may be an instance of any class implementing a
-				write() method that accepts bytes-like objects.
-		
-		Raises:
-			Codec.TypeErr: if type(value) is incompatible with BinON.
-			Exception: any other I/O exception raised by outF.write().
-				This would typically be an OSError for a file object.
 		"""
 		typ = type(value)
 		try:
@@ -120,145 +132,96 @@ class Codec:
 			raise cls.TypeErr(typ)
 		codec.EncodeObj(value, outF)
 	@classmethod
-	def Decode(cls, inF):
+	def EncodeObjList(cls, lst, outF, lookedUp=False):
 		"""
-		Reads a BinON-encoded object from an input stream and returns
-		the original value.
+		This method is like EncodeObj(), except that it writes the code byte
+		only once at the beginning, followed by the data for all the elements in
+		a list. This implies that all the elements share the same data type.
+		EncodeObjList() is called internally by SListCodec.EncodeObj() and the
+		like.
+		
+		Note that when you call Codec.EncodeObjList() (as opposed to calling it
+		on a specific subclass of Codec), the element data type is determined
+		from the 0th element of lst. If lst is empty, the data type is taken
+		to be type(None).
+		
+		WARNING: Note that EncodeObjList() does NOT write the length of the
+		list, but you will to supply this to DecodeObjList(). If you are calling
+		EncodeObjList() directly, you might want to write the length first with
+		UIntCodec.EncodeData(len(myList), outF) so that you can read it back
+		later, unless the list has a fixed length or its length is implied in
+		some other way.
 		
 		Args:
+			lst (list/tuple of object): objects of type matching codec
+			outF (file object): a binary output stream
+			lookedUp (bool, optional): ignore this
+				You should let this argument default to False.
+				
+				(It indicates whether the list element type had to be looked up,
+				which can have implications for certain codecs.)
+		"""
+		typ = type(lst[0]) if len(lst) else type(None)
+		try:
+			codec = cls._gTypeCodec[typ]
+		except KeyError:
+			raise cls.TypeErr(typ)
+		codec.EncodeObjList(lst, outF)
+	@classmethod
+	def DecodeObj(cls, inF, codeByte=None):
+		"""
+		Decodes what was encoded by EncodeObj().
+		
+		Input:
 			inF (file object): a binary input stream
-				Decode() calls ioutil.MustRead() to read from this stream.
+			codeByte (CodeByte or None, optional): ignore this
+				You should let this argument default to None.
+				
+				(When you call Codec.DecodeObj(), it needs to read the code byte
+				first to determine which specific codec was used, and then this
+				gets passed into the subclass's DecodeObj() method.)
 		
 		Returns:
-			object: the decoded value
+			object: the encoded value
+		"""
+		codeByte = cls._CheckCodeByte(codeByte, inF)
+		try:
+			codec = cls._gIDCodec[codeByte.codecID]
+		except KeyError:
+			raise CodeByte.ParseErr(codeByte)
+		return codec.DecodeObj(inF, codeByte)
+	@classmethod
+	def DecodeObjList(cls, inF, length, codeByte=None):
+		"""
+		Decodes what was encoded by EncodeObjList().
 		
-		Raises:
-			Codec.ParseErr: if decoded data in unrecognized format
-			ioutil.EndOfFile, Exception: see ioutil.MustRead()
+		Input:
+			inF (file object): a binary input stream
+			length (int): length of the original sequence
+			codeByte (CodeByte or None, optional): ignore this
+				See DecodeObj().
+		
+		Returns:
+			list: the original sequence as a list object
 		"""
 		codeByte = CodeByte.Read(inF)
 		try:
 			codec = cls._gIDCodec[codeByte.codecID]
 		except KeyError:
 			raise CodeByte.ParseErr(codeByte)
-		return codec.DecodeObj(inF, codeByte)
-	
-	@classmethod
-	def EncodeObj(cls, value, outF):
-		"""
-		WARNING: Do not call this method directly on the Codec class
-		Call it on a subclass of Codec instead.
-		
-		If you already know that the value you are encoding is a simple key
-		dictionary, for example, you can call SKDictCodec.EncodeObj() to save a
-		modicum of overhead over Codec.Encode(), since the latter would need to
-		look up the value's data type.
-		
-		Args:
-			value (object): a value of type matching what the codec expects
-			outF (file object): a binary output stream
-		"""
-		CodeByte(cls._kCodecID).write(outF)
-	@classmethod
-	def EncodeData(cls, value, outF):
-		"""
-		WARNING: Do not call this method directly on the Codec class
-		Call it on a subclass of Codec instead.
-		
-		EncodeData() differs from EncodeObj() in that it need not encode a codec
-		ID together with the object data. For example, if you wanted to use the
-		variable length integer encoding in some context outside of BinON, you
-		could go:
-		
-			>>> outF = io.BytesIO()
-			>>> SIntCodec.EncodeData(1000, outF)
-			>>> outF.getvalue()
-			b'\xe8\x83'
-			>>> inF = io.BytesIO(outF.getValue())
-			>>> SIntCodec.DecodeData(inF)
-			1000
-		
-		You need to know enough to call the right codec's DecodeData() method,
-		since Codec.Decode() will not know what to do with this without the
-		coded ID.
-		
-		Args:
-			value (object): a value of type matching what the codec expects
-			outF (file object): a binary output stream
-		"""
-		cls.EncodeObj(value, outF)
-	@classmethod
-	def EncodeDataList(cls, seq, outF):
-		"""
-		WARNING: Do not call this method directly on the Codec class
-		Call it on a subclass of Codec instead.
-		
-		In most cases, EncodeDataLst() does nothing more than call EncodeData()
-		on each item in the loop. It does not even encode the length of the
-		list. The method is, however, overload by the BoolCodec to pack 8
-		bool values to a byte.
-		
-		Args:
-			seq (iterable of object): objects of type matching codec
-			outF (file object): a binary output stream
-		"""
-		for value in seq:
-			cls.EncodeData(value, outF)
-	@classmethod
-	def DecodeObj(cls, inF, codeByte=None):
-		"""
-		WARNING: Do not call this method directly on the Codec class
-		Call it on a subclass of Codec instead.
-		
-		Decodes what was encoded by EncodeObj().
-		
-		Input:
-			inF (file object): a binary input stream
-			codeByte (CodeByte or None, optional): first encoded byte
-				The Decode() method needs to read the first byte to determine
-				which codec was used to encode the object. If you are calling
-				DecodeObj() directly on a subclass of Codec, this is not
-				necessary and you can let this argument default to None.
-		
-		Returns:
-			object: the encoded value
-		"""
-		cls._CheckCodeByte(codeByte, inF)
-		return None
-	@classmethod
-	def DecodeData(cls, inF):
-		"""
-		WARNING: Do not call this method directly on the Codec class
-		Call it on a subclass of Codec instead.
-		
-		Decodes what was encoded by EncodeData().
-		
-		Input:
-			inF (file object): a binary input stream
-		
-		Returns:
-			object: the encoded value
-		"""
-		return cls.DecodeObj(CodeByte.Read(inF), inF)
-	@classmethod
-	def DecodeDataList(cls, inF, size):
-		"""
-		WARNING: Do not call this method directly on the Codec class
-		Call it on a subclass of Codec instead.
-		
-		Decodes what was encoded by EncodeDataList().
-		
-		Input:
-			inF (file object): a binary input stream
-			size (int): length of the original sequence
-		
-		Returns:
-			list: the original sequence as a list object
-		"""
-		return [cls.DecodeData(inF) for i in range(size)]
+		codec.DecodeObjList(inF, length, codeByte)
 	
 	@staticmethod
 	def _CheckCodeByte(codeByte, inF):
 		if codeByte is None:
 			codeByte = CodeByte.Read(inF)
 		return codeByte
+	@classmethod
+	def _EncodeObjList(cls, lst, outF):
+		CodeByte(cls._kCodecID).write(outF)
+		for value in lst:
+			cls.EncodeData(value, outF)
+	@classmethod
+	def _DecodeObjList(cls, inF, length, codeByte=None):
+		cls._CheckCodeByte(codeByte, inF)
+		return [cls.DecodeData(inF) for i in range(length)]

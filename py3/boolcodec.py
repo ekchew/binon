@@ -12,7 +12,8 @@ class BoolCodec(Codec):
 	def EncodeObj(cls, value, outF):
 		CodeByte(cls._kCodecID, 0x01 if value else 0x00).write(outF)
 	@classmethod
-	def EncodeDataList(cls, lst, outF):
+	def EncodeObjList(cls, lst, outF, lookedUp=False):
+		CodeByte(cls._kCodecID).write(outF)
 		nBits = 0
 		byte = 0x00
 		for value in lst:
@@ -28,15 +29,16 @@ class BoolCodec(Codec):
 			outF.write(bytes([byte << 8 - nBits]))
 	@classmethod
 	def DecodeObj(cls, inF, codeByte=None):
-		return cls._CheckCodeByte(codeByte, inF).data != 0x0
+		return cls._CheckCodeByte(codeByte, inF).data & 0x1 != 0x0
 	@classmethod
-	def DecodeDataList(cls, inF, size):
-		data = MustRead(inF, size + 7 >> 3)
+	def DecodeObjList(cls, inF, length, codeByte=None):
+		cls._CheckCodeByte(codeByte, inF)
+		data = MustRead(inF, length + 7 >> 3)
 		byteIter = iter(data)
 		byte = next(byteIter)
 		nBits = 8
 		values = []
-		for i in range(size):
+		for i in range(length):
 			values.append(True if byte & 0x80 else False)
 			nBits -= 1
 			if nBits:
