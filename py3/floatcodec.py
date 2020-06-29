@@ -11,6 +11,10 @@ class FloatCls:
 	_kStruct = Struct("@f")
 	_kStructs = [Struct(f">{c}") for c in "efd"]
 	
+	@classmethod
+	def FromFloat(cls, value):
+		float32 = value == cls._kStruct.unpack(cls._kStruct.pack(value))[0]
+		return Float32(value) if float32 else Float64(value)
 	@staticmethod
 	def _IStructBytes(i):
 		return 2 << i
@@ -25,11 +29,6 @@ class FloatCls:
 			data = MustRead(inF, cls._IStructBytes(iStruct))
 			value = cls._kStructs[iStruct].unpack(data)
 		return value
-	
-	@classmethod
-	def FromFloat(cls, value):
-		float32 = value == cls._kStruct.unpack(cls._kStruct.pack(value))[0]
-		return Float32(value) if float32 else Float64(value)
 	
 	def __init__(self, value):
 		self.value = value
@@ -93,13 +92,19 @@ class Float16Codec(Codec):
 		cls._gIDCodec[cls._kCodecID] = cls
 	@classmethod
 	def EncodeObj(cls, value, outF):
-		value.encodeObj(outF)
+		try:
+			value.encodeObj(outF)
+		except AttributeError:
+			Float16(value).encodeObj(outF)
 	@classmethod
 	def EncodeObjList(cls, lst, outF, lookedUp=False):
 		cls._EncodeObjList(lst, outF)
 	@classmethod
 	def EncodeData(cls, value, outF):
-		value.encodeData(outF)
+		try:
+			value.encodeData(outF)
+		except AttributeError:
+			Float16(value).encodeData(outF)
 	@classmethod
 	def DecodeObj(cls, inF, codeByte=None):
 		return Float16.DecodeObj(inF, cls._CheckCodeByte(codeByte, inF))
@@ -118,13 +123,19 @@ class Float32Codec(Codec):
 		cls._gIDCodec[cls._kCodecID] = cls
 	@classmethod
 	def EncodeObj(cls, value, outF):
-		value.encodeObj(outF)
+		try:
+			value.encodeObj(outF)
+		except AttributeError:
+			Float32(value).encodeObj(outF)
 	@classmethod
 	def EncodeObjList(cls, lst, outF, lookedUp=False):
 		cls._EncodeObjList(lst, outF)
 	@classmethod
 	def EncodeData(cls, value, outF):
-		value.encodeData(outF)
+		try:
+			value.encodeData(outF)
+		except AttributeError:
+			Float32(value).encodeData(outF)
 	@classmethod
 	def DecodeObj(cls, inF, codeByte=None):
 		return Float32.DecodeObj(inF, cls._CheckCodeByte(codeByte, inF))
@@ -166,7 +177,10 @@ class Float64Codec(Codec):
 		codec._EncodeObjList(lst, outF)
 	@classmethod
 	def EncodeData(cls, value, outF):
-		value.encodeData(outF)
+		try:
+			value.encodeData(outF)
+		except AttributeError:
+			Float64(value).encodeData(outF)
 	@classmethod
 	def DecodeObj(cls, inF, codeByte=None):
 		return Float64.DecodeObj(inF, cls._CheckCodeByte(codeByte, inF))

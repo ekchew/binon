@@ -142,8 +142,8 @@ class Codec:
 		
 		Note that when you call Codec.EncodeObjList() (as opposed to calling it
 		on a specific subclass of Codec), the element data type is determined
-		from the 0th element of lst. If lst is empty, the data type is taken
-		to be type(None).
+		from the first element iterated out of lst. If lst is empty, the data
+		type is taken to be type(None).
 		
 		WARNING: Note that EncodeObjList() does NOT write the length of the
 		list, but you will to supply this to DecodeObjList(). If you are calling
@@ -153,7 +153,10 @@ class Codec:
 		some other way.
 		
 		Args:
-			lst (list/tuple of object): objects of type matching codec
+			lst (list of object): objects of type matching codec
+				(lst can optionally be a tuple, set, or frozenset also, but
+				bear in mind that what DecodeObjList() returns will be a list
+				regardless.)
 			outF (file object): a binary output stream
 			lookedUp (bool, optional): ignore this
 				You should let this argument default to False.
@@ -161,7 +164,10 @@ class Codec:
 				(It indicates whether the list element type had to be looked up,
 				which can have implications for certain codecs.)
 		"""
-		typ = type(lst[0]) if len(lst) else type(None)
+		try:
+			typ = type(next(iter(lst)))
+		except StopIteration:
+			typ = type(None)
 		try:
 			codec = cls._gTypeCodec[typ]
 		except KeyError:
@@ -188,7 +194,7 @@ class Codec:
 		try:
 			codec = cls._gIDCodec[codeByte.codecID]
 		except KeyError:
-			raise CodeByte.ParseErr(codeByte)
+			codeByte.raiseParseErr()
 		return codec.DecodeObj(inF, codeByte)
 	@classmethod
 	def DecodeObjList(cls, inF, length, codeByte=None):

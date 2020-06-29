@@ -28,6 +28,9 @@ class BoolCodec(Codec):
 		if nBits:
 			outF.write(bytes([byte << 8 - nBits]))
 	@classmethod
+	def EncodeData(cls, value, outF):
+		outF.write(b"\x01" if value else b"\x00")
+	@classmethod
 	def DecodeObj(cls, inF, codeByte=None):
 		return cls._CheckCodeByte(codeByte, inF).data & 0x1 != 0x0
 	@classmethod
@@ -47,5 +50,8 @@ class BoolCodec(Codec):
 				byte = next(byteIter)
 				nBits = 8
 		return values
+	@classmethod
+	def DecodeData(cls, inF):
+		return MustRead(inF, 1)[0] & 0x01 != 0x00
 
 BoolCodec._Init()

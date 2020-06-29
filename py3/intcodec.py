@@ -8,7 +8,6 @@ class IntCls:
 	@classmethod
 	def FromInt(value):
 		return SInt(value) if value < 0 else UInt(value)
-	
 	@staticmethod
 	def _IStructBits(i):
 		return 8 << i
@@ -102,8 +101,9 @@ class UInt(IntCls):
 			return cls._kIStructs[3].unpack(MustRead(inF, 8)), 64
 		return cls._DecodeBuffer(inF)
 	
-	def __init__(self, value):
+	def __init__(self, value, codecID=Codec._kUIntID):
 		super().__init__(value)
+		self.codecID = codecID
 	def _screenForObj(self):
 		if self.value < 8:
 			return 0,
@@ -133,12 +133,12 @@ class UInt(IntCls):
 			iM = iA + iB >> 1
 		return iB
 	def _encodeObjByCodeByte(self, outF):
-		CodeByte(UIntCodec._kCodecID, self.value).write(outF)
+		CodeByte(self.codecID, self.value).write(outF)
 	def _encodeObjByStruct(self, iStruct, outF):
-		CodeByte(UIntCodec._kCodecID, 0x8 | iStruct).write(outF)
+		CodeByte(self.codecID, 0x8 | iStruct).write(outF)
 		outF.write(self._kIStructs[iStruct].pack(self.value))
 	def _encodeObjByBuffer(self, nBytes, outF):
-		CodeByte(UIntCodec._kCodecID, 0xF).write(outF)
+		CodeByte(self.codecID, 0xF).write(outF)
 		self._EncodeBuffer(self.value, nBytes, outF)
 	def _encodeDataByStruct(self, iStruct, outF):
 		if iStruct == 4:
@@ -198,7 +198,10 @@ class UIntCodec(Codec):
 		cls._gIDCodec[cls._kCodecID] = cls
 	@classmethod
 	def EncodeObj(cls, value, outF):
-		value.encodeObj(outF)
+		try:
+			value.encodeObj(outF)
+		AttributeError:
+			UInt(value).encodeObj(outF)
 	@classmethod
 	def EncodeObjList(cls, lst, outF, lookedUp=False):
 		cls._EncodeObjList(lst, outF)
@@ -206,7 +209,7 @@ class UIntCodec(Codec):
 	def EncodeData(cls, value, outF):
 		try:
 			value.encodeData(outF)
-		except AttributeError:
+		AttributeError:
 			UInt(value).encodeData(outF)
 	@classmethod
 	def DecodeObj(cls, inF, codeByte=None):
