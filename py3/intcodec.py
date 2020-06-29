@@ -198,10 +198,7 @@ class UIntCodec(Codec):
 		cls._gIDCodec[cls._kCodecID] = cls
 	@classmethod
 	def EncodeObj(cls, value, outF):
-		try:
-			value.encodeObj(outF)
-		except AttributeError:
-			UInt(value).encodeObj(outF)
+		value.encodeObj(outF)
 	@classmethod
 	def EncodeObjList(cls, lst, outF, lookedUp=False):
 		cls._EncodeObjList(lst, outF)
@@ -259,3 +256,6 @@ class SIntCodec(Codec):
 	@classmethod
 	def DecodeData(cls, inF):
 		return SInt.DecodeData(inF)
+
+for cls in (UIntCodec, SIntCodec):
+	cls._Init()
