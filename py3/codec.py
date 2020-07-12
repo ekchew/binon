@@ -63,6 +63,26 @@ class CodeByte:
 class Codec:
 	"""
 	This class encodes/decodes to/from binary file objects in the BinON format.
+	Codec is the base class of all the other ...Codec classes (e.g. SIntCodec).
+	All methods in all of these classes are class methods, so you need not ever
+	instantiate any of these.
+	
+	The way these classes are structured is that Codec's methods are the most
+	general-purpose but slowest compared to its counterparts in subclasses. So
+	if you know that you are encoding a float, for exaample,
+	Float32Codec.EncodeObj(0.5) will be faster than Codec.EncodeObj(0.5). This
+	is because the former must look up the data type of 0.5 first to identify it
+	as a float.
+	
+	If you really want the quickest encoding possible, check if the subclass's
+	module has data type wrapper classes and use those where available. So in
+	the above example, Float32Codec.EncodeObj(Float32(0.5)) would give you the
+	fastest result possible. (For floats in particular, it is a good idea to
+	specify single-precision this way if that's what you want, since the
+	algorithm for determining the precision of a float is expensive if tends to
+	fall back on double-precision as the default. You can call
+	Codec.EncodeObj(Float32(0.5)) also, which would be faster than
+	Codec.EncodeObj(0.5).)
 	
 	Note that in addition to the object encoding and decoding methods you see
 	here, there are EncodeData() and DecodeData() methods implemented in every
@@ -81,8 +101,8 @@ class Codec:
 		1000
 	
 	You need to know enough to call the right DecodeData() method (in this case,
-	UIntCodec.DecodeData()), of course, since this information would not be
-	stored as it is by EncodeObj().
+	UIntCodec.DecodeData()), since this information would not be stored as it
+	would be by EncodeObj().
 	"""
 	
 	class ParseErr(RuntimeError):
@@ -108,7 +128,76 @@ class Codec:
 	
 	_gTypeCodec = {}
 	_gIDCodec = {}
+	
+	@classmethod
+	def CodecFromValue(cls, value):
+		"""
+		Equivalent to CodecFromType(type(value)).
+		"""
+		return cls.CodecFromType(type(value))
+	@classmethod
+	def CodecFromType(cls, typ):
+		"""
+		Given a base type like int, float, list, etc. or a BinON wrapper type
+		like Float32 or SList, this function returns a Codec subclass suitable
+		to that type.
 		
+		For base types, the actual encoding used may differ from that directly
+		associated with the returned class, though it would be of the same
+		family. For example, Codec.CodecFromType(int) returns SIntCodec. But if
+		you were to call Codec.CodecFromType(int).EncodeObj(15, outF), it would
+		ultimately encode as an unsigned (rather than signed) integer. (Note
+		that this is functionally equivalent to Codec.EncodeObj(15, outF).)
+		
+		Args:
+			typ (type): type to be encoded
+		
+		Returns:
+			type: appropriate subclass of Codec for typ
+		
+		Raises:
+			Codec.TypeErr: if no codec can be found for value
+			"""
+		try:
+			return cls._gTypeCodec[typ]
+		except KeyError:
+			raise cls.TypeErr(typ)
+	@classmethod
+	def ListElemCodec(cls, lst):
+		"""
+		Determines the appropriate codec to use to encode elements in a list. It
+		may return None to indicate that there is no single codec that can
+		handle every element, meaning you would need a GList instead of an SList
+		*or a more general dictionary type).
+		
+		This method is overloaded for a number of codecs. For example, if you
+		know you are dealing with int elements, you may call
+		SIntCodec.ListElemCodec(), which should return either SIntCodec or
+		UIntCodec depending on whether there are any negative numbers in your
+		list.
+		
+		The function is called automatically by EncodeObj() when you pass it a
+		list (or some other sequence primitive like a tuple).
+		
+		Args:
+			lst (iterable): list containing elements to examine
+				Technically, this can be any iterable type for the purposes of
+				this method.
+		
+		Returns:
+			type: a codec class that can handle all lst elements
+			None: if no single such codec exists
+		"""
+		it = iter(lst)
+		typ = None
+		try:
+			typ = next(it)
+			while type(next(it)) is typ: pass
+			typ = None
+		except StopIteration: pass
+		if typ is not None:
+			typ = cls.CodecFromType(typ)._ListElemCodec(lst)
+		return typ
 	@classmethod
 	def EncodeObj(cls, value, outF):
 		"""
@@ -121,16 +210,19 @@ class Codec:
 		would forego the need to look up StrCodec by examining the data type of
 		"Hello, world!".
 		
+		Moreover, if a wrapper class exists for the type you are considering,
+		you can further reduce the encoding time by using the wrapper. For
+		example, SIntCodec.EncodeObj(SInt(-1)) would be faster than
+		SIntCodec.EncodeObj(-1).
+		
+		(See CodecFromType() for further notes on how
+		EncodeObj's algorithm works.)
+		
 		Args:
-			value (object): a value of type matching what the codec expects
+			value (object): the value to be encoded
 			outF (file object): a binary output stream
 		"""
-		typ = type(value)
-		try:
-			codec = cls._gTypeCodec[typ]
-		except KeyError:
-			raise cls.TypeErr(typ)
-		codec.EncodeObj(value, outF)
+		cls.CodecFromValue(value).EncodeObj(value, outF)
 	@classmethod
 	def EncodeObjList(cls, lst, outF, lookedUp=False):
 		"""
@@ -149,8 +241,8 @@ class Codec:
 		list, but you will to supply this to DecodeObjList(). If you are calling
 		EncodeObjList() directly, you might want to write the length first with
 		UIntCodec.EncodeData(len(myList), outF) so that you can read it back
-		later, unless the list has a fixed length or its length is implied in
-		some other way.
+		later, unless the list has a fixed length or its length can be inferred
+		in some other way.
 		
 		Args:
 			lst (list of object): objects of type matching codec
@@ -165,14 +257,10 @@ class Codec:
 				which can have implications for certain codecs.)
 		"""
 		try:
-			typ = type(next(iter(lst)))
+			elem0 = next(iter(lst))
 		except StopIteration:
-			typ = type(None)
-		try:
-			codec = cls._gTypeCodec[typ]
-		except KeyError:
-			raise cls.TypeErr(typ)
-		codec.EncodeObjList(lst, outF)
+			elem0 = None
+		cls.CodecFromValue(elem0).EncodeObjList(lst, outF)
 	@classmethod
 	def DecodeObj(cls, inF, codeByte=None):
 		"""
@@ -231,3 +319,14 @@ class Codec:
 	def _DecodeObjList(cls, inF, length, codeByte=None):
 		cls._CheckCodeByte(codeByte, inF)
 		return [cls.DecodeData(inF) for i in range(length)]
+	@classmethod
+	def _ListElemCodec(cls, lst):
+		#	Codec.ListElemCodec() eventually calls this internal version of the
+		#	function on specific codec class once it is determined. This is
+		#	where SIntCodec, for example, could return UIntCodec if it finds no
+		#	negative numbers in the list. We do not want to call the specific
+		#	codec's ListElemCodec() function from Codec in case it is not
+		#	overridden, as that would lead to infinite recursion. This default
+		#	implementation of the internal _ListElemCodec() simply returns the
+		#	specific codec (cls) unmodified.
+		return cls

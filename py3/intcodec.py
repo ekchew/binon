@@ -3,6 +3,20 @@ from .ioutil import MustRead
 from struct import Struct
 
 class IntCls:
+	"""
+	Base class of UInt and SInt. You can wrap int values in the latter to save
+	Codec and SIntCodec some time in determining whether your integers are
+	signed or unsigned. (This is done by calling FromInt(), which returns an
+	SInt if its argument is negative or a UInt otherwise.)
+	
+	These wrappers support the ==, <, and hash operators, meaning they can be
+	sorted or placed in sets/dictionary keys. To do anything more complicated,
+	you need to access the value attribute containing the int.
+	
+	Attributes:
+		value (int): the integer value
+	"""
+	
 	_kIStructs = [Struct(f">{c}") for c in "BHIQ"]
 	
 	@classmethod
@@ -48,6 +62,19 @@ class IntCls:
 	
 	def __init__(self, value):
 		self.value = value
+	def __eq__(self, rhs):
+		try:
+			return self.value == rhs.value
+		except AttributeError:
+			return self.value == rhs
+	def __lt__(self, rhs):
+		try:
+			return self.value < rhs.value
+		except AttributeError:
+			return self.value < rhs
+	def __hash__(self):
+		return hash(self.value)
+	
 	def encodeObj(self, outF):
 		tup = self._screenForObj()
 		fns = (
@@ -190,6 +217,16 @@ class SInt(IntCls):
 			outf.write(self._kIStructs[iStruct].pack(word))
 
 class UIntCodec(Codec):
+	"""
+	Codec for encoding unsigned int values.
+	
+	WARNING:
+		The Encode...() methods you see here will not check that their arguments
+		indeed contain non-negative integers. If you are uncertain, pass int
+		values into SIntCodec's EncodeObj...() methods insteam to perform a
+		check.
+	"""
+	
 	_kCodecID = Codec._kUIntID
 	
 	@classmethod
@@ -221,6 +258,11 @@ class UIntCodec(Codec):
 	def DecodeData(cls, inF):
 		return UInt.DecodeData(inF)
 class SIntCodec(Codec):
+	"""
+	Codec for encoding any integers. The EncodeObj...() methods may use an
+	unsigned integer encoding in certain cases if they can get away with it. You
+	can wrap your integers in SInt if you want to suppress this.
+	"""
 	_kCodecID = Codec._kSIntID
 	
 	@classmethod
@@ -245,6 +287,9 @@ class SIntCodec(Codec):
 				codec = UIntCodec
 		codec._EncodeObjList(lst, outF)
 	@classmethod
+	def ListElemCodec(cls, lst):
+		return cls._ListElemCodec(lst)
+	@classmethod
 	def EncodeData(cls, value, outF):
 		try:
 			value.encodeData(outF)
@@ -259,6 +304,13 @@ class SIntCodec(Codec):
 	@classmethod
 	def DecodeData(cls, inF):
 		return SInt.DecodeData(inF)
+	
+	@classmethod
+	def _ListElemCodec(cls, lst):
+		for i in lst:
+			if i < 0:
+				return cls
+		return UIntCodec
 
 for cls in (UIntCodec, SIntCodec):
 	cls._Init()
