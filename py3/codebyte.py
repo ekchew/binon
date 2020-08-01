@@ -20,7 +20,7 @@ class CodeByte:
 			In other words, the object is an IntObj, FloatObj, etc. rather than
 			a UInt, Float32, etc. Specialized subtypes start at 2 and up and
 			equates for these are defined in other ...obj modules since they are
-			context-dependent to the base type.
+			context-dependent on the base type.
 	
 	Instance Attributes:
 		value (int): should be a number in the range [0,255]
@@ -34,6 +34,18 @@ class CodeByte:
 	
 	@classmethod
 	def Read(cls, inF):
+		"""
+		Reads a code byte from a file or other data stream.
+		
+		Args:
+			inF (file object): a readable binary data stream
+		
+		Returns:
+			CodeByte: the read-in code byte
+		
+		Raises:
+			ioutil.EndOfFile: on failure to read the code byte
+		"""
 		return cls(MustRead(inF, 1)[0])
 	
 	__slots__ = ["value"]
@@ -72,4 +84,10 @@ class CodeByte:
 		return f"CodeByte(baseType={self.baseType}, subtype={self.subtype})"
 	
 	def write(self, outF):
+		"""
+		Writes the code byte to a file or other data stream.
+		
+		Args:
+			outF (file object): a writable binary data stream
+		"""
 		outF.write(bytes([self.value]))
