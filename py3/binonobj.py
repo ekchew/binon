@@ -26,6 +26,9 @@ class BinONObj:
 		"""
 		pass
 	
+	#	BinON uses a big-endian byte order
+	_kEndian = "big"
+	
 	#	Maps CodeByte values onto their corresponding object classes.
 	_gCodeObjCls = {}
 	
@@ -110,7 +113,11 @@ class BinONObj:
 		try:
 			objCls = cls._gCodeObjCls[cb.value]
 		except KeyError:
-			raise cls.ParseErr(f"unknown BinON base type code: {cb.baseType}")
+			raise cls.ParseErr(
+				"unknown BinON base type {} with subtype {}".format(
+					cb.baseType, cb.subtype
+				)
+			)
 		obj = objCls._Decode(cb, inF)
 		return obj if asObj else obj.asValue()
 	@classmethod
@@ -162,7 +169,8 @@ class BinONObj:
 		"""
 		st = CodeByte.kBaseSubtype if self.value else CodeByte.kDefaultSubtype
 		CodeByte(baseType=self.kBaseType, subtype=st).write(outF)
-		self.encodeData(outF)
+		if self.value:
+			self.encodeData(outF)
 	def encodeData(self, outF):
 		"""
 		Every BinON object is represented by a code byte which is typically

@@ -33,6 +33,16 @@ class CodeByte:
 	kBaseSubtype = 1
 	
 	@classmethod
+	def BaseSubtypes(cls):
+		"""
+		Simply returns the two subtypes associated with the base object class in
+		tuple form. (This is used interally by the object classes in registering
+		themselves into BinONObj's internal database.)
+		
+		Returns:
+			tuple of (int, int): (kDefaultSubtype, kBaseSubtype)
+		"""
+	@classmethod
 	def Read(cls, inF):
 		"""
 		Reads a code byte from a file or other data stream.
@@ -59,7 +69,7 @@ class CodeByte:
 	@property
 	def subtype(self):
 		return value & 0xF
-	@data.setter
+	@subtype.setter
 	def subtype(self, v):
 		value = selv.value & 0xF0 | v & 0x0F
 	
@@ -82,6 +92,10 @@ class CodeByte:
 			self.subtype = subtype
 	def __repr__(self):
 		return f"CodeByte(baseType={self.baseType}, subtype={self.subtype})"
+	def __hash__(self):
+		return hash(self.value)
+	def __eq__(self, rhs):
+		return self.value == rhs.value
 	
 	def write(self, outF):
 		"""
