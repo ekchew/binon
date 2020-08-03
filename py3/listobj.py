@@ -1,6 +1,8 @@
 from .binonobj import BinONObj
+from .boolobj import BoolObj
 from .codebyte import CodeByte
 from .intobj import UInt
+from .ioutil import MustRead
 
 class ListObj(BinOnObj):
 	kBaseType = 8
@@ -33,9 +35,10 @@ class ListObj(BinOnObj):
 			sc0 = type(bc._AsObj(value, specialize=True))
 			try:
 				while True:
-					sc = type(cls.AsObj(next(it), specialize=True))
-					if not isinstance(sc, bc):
+					obj = cls.AsObj(next(it), specialize=True)
+					if not isinstance(obj, bc):
 						break
+					sc = type(obj)
 					if sc is not sc0:
 						sc0 = bc
 			except StopIteration: pass
@@ -71,12 +74,36 @@ class SList(ListObj):
 	@classmethod
 	def DecodeElems(cls, inF, count, asObj=False):
 		objCls = cls._ReadCodeByte(inF)
-		return [objCls.DecodeData(inF, asObj) for i in range(count)]
+		if objCls is BoolObj:
+			lst = []
+			for i in range(count):
+				if (i & 0x7) == 0x0:
+					byte = MustRead(inF, 1)[0]
+				lst.append(True if byte & 0x80 else False)
+				byte <<= 1
+		else lst = [objCls.DecodeData(inF, asObj) for i in range(count)]
+		return lst
 	
 	def encodeElems(self, outF):
-		self.elemCls.GetCodeByte().write(outF)
-		for elem in self.value:
-			self.elemCls._AsObj(elem, specialize=False).encodeData(outF)
+		if self.elemCls is BoolObj:
+			self._encodeBools(outF)
+		else:
+			self.elemCls.GetCodeByte().write(outF)
+			for elem in self.value:
+				self.elemCls._AsObj(elem, specialize=False).encodeData(outF)
+	def _encodeBools(self, outF):
+		byte = 0x00
+		for i, elem in enumerate(self.value):
+			byte <<= 1
+			byte |= 0x01 if elem else 0x00
+			if (i & 0x7) == 0x7:
+				outF.write([byte])
+				byte = 0x00
+		try:
+			i &= 0x7
+			if i < 0x7:
+				outF.write([byte << 0x7 - i])
+		except NameError: pass # you can get this if value is empty list
 
 def _Init():
 	cb = CodeByte(baseType=ListObj.kBaseType)
