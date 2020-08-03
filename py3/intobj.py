@@ -96,9 +96,6 @@ class UInt(IntObj):
 		v = int.from_bytes(data, cls.kEndian) & m
 		return cls(v) if asObj else v
 	
-	def encode(self, outF):
-		CodeByte(baseType=self.kBaseType, subtype=kSubtype).write(outF)
-		self.encodeData(outF)
 	def encodeData(self, outF):
 		if self.value < 0x80:
 			m = 0x00

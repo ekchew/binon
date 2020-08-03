@@ -36,6 +36,7 @@ class BinONObj:
 	#	object classes as well as built-in types such as int or list.
 	_gTypeBaseCls = {}
 	
+	#	Class methods to call directly on BinONObj.
 	@classmethod
 	def AsObj(cls, value, specialize=False):
 		"""
@@ -109,17 +110,10 @@ class BinONObj:
 			ioutil.EndOfFile: if the object data cannot be read
 			BinONObj.ParseErr: if there is something wrong with the object data
 		"""
-		cb = CodeByte.Read(inF)
-		try:
-			objCls = cls._gCodeObjCls[cb.value]
-		except KeyError:
-			raise cls.ParseErr(
-				"unknown BinON base type {} with subtype {}".format(
-					cb.baseType, cb.subtype
-				)
-			)
-		obj = objCls._Decode(cb, inF)
+		obj = cls._ReadCodeByte(inF)._Decode(cb, inF)
 		return obj if asObj else obj.asValue()
+	
+	#	Class methods to be called only on subclasses of BinONObj.
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
 		"""
@@ -139,13 +133,39 @@ class BinONObj:
 		"""
 		obj = cls()
 		return obj if asObj else obj.asValue()
+	@classmethod
+	def GetCodeByte(cls):
+		"""
+		Given a subclass of BinONObj, this method returns a CodeByte with its
+		baseType and subtype fields filled out appropriately.
+		
+		For base type classes, the subtype will be set to CodeByte.kBaseSubtype
+		(as opposed to CodeByte.kDefaultSubtype).
+		
+		Returns:
+			CodeByte: the code byte for the BinONObj subclass in question
+		"""
+		try:
+			return CodeByte(cls.kBaseType, cls.kSubtype)
+		except AttributeError:
+			return CodeByte(cls.kBaseType, CodeByte.kBaseSubtype)
 	
+	#	Private class methods (may or may not be overridden).
 	@classmethod
 	def _AsObj(cls, value, specialize):
 		return cls(value)
 	@classmethod
 	def _Decode(cls, codeByte, inF):
 		return cls.DecodeData(inF) if cls.subtype else cls()
+	@classmethod
+	def _ReadCodeByte(cls, inF):
+		#	Returns object class looked up from the code byte.
+		cb = CodeByte.Read(inF)
+		try:
+			return cls._gCodeObjCls[cb]
+		except KeyError:
+			typeInfo = f"base type = {cb.baseType}, subtype = {cb.subtype}"
+			raise cls.ParseErr(f"unknown BinON data type: {typeInfo}")
 	
 	__slots__ = ["value"]
 	
@@ -167,9 +187,11 @@ class BinONObj:
 		Args:
 			outF (file object): a writable binary data stream
 		"""
-		st = CodeByte.kBaseSubtype if self.value else CodeByte.kDefaultSubtype
-		CodeByte(baseType=self.kBaseType, subtype=st).write(outF)
-		if self.value:
+		cb = self.GetCodeByte()
+		if cb.subtype == CodeByte.kBaseSubtype and not self.value:
+			cb.subtype = CodeByte.kDefaultSubtype
+		cb.write(outF)
+		if cb.subtype != CodeByte.kDefaultSubtype:
 			self.encodeData(outF)
 	def encodeData(self, outF):
 		"""
