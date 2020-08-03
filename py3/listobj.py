@@ -62,6 +62,23 @@ class ListObj(BinOnObj):
 			self.Encode(elem, outF)
 
 class SList(ListObj):
+	"""
+	A simple list is one in which all elements share the same data type. It can
+	encode tighter than a general list (ListObj) because it need not include a
+	code byte for each element.
+	
+	The specialize option, where applied to list encoding, scans the list first
+	to see if the elements are indeed of the same type, in which case an SList
+	is employed (rather than a plain ListObj). Note that if all the elements
+	themselves are of the same specialized type, that type will be used.
+	Otherwise, the algorithm falls back on the more general type. For example,
+	were you encoding a list of floats and all but one were Float32s, it would
+	have to go with plain 64-bit FloatObjs for ALL elements to accommodate the
+	one exception. (In this case, the simple list may actually encode longer
+	than a general one would have, so specialize may not be a great idea. For
+	floats, it is generally better to go SList(myArray, Float32) explicitly if
+	you mean to write an array of 32-bit floats.)
+	"""
 	kSubtype = 2
 	
 	def __init__(self, value, elemCls=None):
