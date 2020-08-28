@@ -25,7 +25,8 @@ class ListObj(BinONObj):
 		Returns:
 			list of object: list of read back elements
 		"""
-		return [cls.Decode(inF, asObj) for i in range(count)]
+		v = [cls.Decode(inF, asObj) for i in range(count)]
+		return cls(v) if asObj else v
 	
 	@classmethod
 	def _AsObj(cls, value, specialize):
