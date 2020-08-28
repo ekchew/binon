@@ -42,6 +42,7 @@ class CodeByte:
 		Returns:
 			tuple of (int, int): (kDefaultSubtype, kBaseSubtype)
 		"""
+		return cls.kDefaultSubtype, cls.kBaseSubtype
 	@classmethod
 	def Read(cls, inF):
 		"""

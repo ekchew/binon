@@ -4,7 +4,7 @@ from .codebyte import CodeByte
 from .intobj import UInt
 from .ioutil import MustRead
 
-class ListObj(BinOnObj):
+class ListObj(BinONObj):
 	kBaseType = 8
 	
 	@classmethod
