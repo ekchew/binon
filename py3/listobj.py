@@ -5,6 +5,11 @@ from .intobj import UInt
 from .ioutil import MustRead
 
 class ListObj(BinONObj):
+	"""
+	A base list object encodes the length N of the list as an unsigned integer,
+	followed by N elements of fully-formed BinON objects (with a code byte for
+	every element).
+	"""
 	kBaseType = 8
 	
 	@classmethod

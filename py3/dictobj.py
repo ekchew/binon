@@ -2,6 +2,11 @@ from .binonobj import BinONObj
 from .listobj import ListObj, SList
 
 class DictObj(BinONObj):
+	"""
+	Dictionary objects essentially encode as a pair of list objects: one for the
+	keys and another for the values. But since the lists would always be of the
+	same length, this length is only encoded once ahead of the keys list.
+	"""
 	kBaseType = 9
 	
 	@classmethod
@@ -16,13 +21,24 @@ class DictObj(BinONObj):
 	
 	@classmethod
 	def _AsObj(cls, value, specialize):
-		pass #TODO
+		keys = ListObj._AsObj(value.keys(), specialize)
+		if type(keys) is SList:
+			vals = ListObj._AsObj(value.values(), specialize)
+			if type(vals) is SList:
+				return SDict(value, keyCls=keys.elemCls, valCls=vals.elemCls)
+			return SKDict(value, keyCls=keys.elemCls)
+		return cls(value)
 	
 	def encodeData(self, outF):
 		ListObj(self.value.keys()).encodeData(outF)
 		ListObj(self.value.values()).encodeElems(outF)
 
 class SKDict(DictObj):
+	"""
+	A simple key dictionary is one in which all the keys must be of the same
+	data type. They can then be encoded internally as an SList (rather than a
+	more general ListObj).
+	"""
 	kSubtype = 2
 	
 	def __init__(self, value, keyCls=None):
@@ -50,6 +66,11 @@ class SKDict(DictObj):
 		ListObj(self.value.values()).encodeElems(outF)
 
 class SDict(DictObj):
+	"""
+	In a simple dictionary, the keys must all be of one data type and the values
+	must also be of one data type (not necessary the same as the keys'). This
+	allows both the keys and values to be encoded internally as SList data.
+	"""
 	kSubtype = 3
 	
 	def __init__(self, value, keyCls=None, valCls=None):
