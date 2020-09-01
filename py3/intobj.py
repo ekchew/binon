@@ -19,10 +19,10 @@ class IntObj(BinONObj):
 			m = 0x1fffffff
 			n = 4
 		elif (byte0 & 0x10) == 0:
-			m = 0x0fffffffffffffff
+			m = 0x0fffffff_ffffffff
 			n = 8
 		elif (byte0 & 0x01) == 0:
-			m = 0xffffffffffffffff
+			m = 0xffffffff_ffffffff
 			n = 9
 		else:
 			n = self.DecodeData(inF)
@@ -50,11 +50,11 @@ class IntObj(BinONObj):
 		elif -0x10000000 <= self.value < 0x10000000:
 			m = 0xC0000000
 			n = 4
-		elif -0x0800000000000000 <= self.value < 0x0800000000000000:
-			m = 0xE000000000000000
+		elif -0x08000000_00000000 <= self.value < 0x08000000_00000000:
+			m = 0xE0000000_00000000
 			n = 8
-		elif -0x8000000000000000 <= self.value < 0x8000000000000000:
-			m = 0xF00000000000000000
+		elif -0x80000000_00000000 <= self.value < 0x80000000_00000000:
+			m = 0xF0_00000000_00000000
 			n = 9
 		else:
 			m = 0
@@ -82,10 +82,10 @@ class UInt(IntObj):
 			m = 0x1fffffff
 			n = 4
 		elif (byte0 & 0x10) == 0:
-			m = 0x0fffffffffffffff
+			m = 0x0fffffff_ffffffff
 			n = 8
 		elif (byte0 & 0x01) == 0:
-			m = 0xffffffffffffffff
+			m = 0xffffffff_ffffffff
 			n = 9
 		else:
 			n = self.DecodeData(inF)
@@ -106,11 +106,11 @@ class UInt(IntObj):
 		elif self.value < 0x20000000:
 			m = 0xC0000000
 			n = 4
-		elif self.value < 0x1000000000000000:
-			m = 0xE000000000000000
+		elif self.value < 0x10000000_00000000:
+			m = 0xE0000000_00000000
 			n = 8
-		elif self.value < 0x10000000000000000:
-			m = 0xF00000000000000000
+		elif self.value < 0x1_00000000_00000000:
+			m = 0xF0_00000000_00000000
 			n = 9
 		else:
 			m = 0
