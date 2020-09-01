@@ -25,7 +25,7 @@ class IntObj(BinONObj):
 			m = 0xffffffff_ffffffff
 			n = 9
 		else:
-			n = self.DecodeData(inF)
+			n = UInt.DecodeData(inF)
 			m = (1 << n + 3) - 1
 			n += 1
 		if n > 1:
@@ -61,7 +61,7 @@ class IntObj(BinONObj):
 			v = -self.value - 1 if self.value < 0 else self.value
 			n = self.value.bit_length() + 8 >> 3
 			outF.write(b"\xf1")
-			self.encodeData(n)
+			UInt(n).encodeData(outF)
 		v = self.value & (1 << n + 3) - 1 | m
 		outF.write(v.to_bytes(n, self.kEndian))
 
@@ -88,7 +88,7 @@ class UInt(IntObj):
 			m = 0xffffffff_ffffffff
 			n = 9
 		else:
-			n = self.DecodeData(inF)
+			n = cls.DecodeData(inF)
 			m = (1 << n + 3) - 1
 			n += 1
 		if n > 1:
@@ -116,7 +116,7 @@ class UInt(IntObj):
 			m = 0
 			n = self.value.bit_length() + 7 >> 3
 			outF.write(b"\xf1")
-			self.encodeData(n)
+			UInt(n).encodeData(outF)
 		outF.write((m | self.value).to_bytes(n, self.kEndian))
 
 def _Init():
