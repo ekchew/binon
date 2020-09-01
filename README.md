@@ -115,10 +115,30 @@ the byte, rather than wasting an entire data byte for each value.
 
 Full Binary Encoding:
 
-| Code Byte  | Data                    | Python Value      |
-| :--------- | :---------------------- | ----------------: |
-| `00100000` |                         |                 0 |
-| `00100001` | `0iiiiiii`              |   -2^6 <= i < 2^6 |
-| `00100001` | `10iiiiii` `iiiiiiii`   | -2^13 <= i < 2^13 |
-| `00100001` | `110iiiii` `iiiiiiii`*3 | -2^28 <= i < 2^28 |
-| `00100001` | `1110iiii` `iiiiiiii`*7 | -2^59 <= i < 2^59 |
+| Code Byte  | Data                      | Python Value      |
+| :--------- | :------------------------ | ----------------: |
+| `00100000` |                           |                 0 |
+| `00100001` | `0iiiiiii`                |   -2^6 <= i < 2^6 |
+| `00100001` | `10iiiiii` `iiiiiiii`     | -2^13 <= i < 2^13 |
+| `00100001` | `110iiiii` `iiiiiiii`*3   | -2^28 <= i < 2^28 |
+| `00100001` | `1110iiii` `iiiiiiii`*7   | -2^59 <= i < 2^59 |
+| `00100001` | `11110000` `iiiiiiii`*8   | -2^63 <= i < 2^63 |
+| `00100001` | `11110001` U `iiiiiiii`*U |           any int |
+| `00100010` | `0iiiiiii`                |      0 <= i < 2^7 |
+| `00100010` | `10iiiiii` `iiiiiiii`     |     0 <= i < 2^14 |
+| `00100010` | `110iiiii` `iiiiiiii`*3   |     0 <= i < 2^29 |
+| `00100010` | `1110iiii` `iiiiiiii`*7   |     0 <= i < 2^60 |
+| `00100010` | `11110000` `iiiiiiii`*8   |     0 <= i < 2^64 |
+| `00100010` | `11110001` U `iiiiiiii`*U |            i >= 0 |
+
+Integer objects use a variable-length encoding format. The base type (`IntObj`)
+can encode signed integers of any length, but there is also a variant (`UInt`)
+for encoding unsigned integers.
+
+For typical integers, the encoding somewhat resembles UTF-8 using 1, 2, 4, and
+8-byte quantities. For values approaching the 64-bit limit, there is a 9-byte
+encoding: a single 0xf0 byte, followed by the 64-bit value in 8 bytes.
+
+For values requiring more than 64 bits, a single 0xf1 byte is followed by a UInt
+data encoding of the number of bytes needed to store the integer data that
+follows. This recursively encoded integer is represented by U above.
