@@ -19,6 +19,7 @@ BinON is a JSON-like object notation that uses a more condensed binary format.
 * [Python Interface](#python)
 	* [Class Inheritance Tree](#py_tree)
 	* [High Level Interface](#py_high_level)
+	* [Low-Level Interface](#py_low_level)
 
 <a name="requirements"></a>
 ## Requirements
@@ -335,4 +336,88 @@ and can be found in the same module. These specialized classes do not end in
 <a name="py_high_level"></a>
 ### High-Level Interface
 
-The easiest way to encode/decode your data in BinON format is to call the `BinONObj.Encode()` and `BinONObj.Decode()` class methods (from the `binon.binonobj` module).
+The easiest way to encode/decode your data in BinON format is to call the
+`BinONObj.Encode()` and `BinONObj.Decode()` class methods (from the
+`binon.binonobj` module).
+
+`BinONObj.Encode()` expects 2 or 3 arguments:
+1. `value` (object): the value to encode
+2. `outF` (file object): a writable binary data stream
+3. `specialize` (bool, optional): auto-specialize encoding classes where
+possible
+
+What you pass in as value can be an instrinsic Python data type or container of
+such types.
+
+	BinONObj.Encode(42, myFile)
+	BinONObj.Encode([1,2,3], myFile)
+
+It may also be a BinON class-wrapped intrinsic value.
+
+	BinONObj.Encode(UInt(42), myFile)
+
+More on that under [Low-Level Interface](#py_low_level).
+
+The main things to remember about `outF` is that it needs to be writable and binary.
+
+	with open("/path/to/foo.bin", "wb") as myFile: ...
+
+Alternatively, you could write binary data to the standard output buffer:
+
+	myFile = sys.stdout.buffer
+
+A third option would be to write it into a memory buffer and later call its
+`getvalue()` method to retrieve the final product.
+
+	myFile = io.BytesIO()
+
+The `specialize` option tells `Encode()` to look closely at your data to
+determine whether it can apply a specialized BinON encoding to it. For example,
+if you called `BinONObj.Encode(42,myFile)`, this would ultimately call
+`IntObj(42).encode(myFile)`. If you called
+`BinONObj.Encode(42,myFile,specialize=True)` instead, you would get
+`UInt(42).encode(myFile)` because the encoder would realize 42 is not just an
+integer but an unsigned integer.
+
+`specialize` should give you the tightest encoding in most situations, but it
+comes at a cost in that it has to run over your data once before deciding what
+to do. This can be particularly expensive with container types. For example, in
+encoding a list of integers, it would need to check that all elements are indeed
+integers before substituting an `SList` for a `ListObj`.
+
+The alternative to using `specialize` is to be more explicit about the data
+types you are encoding, as described in the low-level interface next.
+
+<a name="py_low_level"></a>
+### Low-Level Interface
+
+The low-level interface involves dealing more directly with the classes that
+handle specific data types. In particular, you may want to apply specialized
+data types like `UInt` or `Float32` before encoding them. You can do so at the
+scalar level (e.g. `UInt(42)`) or the container level (e.g.
+`SList([1,2,3],elemCls=UInt)`).
+
+At this point, you could directly call the `encode()` method directly on the
+object you just created, or fall back on the higher level `Encode()` class
+method. The latter may be a good choice if you are only applying specialized
+classes to parts of your data structure. For example, say you are encoding a
+data structure containing some specialized elements but not others.
+
+	BinONObj.Encode(["foo", -1, Float32(1.0/3)], myFile)
+
+This would give you the same output as:
+
+	ListObj([StrObj("foo"), IntObj(-1), Float32(2.5)]).encode(myFile)
+
+`BinONObj.Encode()` supplies base data type classes (those ending in "Obj") for
+basic Python types automatically, so you only need worry about places where you
+want a specialized class (one not ending in "Obj") to encode a particular value.
+Here, if we had simply written `2.5` instead of `Float32(2.5)`,
+`BinONObj.Encode()` would have supplied `FloatObj(2.5)` instead, which encodes
+as double-precision (64 bits). (Note that in this particular case, setting
+`specialize=True` in the `BinONObj.Encode()` call would give you a `Float32`
+even without the explicit casting, but for floating-point in particular, it is
+not a great idea to rely on this. See notes on the [floatobj](#float) module.)
+
+Next, we will have a closer look at some specific data type-handling modules.
+
