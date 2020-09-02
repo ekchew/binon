@@ -20,6 +20,7 @@ BinON is a JSON-like object notation that uses a more condensed binary format.
 	* [Class Inheritance Tree](#py_tree)
 	* [High Level Interface](#py_high_level)
 	* [Low-Level Interface](#py_low_level)
+	    * [encodeData() and DecodeData()](#py_encode_data)
 
 <a name="requirements"></a>
 ## Requirements
@@ -419,5 +420,5 @@ as double-precision (64 bits). (Note that in this particular case, setting
 even without the explicit casting, but for floating-point in particular, it is
 not a great idea to rely on this. See notes on the [floatobj](#float) module.)
 
-Next, we will have a closer look at some specific data type-handling modules.
-
+<a name="py_encode_data"></a>
+#### encodeData() and DecodeData()
