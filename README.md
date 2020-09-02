@@ -16,6 +16,9 @@ BinON is a JSON-like object notation that uses a more condensed binary format.
 		* [String Objects](#string)
 		* [List Objects](#list)
 		* [Dictionary Object](#dict)
+* [Python Interface](#python)
+	* [Class Inheritance Tree](#py_tree)
+	* [High Level Interface](#py_high_level)
 
 <a name="requirements"></a>
 ## Requirements
@@ -261,7 +264,10 @@ bits.
 <a name="dict"></a>
 #### Dictionary Objects
 
-The data format for dictionaries looks a lot like two lists stuck together: one for the keys and another for the associated values. Since both lists always share the same length, however, the length gets omitted when the values list is encoded.
+The data format for dictionaries looks a lot like two lists stuck together: one
+for the keys and another for the associated values. Since both lists always
+share the same length, however, the length gets omitted when the values list is
+encoded.
 
 Binary Encoding:
 
@@ -285,4 +291,48 @@ value.
 Note that in simple dictionaries, boolean values get packed 8 to a byte as they
 do in simple lists.
 
-*Implementation Note: Having a single list of key-value pairs may have improved binary legibility, but it would also have eliminated the ability to pack bools, which was seen as too much of a sacrifice.*
+*Implementation Note: Having a single list of key-value pairs may have improved
+binary legibility, but it would also have eliminated the ability to pack bools,
+which was seen as too much of a sacrifice.*
+
+<a name="python"></a>
+## Python Interface
+
+<a name="py_tree"></a>
+### Class Inheritance Tree
+
+* `BaseException`
+    * `Exception`
+        * `RuntimeError`
+		    * `binon.binonobj.BinOnObj.ParseErr`
+            * `binon.ioutil.EndOfFile`
+		* `TypeError`
+		    * `binon.binonobj.BinOnObj.TypeErr`
+* `binon.binonobj.BinONObj`
+    * `binon.boolobj.BoolObj`
+	    * `binon.boolobj.TrueObj`
+	* `binon.bufferobj.BufferObj`
+	* `binon.dictobj.DictObj`
+	    * `binon.dictobj.SKDict`
+		* `binon.dictobj.SDict`
+	* `binon.floatobj.FloatObj`
+	    * `binon.floatobj.Float32`
+	* `binon.intobj.IntObj`
+	    * `binon.intobj.UInt`
+	* `binon.listobj.ListObj`
+	    * `binon.listobj.SList`
+	* `binon.nullobj.NullObj`
+	* `binon.strobj.StrObj`
+* `binon.codebyte.CodeByte`
+
+As you can see, `BinONObj` is the root class of all the classes that handle
+specific data types. Each base data type is handled by a class ending in "Obj"
+in a module of the same name (except that the module name is all in lower case).
+Any specialized variants of the such classes inherit from the base type's class
+and can be found in the same module. These specialized classes do not end in
+"Obj".
+
+<a name="py_high_level"></a>
+### High-Level Interface
+
+The easiest way to encode/decode your data in BinON format is to call the `BinONObj.Encode()` and `BinONObj.Decode()` class methods (from the `binon.binonobj` module).
