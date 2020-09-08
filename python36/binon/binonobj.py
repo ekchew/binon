@@ -74,7 +74,7 @@ class BinONObj:
 		try:
 			objCls = cls._gTypeBaseCls[type(value)]
 		except KeyError:
-			raise cls.TypeErr("BinON cannot encode object of type:".format(
+			raise cls.TypeErr("BinON cannot encode object of type: {}".format(
 				type(value).__name__
 			))
 		return objCls._AsObj(value, specialize)
