@@ -30,7 +30,7 @@ class IntObj(BinONObj):
 			n += 1
 		if n > 1:
 			data.extend(MustRead(inF, n-1))
-		v = int.from_bytes(data, cls.kEndian) & m
+		v = int.from_bytes(data, cls._kEndian) & m
 		m += 1
 		if v >= m >> 1:
 			v -= m
@@ -63,7 +63,7 @@ class IntObj(BinONObj):
 			outF.write(b"\xf1")
 			UInt(n).encodeData(outF)
 		v = self.value & (1 << n + 3) - 1 | m
-		outF.write(v.to_bytes(n, self.kEndian))
+		outF.write(v.to_bytes(n, self._kEndian))
 
 class UInt(IntObj):
 	kSubtype = 2
@@ -93,7 +93,7 @@ class UInt(IntObj):
 			n += 1
 		if n > 1:
 			data.extend(MustRead(inF, n-1))
-		v = int.from_bytes(data, cls.kEndian) & m
+		v = int.from_bytes(data, cls._kEndian) & m
 		return cls(v) if asObj else v
 	
 	def encodeData(self, outF):
@@ -117,7 +117,7 @@ class UInt(IntObj):
 			n = self.value.bit_length() + 7 >> 3
 			outF.write(b"\xf1")
 			UInt(n).encodeData(outF)
-		outF.write((m | self.value).to_bytes(n, self.kEndian))
+		outF.write((m | self.value).to_bytes(n, self._kEndian))
 
 def _Init():
 	cb = CodeByte(baseType=IntObj.kBaseType)
