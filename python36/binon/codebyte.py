@@ -69,7 +69,7 @@ class CodeByte:
 		value = self.value & 0x0F | (v & 0xF) << 4
 	@property
 	def subtype(self):
-		return value & 0x0F
+		return self.value & 0x0F
 	@subtype.setter
 	def subtype(self, v):
 		value = self.value & 0xF0 | v & 0x0F
