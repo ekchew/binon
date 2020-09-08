@@ -8,7 +8,7 @@ def _Init():
 	cb = CodeByte(baseType=NullObj.kBaseType)
 	for cb.subtype in CodeByte.BaseSubtypes():
 		BinONObj._gCodeObjCls[cb] = NullObj
-	for typ in (None, NullObj):
+	for typ in (type(None), NullObj):
 		BinONObj._gTypeBaseCls[typ] = NullObj
 
 _Init()
