@@ -1,4 +1,5 @@
 from .binonobj import BinONObj
+from .codebyte import CodeByte
 
 class NullObj(BinONObj):
 	kBaseType = 0

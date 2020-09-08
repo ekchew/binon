@@ -104,7 +104,8 @@ class SList(ListObj):
 					byte = MustRead(inF, 1)[0]
 				lst.append(True if byte & 0x80 else False)
 				byte <<= 1
-		else lst = [objCls.DecodeData(inF, asObj) for i in range(count)]
+		else:
+			lst = [objCls.DecodeData(inF, asObj) for i in range(count)]
 		return lst
 	
 	def encodeElems(self, outF):
@@ -131,7 +132,7 @@ class SList(ListObj):
 def _Init():
 	cb = CodeByte(baseType=ListObj.kBaseType)
 	for cb.subtype in CodeByte.BaseSubtypes():
-		BinONObj._gCodeObjCls[cb] = IntObj
+		BinONObj._gCodeObjCls[cb] = ListObj
 	cb.subtype = SList.kSubtype
 	BinONObj._gCodeObjCls[cb] = SList
 	for typ in (list, set, tuple, ListObj, SList):

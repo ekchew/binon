@@ -1,4 +1,5 @@
 from .binonobj import BinONObj
+from .codebyte import CodeByte
 from .ioutil import MustRead
 
 class BoolObj(BinONObj):
@@ -47,6 +48,6 @@ def _Init():
 	cb.subtype = TrueObj.kSubtype
 	BinONObj._gCodeObjCls[cb] = TrueObj
 	for typ in (bool, BoolObj, TrueObj):
-		BinONObj._gTypeBaseCls[typ] = IntObj
+		BinONObj._gTypeBaseCls[typ] = BoolObj
 
 _Init()

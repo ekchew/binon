@@ -1,4 +1,5 @@
 from .binonobj import BinONObj
+from .codebyte import CodeByte
 from .listobj import ListObj, SList
 
 class DictObj(BinONObj):

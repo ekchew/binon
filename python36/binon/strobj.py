@@ -1,5 +1,6 @@
 from .binonobj import BinONObj
 from .bufferobj import BufferObj
+from .codebyte import CodeByte
 
 class StrObj(BinONObj):
 	"""

@@ -64,7 +64,7 @@ class CodeByte:
 	@property
 	def baseType(self):
 		return value >> 4 & 0x0F
-	@codecID.setter
+	@baseType.setter
 	def baseType(self, v):
 		value = self.value & 0x0F | (v & 0xF) << 4
 	@property
@@ -72,7 +72,7 @@ class CodeByte:
 		return value & 0x0F
 	@subtype.setter
 	def subtype(self, v):
-		value = selv.value & 0xF0 | v & 0x0F
+		value = self.value & 0xF0 | v & 0x0F
 	
 	def __init__(self, value=0x00, baseType=None, subtype=None):
 		"""

@@ -6,7 +6,7 @@ data type, the other ...obj modules containing subclasses of BinONObj may offer
 a shortcut to encoding/decoding them.
 """
 
-from codebyte import CodeByte
+from .codebyte import CodeByte
 
 class BinONObj:
 	"""
