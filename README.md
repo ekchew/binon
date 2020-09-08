@@ -21,6 +21,10 @@ BinON is a JSON-like object notation that uses a more condensed binary format.
 	* [High Level Interface](#py_high_level)
 	* [Low-Level Interface](#py_low_level)
 	    * [encodeData() and DecodeData()](#py_encode_data)
+		* [Class Notes](#py_classes)
+		    * [BoolObj](#py_boolobj)
+		    * [FloatObj](#py_floatobj)
+			* [ListObj](#py_listobj)
 
 <a name="requirements"></a>
 ## Requirements
@@ -422,3 +426,60 @@ not a great idea to rely on this. See notes on the [floatobj](#float) module.)
 
 <a name="py_encode_data"></a>
 #### encodeData() and DecodeData()
+
+The full encoding of a BinON object consists of a code byte indicating the data type followed by a number of bytes of object data. If the data type is obvious from the context of what you are doing, you may omit it by calling the `encodeData()` method on a BinON wrapper instance of the type in question.
+
+For example, `IntObj(42).encode(myFile)` should output the hexadecimal: 21 2a. `IntObj(42).encodeData(myFile)` would only output: 2a.
+
+`encodeData()` leaves object type identification in your hands, so you must later call the correct counterpart `DecodeData()` method; in this case, `IntObj.DecodeData(myFile)`. (Note that BinON follows a convention that class methods begin with a capital letter while instance methods begin in lower case.)
+
+BinON itself uses `encodeData()` internally when, for example, it needs to store the length of a container which will always be a `UInt`.
+
+Note that with the exception of `NullObj`, `encodeData()` will always write at
+least one byte of data. (It would not make sense to use the default value mode
+where the value is encoded into the code byte if the code byte does not exist!)
+For example, `BoolObj.encodeData()` will write a 0x00 or 0x01 byte depending on
+its value.
+
+<a name="py_classes"></a>
+#### Class Notes
+
+What follows are some usage notes pertaining to specific data type classes.
+
+<a name="py_boolobj"></a>
+##### BoolObj
+
+* When manually wrapping a value in a `BoolObj`, the value itself need not be a
+`bool`. It could be anything that can evaluate as a boolean. For example, an
+`int` evaluates as `False` for the value 0 and `True` for anything else. (When
+calling the higher-level `BinONObj.Encode()`, however, an `int` will encode as
+an `IntObj` or `UInt` instead, so be careful about relying on this.)
+* When encoding a scalar bool, even the base `BoolObj` class will use the
+`TrueObj` encoding for the `True` case. To put it another way, `BoolObj`
+auto-specializes even without the `specialize=True` option in
+`BinONObj.Encode()`. (It simply didn't make sense to use a 2-byte encoding for
+booleans, though the decoder will recognize it if it encounters one and deal
+with it appropriately.)
+* When encoding a list of `BoolObj` in an `SList`, there is special logic which
+packs the boolean values 8 to a byte with a big-endian bit order. (If the length
+of the list is not a multiple of 8, the last byte will be zero-padded in its
+least-significant bits.)
+
+<a name="py_floatobj"></a>
+##### FloatObj
+
+* The main thing to bear in mind here is that `FloatObj` uses a
+double-precision (64-bit) encoding by default, and if you want single-precision
+(32-bit) encoding instead, it is best to explicitly specify the `Float32`
+subtype. For a scalar, you can simply write `Float32(x)`. For containers, you
+can write `SList(lst, elemCls=Float32)`, `SDict(dct, keyCls=str,
+valCls=Float32)`, or whatever.
+
+<a name="py_listobj"></a>
+##### ListObj
+
+* `ListObj` (and its subclass `SList`) implement `encodeElems()` and
+`DecodeElems()` methods in addition to the usual `encodeData()` and
+`DecodeData()`. `encodeElems()` is equivalent to `encodeData()` except that it
+omits writing the length of the list first. You must therefore supply this
+length later when you call `DecodeElems()`.
