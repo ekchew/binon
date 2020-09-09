@@ -63,16 +63,16 @@ class CodeByte:
 	
 	@property
 	def baseType(self):
-		return value >> 4 & 0x0F
+		return self.value >> 4 & 0x0F
 	@baseType.setter
 	def baseType(self, v):
-		value = self.value & 0x0F | (v & 0xF) << 4
+		self.value = self.value & 0x0F | (v & 0xF) << 4
 	@property
 	def subtype(self):
 		return self.value & 0x0F
 	@subtype.setter
 	def subtype(self, v):
-		value = self.value & 0xF0 | v & 0x0F
+		self.value = self.value & 0xF0 | v & 0x0F
 	
 	def __init__(self, value=0x00, baseType=None, subtype=None):
 		"""

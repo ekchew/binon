@@ -146,9 +146,15 @@ class BinONObj:
 			CodeByte: the code byte for the BinONObj subclass in question
 		"""
 		try:
-			return CodeByte(cls.kBaseType, cls.kSubtype)
+			return CodeByte(
+				baseType = cls.kBaseType,
+				subtype = cls.kSubtype
+			)
 		except AttributeError:
-			return CodeByte(cls.kBaseType, CodeByte.kBaseSubtype)
+			return CodeByte(
+				baseType = cls.kBaseType,
+				subtype = CodeByte.kBaseSubtype
+			)
 	
 	#	Private class methods (may or may not be overridden).
 	@classmethod

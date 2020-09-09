@@ -22,7 +22,7 @@ class BoolObj(BinONObj):
 		overridden to write a more condensed TrueObj() where applicable, even
 		without the specialize option set True in BinONObj.Encode().
 		"""
-		if self.value:
+		if self.value and not isinstance(self, TrueObj):
 			TrueObj(self.value).encode(outF)
 		else:
 			super().encode(outF)
@@ -36,7 +36,7 @@ class TrueObj(BoolObj):
 	def DecodeData(cls, inF, asObj=False):
 		return cls(True) if asObj else True
 	
-	def __init__(self):
+	def __init__(self, ignored=None):
 		super().__init__(True)
 	
 	def encodeData(self, outF): pass
