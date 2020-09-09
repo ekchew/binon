@@ -1,3 +1,5 @@
+import sys
+
 class EndOfFile(RuntimeError):
 	def __init__(self, inF, n):
 		super().__init__(f"failed to read {n} bytes from {inF!r}")
@@ -27,3 +29,27 @@ def MustRead(inF, n):
 	if len(data) < n:
 		raise EndOfFile(inF, n)
 	return data
+
+def HexDump(data, outF=sys.stdout, **kwargs):
+	addr = kwargs.pop("baseAddr", 0)
+	addrFmt = kwargs.pop("addrFmt", "{:08X}:")
+	byteFmt = kwargs.pop("byteFmt", "{:02X}")
+	wordBytes = kwargs.pop("wordBytes", 4)
+	lineWords = kwargs.pop("lineWords", 4)
+	lineBytes = lineWords * wordBytes
+	if kwargs:
+		raise ValueError("invalid kwargs to ioutil.HexDump: {}".format(
+			", ".join(f"{k} = {v!r}" for k,v in kwargs.items())
+		))
+	for i, byte in enumerate(data):
+		iLineByte = i % lineBytes
+		if iLineByte == 0:
+			outF.write(addrFmt.format(addr))
+		if (iLineByte % wordBytes) == 0:
+			outF.write(" ")
+		outF.write(byteFmt.format(byte))
+		if iLineByte == lineBytes - 1:
+			outF.write("\n")
+			addr += lineBytes
+	if i % lineBytes != lineBytes - 1:
+		outF.write("\n")
