@@ -1,5 +1,4 @@
 from .binonobj import BinONObj
-from .codebyte import CodeByte
 from .ioutil import MustRead
 
 class IntObj(BinONObj):
@@ -37,8 +36,10 @@ class IntObj(BinONObj):
 		return cls(v) if asObj else v
 	
 	@classmethod
-	def _AsObj(cls, value, specialize):
-		return UInt(value) if specialize and value >= 0 else IntObj(value)
+	def _AsObj(cls, value, isClsObj, specialize):
+		return value if isClsObj else (
+			UInt(value) if specialize and value >= 0 else IntObj(value)
+		)
 
 	def encodeData(self, outF):
 		if -0x40 <= self.value < 0x40:
@@ -128,13 +129,4 @@ class UInt(IntObj):
 			UInt(n).encodeData(outF)
 		outF.write((m | self.value).to_bytes(n, self._kEndian))
 
-def _Init():
-	cb = CodeByte(baseType=IntObj.kBaseType)
-	for cb.subtype in CodeByte.BaseSubtypes():
-		BinONObj._gCodeObjCls[cb] = IntObj
-	cb.subtype = UInt.kSubtype
-	BinONObj._gCodeObjCls[cb] = UInt
-	for typ in (int, IntObj, UInt):
-		BinONObj._gTypeBaseCls[typ] = IntObj
-
-_Init()
+BinONObj._InitSubcls(IntObj, [UInt], [int])

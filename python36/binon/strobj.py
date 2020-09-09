@@ -1,6 +1,5 @@
 from .binonobj import BinONObj
 from .bufferobj import BufferObj
-from .codebyte import CodeByte
 
 class StrObj(BinONObj):
 	"""
@@ -17,11 +16,4 @@ class StrObj(BinONObj):
 	def encodeData(self, outF):
 		BufferObj(self.value.encode("utf8")).encodeData(outF)
 
-def _Init():
-	cb = CodeByte(baseType=StrObj.kBaseType)
-	for cb.subtype in CodeByte.BaseSubtypes():
-		BinONObj._gCodeObjCls[cb] = StrObj
-	for typ in (str, StrObj):
-		BinONObj._gTypeBaseCls[typ] = StrObj
-
-_Init()
+BinONObj._InitSubcls(StrObj, [], [str])

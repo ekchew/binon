@@ -1,15 +1,14 @@
 from .binonobj import BinONObj
-from .codebyte import CodeByte
 from .ioutil import MustRead
 
 class BoolObj(BinONObj):
 	kBaseType = 1
 	
 	@classmethod
-	def _AsObj(cls, value, specialize):
-		if specialize and value:
-			return TrueObj(True)
-		return cls(value)
+	def _AsObj(cls, value, isClsObj, specialize):
+		return value if isClsObj else (
+			TrueObj() if specialize and value else cls(value)
+		)
 	
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
@@ -41,13 +40,4 @@ class TrueObj(BoolObj):
 	
 	def encodeData(self, outF): pass
 
-def _Init():
-	cb = CodeByte(baseType=BoolObj.kBaseType)
-	for cb.subtype in CodeByte.BaseSubtypes():
-		BinONObj._gCodeObjCls[cb] = BoolObj
-	cb.subtype = TrueObj.kSubtype
-	BinONObj._gCodeObjCls[cb] = TrueObj
-	for typ in (bool, BoolObj, TrueObj):
-		BinONObj._gTypeBaseCls[typ] = BoolObj
-
-_Init()
+BinONObj._InitSubcls(BoolObj, [TrueObj], [bool])

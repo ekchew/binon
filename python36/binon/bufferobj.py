@@ -1,5 +1,4 @@
 from .binonobj import BinONObj
-from .codebyte import CodeByte
 from .intobj import UInt
 from .ioutil import MustRead
 
@@ -19,11 +18,4 @@ class BufferObj(BinONObj):
 		UInt(len(self.value)).encodeData(outF)
 		outF.write(self.value)
 
-def _Init():
-	cb = CodeByte(baseType=BufferObj.kBaseType)
-	for cb.subtype in CodeByte.BaseSubtypes():
-		BinONObj._gCodeObjCls[cb] = BufferObj
-	for typ in (bytes, bytearray, BufferObj):
-		BinONObj._gTypeBaseCls[typ] = BufferObj
-
-_Init()
+BinONObj._InitSubcls(BufferObj, [], [bytes, bytearray])

@@ -101,15 +101,4 @@ class SDict(DictObj):
 		SList(self.value.keys(), elemCls=self.keyCls).encodeData(outF)
 		SList(self.value.values(), elemCls=self.valCls).encodeElems(outF)
 
-def _Init():
-	cb = CodeByte(baseType=ListObj.kBaseType)
-	for cb.subtype in CodeByte.BaseSubtypes():
-		BinONObj._gCodeObjCls[cb] = ListObj
-	cb.subtype = SKDict.kSubtype
-	BinONObj._gCodeObjCls[cb] = SKDict
-	cb.subtype = SDict.kSubtype
-	BinONObj._gCodeObjCls[cb] = SDict
-	for typ in (dict, DictObj, SKDict, SDict):
-		BinONObj._gTypeBaseCls[typ] = DictObj
-
-_Init()
+BinONObj._InitSubcls(DictObj, [SKDict, SDict], [dict])

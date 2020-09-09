@@ -1,5 +1,4 @@
 from .binonobj import BinONObj
-from .codebyte import CodeByte
 from .ioutil import MustRead
 from struct import Struct
 
@@ -44,13 +43,4 @@ class Float32(FloatObj):
 	def encodeData(self, outF):
 		outF.write(self._kF32BEStruct.pack(self.value))
 
-def _Init():
-	cb = CodeByte(baseType=FloatObj.kBaseType)
-	for cb.subtype in CodeByte.BaseSubtypes():
-		BinONObj._gCodeObjCls[cb] = FloatObj
-	cb.subtype = Float32.kSubtype
-	BinONObj._gCodeObjCls[cb] = Float32
-	for typ in (float, FloatObj, Float32):
-		BinONObj._gTypeBaseCls[typ] = FloatObj
-
-_Init()
+BinONObj._InitSubcls(FloatObj, [Float32], [float])

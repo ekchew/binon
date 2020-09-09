@@ -34,7 +34,7 @@ class BinONObj:
 	
 	#	Maps data types onto their object base classes. The data types include
 	#	object classes as well as built-in types such as int or list.
-	_gTypeBaseCls = {}
+	_gTypeCls = {}
 	
 	#	Class methods to call directly on BinONObj.
 	@classmethod
@@ -69,15 +69,15 @@ class BinONObj:
 		Raises:
 			BinONObj.TypeErr: if type of value cannot be handled
 		"""
-		if isinstance(value, cls):
-			return value
+		
+		typ = type(value)
 		try:
-			objCls = cls._gTypeBaseCls[type(value)]
+			objCls = cls._gTypeCls[typ]
 		except KeyError:
-			raise cls.TypeErr("BinON cannot encode object of type: {}".format(
-				type(value).__name__
-			))
-		return objCls._AsObj(value, specialize)
+			raise cls.TypeErr(
+				f"BinON cannot encode object of type: {typ.__name__}"
+			)
+		return objCls._AsObj(value, typ is objCls, specialize)
 	@classmethod
 	def Encode(cls, value, outF, specialize=False):
 		"""
@@ -110,7 +110,8 @@ class BinONObj:
 			ioutil.EndOfFile: if the object data cannot be read
 			BinONObj.ParseErr: if there is something wrong with the object data
 		"""
-		obj = cls._ReadCodeByte(inF)._Decode(cb, inF)
+		cb, objCls = cls._ReadCodeByte(inF)
+		obj = objCls._Decode(cb, inF)
 		return obj if asObj else obj.asValue()
 	
 	#	Class methods to be called only on subclasses of BinONObj.
@@ -158,17 +159,72 @@ class BinONObj:
 	
 	#	Private class methods (may or may not be overridden).
 	@classmethod
-	def _AsObj(cls, value, specialize):
-		return cls(value)
+	def _AsObj(cls, value, isClsObj, specialize):
+		return value if isClsObj else cls(value)
 	@classmethod
 	def _Decode(cls, codeByte, inF):
-		return cls.DecodeData(inF) if cls.subtype else cls()
+		return cls.DecodeData(inF) if codeByte.subtype else cls()
+	@classmethod
+	def _InitSubcls(cls, baseCls, specClsLst, pyTypes):
+		#	Each subclass module calls this method to register its classes into
+		#	the two dictionaries the root BinONOBj class maintains to identify
+		#	them by either data type (for encoding) or code byte (for
+		#	decoding). The two dictionaries are _gTypeCls and _gCodeObjCls,
+		#	respectively.
+		#	
+		#	Note also that the __init__.py file for the binon package
+		#	automatically imports all the modules whose names end in "obj"
+		#	(aside from binonobj itself) in order to make sure every type gets
+		#	registered. So these "...obj" modules can sort of be thought of as
+		#	plug-ins that automatically get loaded by the binon package.
+		#
+		#	Args:
+		#		baseCls (type): base class of a plug-in module
+		#			This is the class whose name matches that of the module
+		#			(other than it being in camel case), such as intobj.IntObj.
+		#		specClsLst (iterable of type): specialized classes in module
+		#			e.g. [intobj.UInt].
+		#		pyTypes (iterable of type): Python types handled by module
+		#			e.g. [int]
+		
+		#	The relevant built-in Python types plus the base class should all
+		#	map onto the base class for the purposes of encoding. (In the
+		#	former case, a specialized class may get substituted later if the
+		#	specialization flag is set True.)
+		for typ in pyTypes + [baseCls]:
+			cls._gTypeCls[typ] = baseCls
+		
+		#	On the decoding side, there are two standard subtype codes in the
+		#	code byte that should map onto the base type:
+		#	CodeByte.kDefaultSubtype and CodeByte.kBaseSubtype.
+		#	CodeByte.BaseSubtypes() is a convenience class method to let you
+		#	iterate those two.
+		for bst in CodeByte.BaseSubtypes():
+			
+			#	Note that every base class defines a kBaseType (e.g. 2 for
+			#	IntObj).
+			cb = CodeByte(baseType=baseCls.kBaseType, subtype=bst)
+			cls._gCodeObjCls[cb] = baseCls
+		
+		for typ in specClsLst:
+			
+			#	If a value has already been wrapped in a specialized class
+			#	(e.g. UInt(42)), that is obviously the class we will want to be
+			#	using.
+			cls._gTypeCls[typ] = typ
+			
+			#	Every specialized class should define a kSubtype that is >= 2
+			#	(since 0 and 1 are reserved for kDefaultSubtype and
+			#	kBaseSubtype, respectively). We match this subtype to class in
+			#	question.
+			cb = CodeByte(baseType=baseCls.kBaseType, subtype=typ.kSubtype)
+			cls._gCodeObjCls[cb] = typ
 	@classmethod
 	def _ReadCodeByte(cls, inF):
-		#	Returns object class looked up from the code byte.
+		#	Returns code byte and object class looked up it.
 		cb = CodeByte.Read(inF)
 		try:
-			return cls._gCodeObjCls[cb]
+			return cb, cls._gCodeObjCls[cb]
 		except KeyError:
 			typeInfo = f"base type = {cb.baseType}, subtype = {cb.subtype}"
 			raise cls.ParseErr(f"unknown BinON data type: {typeInfo}")
@@ -177,6 +233,8 @@ class BinONObj:
 	
 	def __init__(self, value=None):
 		self.value = value
+	def __bool__(self):
+		return bool(self.value)
 	def asValue(self):
 		"""
 		Returns:

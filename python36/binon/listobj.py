@@ -1,6 +1,5 @@
 from .binonobj import BinONObj
 from .boolobj import BoolObj
-from .codebyte import CodeByte
 from .intobj import UInt
 from .ioutil import MustRead
 
@@ -96,7 +95,7 @@ class SList(ListObj):
 	
 	@classmethod
 	def DecodeElems(cls, inF, count, asObj=False):
-		objCls = cls._ReadCodeByte(inF)
+		cb, objCls = cls._ReadCodeByte(inF)
 		if objCls is BoolObj:
 			lst = []
 			for i in range(count):
@@ -129,13 +128,4 @@ class SList(ListObj):
 				outF.write([byte << 0x7 - i])
 		except NameError: pass # you can get this if value is empty list
 
-def _Init():
-	cb = CodeByte(baseType=ListObj.kBaseType)
-	for cb.subtype in CodeByte.BaseSubtypes():
-		BinONObj._gCodeObjCls[cb] = ListObj
-	cb.subtype = SList.kSubtype
-	BinONObj._gCodeObjCls[cb] = SList
-	for typ in (list, set, tuple, ListObj, SList):
-		BinONObj._gTypeBaseCls[typ] = ListObj
-
-_Init()
+BinONObj._InitSubcls(ListObj, [SList], [list, set, tuple])
