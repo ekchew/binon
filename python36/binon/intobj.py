@@ -22,13 +22,14 @@ class IntObj(BinONObj):
 			n = 8
 		elif (byte0 & 0x01) == 0:
 			m = 0xffffffff_ffffffff
-			n = 9
+			n = 8
+			data = bytearray()
 		else:
 			n = UInt.DecodeData(inF)
-			m = (1 << n + 3) - 1
-			n += 1
-		if n > 1:
-			data.extend(MustRead(inF, n-1))
+			m = (1 << (n << 3)) - 1
+			data = bytearray()
+		if n > len(data):
+			data.extend(MustRead(inF, n-len(data)))
 		v = int.from_bytes(data, cls._kEndian) & m
 		m += 1
 		if v >= m >> 1:

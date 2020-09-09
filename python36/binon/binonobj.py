@@ -111,8 +111,10 @@ class BinONObj:
 			BinONObj.ParseErr: if there is something wrong with the object data
 		"""
 		cb, objCls = cls._ReadCodeByte(inF)
-		obj = objCls._Decode(cb, inF)
-		return obj if asObj else obj.asValue()
+		if cb.subtype == CodeByte.kDefaultSubtype:
+			obj = objCls()
+			return obj if asObj else obj.value
+		return objCls.DecodeData(inF, asObj)
 	
 	#	Class methods to be called only on subclasses of BinONObj.
 	@classmethod
@@ -161,9 +163,6 @@ class BinONObj:
 	@classmethod
 	def _AsObj(cls, value, isClsObj, specialize):
 		return value if isClsObj else cls(value)
-	@classmethod
-	def _Decode(cls, codeByte, inF):
-		return cls.DecodeData(inF) if codeByte.subtype else cls()
 	@classmethod
 	def _InitSubcls(cls, baseCls, specClsLst, pyTypes):
 		#	Each subclass module calls this method to register its classes into
