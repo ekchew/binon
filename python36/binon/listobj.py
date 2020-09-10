@@ -51,6 +51,8 @@ class ListObj(BinONObj):
 				return SList(value, sc0)
 		return cls(value)
 	
+	def __init__(self, value=()):
+		super().__init__(value)
 	def encodeData(self, outF):
 		UInt(len(self.value)).encodeData(outF)
 		self.encodeElems(outF)

@@ -15,6 +15,8 @@ class BoolObj(BinONObj):
 		v = bool(MustRead(inF, 1)[0])
 		return cls(v) if asObj else v
 	
+	def __init__(self, value=False):
+		super().__init__(value)
 	def encode(self, outF):
 		"""
 		Though not strictly necessary, BoolObj's encode() method has been

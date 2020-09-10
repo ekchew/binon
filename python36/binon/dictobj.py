@@ -62,6 +62,8 @@ class SKDict(DictObj):
 		dct = {k:v for k,v in zip(keys, values)}
 		return cls(dct) if asObj else dct
 	
+	def __init__(self, value=None):
+		super().__init__({} if value is None else value)
 	def encodeData(self, outF):
 		SList(self.value.keys(), elemCls=self.keyCls).encodeData(outF)
 		ListObj(self.value.values()).encodeElems(outF)

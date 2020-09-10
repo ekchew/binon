@@ -13,6 +13,8 @@ class StrObj(BinONObj):
 		v = BufferObj.DecodeData(inF).decode("utf8")
 		return cls(v) if asObj else v
 	
+	def __init__(self, value=""):
+		super().__init__(value)
 	def encodeData(self, outF):
 		BufferObj(self.value.encode("utf8")).encodeData(outF)
 

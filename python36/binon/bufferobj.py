@@ -14,6 +14,8 @@ class BufferObj(BinONObj):
 		v = MustRead(inF, UInt.DecodeData(inF))
 		return cls(v) if asObj else v
 	
+	def __init__(self, value=b""):
+		super().__init__(value)
 	def encodeData(self, outF):
 		UInt(len(self.value)).encodeData(outF)
 		outF.write(self.value)

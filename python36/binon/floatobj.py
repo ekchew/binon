@@ -15,11 +15,17 @@ class FloatObj(BinONObj):
 		return cls(v) if asObj else v
 	
 	@classmethod
-	def _AsObj(cls, value, specialize):
-		f32OK = specialize \
-			and cls._kF32Struct.unpack(cls._kF32Struct.pack(value)) == value
-		return Float32(value) if f32OK else FloatObj(value)
+	def _AsObj(cls, value, isClsObj, specialize):
+		if isClsObj:
+			return value
+		if specialize:
+			f32Bin = cls._kF32Struct.pack(value)
+			if cls._kF32Struct.unpack(f32Bin) == value:
+				return Float32(value)
+		return FloatObj(value)
 	
+	def __init__(self, value=0.0):
+		super().__init__(value)
 	def encodeData(self, outF):
 		outF.write(self._kF64BEStruct.pack(self.value))
 

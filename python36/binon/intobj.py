@@ -43,6 +43,8 @@ class IntObj(BinONObj):
 			UInt(value) if specialize and value >= 0 else IntObj(value)
 		)
 
+	def __init__(self, value=0):
+		super().__init__(value)
 	def encodeData(self, outF):
 		if -0x40 <= self.value < 0x40:
 			m = 0x00
