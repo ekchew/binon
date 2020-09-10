@@ -28,8 +28,9 @@ class IntObj(BinONObj):
 			n = UInt.DecodeData(inF)
 			m = (1 << (n << 3)) - 1
 			data = bytearray()
-		if n > len(data):
-			data.extend(MustRead(inF, n-len(data)))
+		n -= len(data)
+		if n > 0:
+			data.extend(MustRead(inF, n))
 		v = int.from_bytes(data, cls._kEndian) & m
 		m += 1
 		if v >= m >> 1:
@@ -97,13 +98,15 @@ class UInt(IntObj):
 			n = 8
 		elif (byte0 & 0x01) == 0:
 			m = 0xffffffff_ffffffff
-			n = 9
+			n = 8
+			data = bytearray()
 		else:
 			n = cls.DecodeData(inF)
-			m = (1 << n + 3) - 1
-			n += 1
-		if n > 1:
-			data.extend(MustRead(inF, n-1))
+			m = (1 << (n << 3)) - 1
+			data = bytearray()
+		n -= len(data)
+		if n > 0:
+			data.extend(MustRead(inF, n))
 		v = int.from_bytes(data, cls._kEndian) & m
 		return cls(v) if asObj else v
 	
@@ -121,11 +124,12 @@ class UInt(IntObj):
 			m = 0xE0000000_00000000
 			n = 8
 		elif self.value < 0x1_00000000_00000000:
-			m = 0xF0_00000000_00000000
-			n = 9
+			m = 0
+			n = 8
+			outF.write(b"\xf0")
 		else:
 			m = 0
-			n = self.value.bit_length() + 7 >> 3
+			n = (self.value.bit_length() + 7) >> 3
 			outF.write(b"\xf1")
 			UInt(n).encodeData(outF)
 		outF.write((m | self.value).to_bytes(n, self._kEndian))
