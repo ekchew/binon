@@ -11,7 +11,7 @@ class FloatObj(BinONObj):
 	
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
-		v = cls._kF64BEStruct.unpack(MustRead(inF, 8))
+		v = cls._kF64BEStruct.unpack(MustRead(inF, 8))[0]
 		return cls(v) if asObj else v
 	
 	@classmethod
@@ -20,7 +20,7 @@ class FloatObj(BinONObj):
 			return value
 		if specialize:
 			f32Bin = cls._kF32Struct.pack(value)
-			if cls._kF32Struct.unpack(f32Bin) == value:
+			if cls._kF32Struct.unpack(f32Bin)[0] == value:
 				return Float32(value)
 		return FloatObj(value)
 	
@@ -43,7 +43,7 @@ class Float32(FloatObj):
 	
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
-		v = cls._kF32BEStruct.unpack(MustRead(inF, 4))
+		v = cls._kF32BEStruct.unpack(MustRead(inF, 4))[0]
 		return cls(v) if asObj else v
 	
 	def encodeData(self, outF):
