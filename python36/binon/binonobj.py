@@ -118,6 +118,50 @@ class BinONObj:
 	
 	#	Class methods to be called only on subclasses of BinONObj.
 	@classmethod
+	def EncodeSListElems(cls, elems, outF):
+		"""
+		In an SList (see listobj.py), all elements share the same data type. The
+		way we typically encode such elements is to wrap them in the BinON class
+		corresponding to that type (if they aren't wrapped already) and call the
+		encodeData() method on each object. But this class method (and its
+		decoding counterpart) may be overridden where appropriate. For example,
+		BoolObj overrides it to pack 8 bools per byte rather than 1 per byte as
+		its scalar encodeData() method would normally do. EncodeSListElems()
+		should never be called on the base BinONObj class, but rather on one of
+		its subclasses handling the appropriate type.
+		
+		Args:
+			elems (iterable of type):
+				The type may be any type supported by BinON but all elements
+				should be of that type (or at least castable to that type).
+			outF (file object): a writable binary data stream
+		"""
+		for elem in elems:
+			try:
+				elem.encodeData(outF)
+			except AttributeError:
+				cls(elem).encodeData(outF)
+	@classmethod
+	def DecodeSListElems(cls, inF, count, asObj=False):
+		"""
+		This is the counterpart to EncodeSListElems(). It should never be called
+		on the base BinONObj class, but rather on one of its subclasses handling
+		the appropriate type. By default, it decodes the specified number of
+		element from the input stream.
+		
+		Args:
+			inF (file object): a readable binary data stream
+			count (int): the number of elements to read from inF and decode
+			asObj (bool, optional): leave return elements in object form?
+				E.g. list of IntObj rather than int. See Decode().
+		
+		Returns:
+			list of type:
+				The type depends on which which subclass DecodeSListElems() was
+				called on (the implied cls arg).
+		"""
+		return [cls.DecodeData(inF, asObj) for i in range(count)]
+	@classmethod
 	def DecodeData(cls, inF, asObj=False):
 		"""
 		Decodes an object's data representation as encoded by encodeData().
