@@ -3,13 +3,13 @@
 from binon.binonobj import BinONObj
 from binon.ioutil import HexDump
 from io import BytesIO
-import sys, traceback
+import random, sys, traceback
 
 try:
 	outF = BytesIO()
 	for i in range(100):
 		outF = BytesIO()
-		v0 = [bool(j & 1) for j in range(i)]
+		v0 = {j: random.random() for j in range(i)}
 		BinONObj.Encode(v0, outF, optimize=True)
 		print(i, v0)
 		HexDump(outF.getvalue())

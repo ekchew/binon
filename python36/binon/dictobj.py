@@ -21,17 +21,17 @@ class DictObj(BinONObj):
 		return cls(dct) if asObj else dct
 	
 	@classmethod
-	def _AsObj(cls, value, isClsObj, optimize):
-		if isClsObj(value):
-			return value
-		keys = ListObj._AsObj(value.keys(), optimize)
+	def _OptimalObj(cls, value, inList):
+		keys = ListObj._OptimalObj(value.keys(), inList=False)
+		vals = ListObj._OptimalObj(value.values(), inList=False)
 		if type(keys) is SList:
-			vals = ListObj._AsObj(value.values(), optimize)
 			if type(vals) is SList:
 				return SDict(value, keyCls=keys.elemCls, valCls=vals.elemCls)
 			return SKDict(value, keyCls=keys.elemCls)
 		return cls(value)
 	
+	def __init__(self, value=None):
+		super().__init__(value or {})
 	def encodeData(self, outF):
 		ListObj(self.value.keys()).encodeData(outF)
 		ListObj(self.value.values()).encodeElems(outF)
@@ -50,7 +50,9 @@ class SKDict(DictObj):
 			self.keyCls = keyCls
 		else:
 			try:
-				self.keyCls = type(self.AsObj(next(iter(self.value.keys()))))
+				self.keyCls = type(
+					self.GeneralObj(next(iter(self.value.keys())))
+				)
 			except StopIteration:
 				raise ValueError("could not determine SKDict key type")
 	
@@ -64,8 +66,6 @@ class SKDict(DictObj):
 		dct = {k:v for k,v in zip(keys, values)}
 		return cls(dct) if asObj else dct
 	
-	def __init__(self, value=None):
-		super().__init__({} if value is None else value)
 	def encodeData(self, outF):
 		SList(self.value.keys(), elemCls=self.keyCls).encodeData(outF)
 		ListObj(self.value.values()).encodeElems(outF)
