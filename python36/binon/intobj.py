@@ -38,11 +38,10 @@ class IntObj(BinONObj):
 		return cls(v) if asObj else v
 	
 	@classmethod
-	def _AsObj(cls, value, isClsObj, specialize):
-		return value if isClsObj else (
-			UInt(value) if specialize and value >= 0 else IntObj(value)
-		)
-
+	def _OptimalObj(cls, value, inList):
+		isUInt = value > 0 or (inList and value == 0)
+		return UInt(value) if isUInt else cls(value)
+	
 	def __init__(self, value=0):
 		super().__init__(value)
 	def encodeData(self, outF):

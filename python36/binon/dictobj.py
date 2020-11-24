@@ -21,10 +21,12 @@ class DictObj(BinONObj):
 		return cls(dct) if asObj else dct
 	
 	@classmethod
-	def _AsObj(cls, value, specialize):
-		keys = ListObj._AsObj(value.keys(), specialize)
+	def _AsObj(cls, value, isClsObj, optimize):
+		if isClsObj(value):
+			return value
+		keys = ListObj._AsObj(value.keys(), optimize)
 		if type(keys) is SList:
-			vals = ListObj._AsObj(value.values(), specialize)
+			vals = ListObj._AsObj(value.values(), optimize)
 			if type(vals) is SList:
 				return SDict(value, keyCls=keys.elemCls, valCls=vals.elemCls)
 			return SKDict(value, keyCls=keys.elemCls)

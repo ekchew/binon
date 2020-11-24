@@ -1,5 +1,6 @@
 from .binonobj import BinONObj
 from .boolobj import BoolObj
+from .codebyte import CodeByte
 from .intobj import UInt
 from .ioutil import MustRead
 
@@ -33,26 +34,27 @@ class ListObj(BinONObj):
 		return cls(v) if asObj else v
 	
 	@classmethod
-	def _AsObj(cls, value, specialize):
-		if specialize and len(value) > 1:
-			it = iter(value)
-			bc = type(cls.AsObj(next(it)))
-			sc0 = type(bc._AsObj(value, specialize=True))
+	def _OptimalObj(cls, value, inList):
+		def subtype(obj):
+			return getattr(type(obj), "kSubtype", CodeByte.kBaseSubtype)
+		if value:
+			pElem = iter(value)
+			obj0 = cls.OptimalObj(next(pElem), inList=True)
+			stp0 = subtype(obj0)
 			try:
-				while True:
-					obj = cls.AsObj(next(it), specialize=True)
-					if not isinstance(obj, bc):
-						break
-					sc = type(obj)
-					if sc is not sc0:
-						sc0 = bc
-			except StopIteration: pass
-			else:
-				return SList(value, sc0)
+				obj1 = cls.OptimalObj(next(pElem), inList=True)
+				while obj1.kBaseType == obj0.kBaseType:
+					stp1 = subtype(obj1)
+					if stp0 > stp1:
+						obj0 = obj1
+						stp0 = stp1
+					obj1 = cls.OptimalObj(next(pElem), inList=True)
+			except StopIteration:
+				return SList(value, elemCls=type(obj0))
 		return cls(value)
 	
 	def __init__(self, value=()):
-		super().__init__(value)
+		super().__init__(value or [])
 	def encodeData(self, outF):
 		UInt(len(self.value)).encodeData(outF)
 		self.encodeElems(outF)
@@ -74,7 +76,7 @@ class SList(ListObj):
 	encode tighter than a general list (ListObj) because it need not include a
 	code byte for each element.
 	
-	The specialize option, where applied to list encoding, scans the list first
+	The optimize option, where applied to list encoding, scans the list first
 	to see if the elements are indeed of the same type, in which case an SList
 	is employed (rather than a plain ListObj). Note that if all the elements
 	themselves are of the same specialized type, that type will be used.
@@ -82,7 +84,7 @@ class SList(ListObj):
 	were you encoding a list of floats and all but one were Float32s, it would
 	have to go with plain 64-bit FloatObjs for ALL elements to accommodate the
 	one exception. (In this case, the simple list may actually encode longer
-	than a general one would have, so specialize may not be a great idea. For
+	than a general one would have, so optimize may not be a great idea. For
 	floats, it is generally better to go SList(myArray, Float32) explicitly if
 	you mean to write an array of 32-bit floats.)
 	"""
@@ -91,7 +93,8 @@ class SList(ListObj):
 	def __init__(self, value, elemCls=None):
 		super().__init__(value)
 		try:
-			self.elemCls = elemCls if elemCls else type(self.AsObj(value[0]))
+			self.elemCls = elemCls if elemCls \
+				else type(self.GeneralObj(value[0]))
 		except IndexError:
 			raise ValueError("could not determine SList element type")
 	
@@ -110,24 +113,28 @@ class SList(ListObj):
 		return lst
 	
 	def encodeElems(self, outF):
+		self.elemCls.GetCodeByte().write(outF)
 		if self.elemCls is BoolObj:
 			self._encodeBools(outF)
 		else:
-			self.elemCls.GetCodeByte().write(outF)
 			for elem in self.value:
-				self.elemCls._AsObj(elem, specialize=False).encodeData(outF)
+				if type(elem) is not self.elemCls:
+					if isinstance(elem, BinONObj):
+						elem = elem.value
+					elem = self.elemCls(elem)
+				elem.encodeData(outF)
 	def _encodeBools(self, outF):
 		byte = 0x00
 		for i, elem in enumerate(self.value):
 			byte <<= 1
 			byte |= 0x01 if elem else 0x00
 			if (i & 0x7) == 0x7:
-				outF.write([byte])
+				outF.write(bytes([byte]))
 				byte = 0x00
 		try:
 			i &= 0x7
 			if i < 0x7:
-				outF.write([byte << 0x7 - i])
+				outF.write(bytes([byte << 0x7 - i]))
 		except NameError: pass # you can get this if value is empty list
 
 BinONObj._InitSubcls(ListObj, [SList], [list, set, tuple])

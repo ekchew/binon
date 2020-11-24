@@ -5,10 +5,8 @@ class BoolObj(BinONObj):
 	kBaseType = 1
 	
 	@classmethod
-	def _AsObj(cls, value, isClsObj, specialize):
-		return value if isClsObj else (
-			TrueObj() if specialize and value else cls(value)
-		)
+	def _OptimalObj(cls, value, inList):
+		return TrueObj(value) if value and not inList else cls(value)
 	
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
@@ -17,11 +15,13 @@ class BoolObj(BinONObj):
 	
 	def __init__(self, value=False):
 		super().__init__(value)
+	def __bool__(self):
+		return self.value
 	def encode(self, outF):
 		"""
 		Though not strictly necessary, BoolObj's encode() method has been
 		overridden to write a more condensed TrueObj() where applicable, even
-		without the specialize option set True in BinONObj.Encode().
+		without the optimize option set True in BinONObj.Encode().
 		"""
 		if self.value and not isinstance(self, TrueObj):
 			TrueObj(self.value).encode(outF)

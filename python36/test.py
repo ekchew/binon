@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from binon.binonobj import BinONObj
 from binon.ioutil import HexDump
 from io import BytesIO
@@ -7,8 +9,8 @@ try:
 	outF = BytesIO()
 	for i in range(100):
 		outF = BytesIO()
-		v0 = [j for j in range(i)]
-		BinONObj.Encode(v0, outF, specialize=False)
+		v0 = [bool(j & 1) for j in range(i)]
+		BinONObj.Encode(v0, outF, optimize=True)
 		print(i, v0)
 		HexDump(outF.getvalue())
 		v1 = BinONObj.Decode(BytesIO(outF.getvalue()))

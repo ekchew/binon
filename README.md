@@ -348,7 +348,7 @@ The easiest way to encode/decode your data in BinON format is to call the
 `BinONObj.Encode()` expects 2 or 3 arguments:
 1. `value` (object): the value to encode
 2. `outF` (file object): a writable binary data stream
-3. `specialize` (bool, optional): auto-specialize encoding classes where
+3. `optimize` (bool, optional): auto-optimize encoding classes where
 possible
 
 What you pass in as value can be an instrinsic Python data type or container of
@@ -376,21 +376,21 @@ A third option would be to write it into a memory buffer and later call its
 
 	myFile = io.BytesIO()
 
-The `specialize` option tells `Encode()` to look closely at your data to
+The `optimize` option tells `Encode()` to look closely at your data to
 determine whether it can apply a specialized BinON encoding to it. For example,
 if you called `BinONObj.Encode(42,myFile)`, this would ultimately call
 `IntObj(42).encode(myFile)`. If you called
-`BinONObj.Encode(42,myFile,specialize=True)` instead, you would get
+`BinONObj.Encode(42,myFile,optimize=True)` instead, you would get
 `UInt(42).encode(myFile)` because the encoder would realize 42 is not just an
 integer but an unsigned integer.
 
-`specialize` should give you the tightest encoding in most situations, but it
+`optimize` should give you the tightest encoding in most situations, but it
 comes at a cost in that it has to run over your data once before deciding what
 to do. This can be particularly expensive with container types. For example, in
 encoding a list of integers, it would need to check that all elements are indeed
 integers before substituting an `SList` for a `ListObj`.
 
-The alternative to using `specialize` is to be more explicit about the data
+The alternative to using `optimize` is to be more explicit about the data
 types you are encoding, as described in the low-level interface next.
 
 <a name="py_low_level"></a>
@@ -420,7 +420,7 @@ want a specialized class (one not ending in "Obj") to encode a particular value.
 Here, if we had simply written `2.5` instead of `Float32(2.5)`,
 `BinONObj.Encode()` would have supplied `FloatObj(2.5)` instead, which encodes
 as double-precision (64 bits). (Note that in this particular case, setting
-`specialize=True` in the `BinONObj.Encode()` call would give you a `Float32`
+`optimize=True` in the `BinONObj.Encode()` call would give you a `Float32`
 even without the explicit casting, but for floating-point in particular, it is
 not a great idea to rely on this. See notes on the [floatobj](#float) module.)
 
@@ -456,7 +456,7 @@ calling the higher-level `BinONObj.Encode()`, however, an `int` will encode as
 an `IntObj` or `UInt` instead, so be careful about relying on this.)
 * When encoding a scalar bool, even the base `BoolObj` class will use the
 `TrueObj` encoding for the `True` case. To put it another way, `BoolObj`
-auto-specializes even without the `specialize=True` option in
+auto-specializes even without the `optimize=True` option in
 `BinONObj.Encode()`. (It simply didn't make sense to use a 2-byte encoding for
 booleans, though the decoder will recognize it if it encounters one and deal
 with it appropriately.)

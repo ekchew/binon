@@ -32,64 +32,106 @@ class BinONObj:
 	#	Maps CodeByte values onto their corresponding object classes.
 	_gCodeObjCls = {}
 	
-	#	Maps data types onto their object base classes. The data types include
+	#	Maps data types onto their object basic classes. The data types include
 	#	object classes as well as built-in types such as int or list.
 	_gTypeCls = {}
 	
 	#	Class methods to call directly on BinONObj.
 	@classmethod
-	def AsObj(cls, value, specialize=False):
+	def GeneralObj(cls, value):
 		"""
-		A class method that wraps a value in an object class instance. If the
-		value is already an object wrapper (as opposed to a built-in Python data
-		type), it will simply be returned.
+		Before you can encode a given value in BinON, you need to identify which
+		codec class can handle values of that type. The codec classes are
+		subclasses of BinONObj such as IntObj, StrObj, etc.
 		
-		Encode() calls AsObj() automatically, but if you are in a situation of
-		having to re-encode the same values frequently, it can save time to have
-		them pre-made into objects (particularly if you set specialize=True).
+		GeneralObj() looks up the most general codec class that can handle your
+		value. This look-up is quick but the class returned is not necessarily
+		optimal. For example, BinONObj.GeneralObj(100) will return an IntObj,
+		but a UInt (a subclass of IntObj) would give you a shorter encoding. If
+		you want a UInt instead, you can either call OptimalObj() or simply wrap
+		your value in a UInt manually.
 		
 		Args:
-			value (object): a built-in data type (or BinONObj subclass instance)
-			specialize (bool, optional): specialize object class where possible
-				Given a value of built-in data type, AsObj() will return an
-				instance of the base class corresponding to that type (e.g.
-				intobj.IntObj for an int) by default (specialize=False). If
-				specialize is set True, it will examine the value further to see
-				if it can be specialized (to say intobj.UInt).
-
-				This may give you a tighter encoding, but at the expense of a
-				little more time to prepare the data. If you know which
-				specialized classes to use already, it should be faster to
-				instantiate the specific class yourself and encode it from
-				there.
+			value (object): a value you want to encode
+				This can be an instance of either a built-in type or a subclass
+				of BinONObj. (In the latter case, value will be returned as-is.)
 		
 		Returns:
-			BinONObj: actually, a subclass of BinONObj
+			type: a subclass of BinOnObj
+				This is the most general BinOnObj subclass that can encode your
+				value. For example, BinOnObj.GeneralObj(100) would return
+				IntObj.
 		
 		Raises:
-			BinONObj.TypeErr: if type of value cannot be handled
+			BinONObj.TypeErr: value is of a type that cannot be encoded
 		"""
-		
-		typ = type(value)
 		try:
-			objCls = cls._gTypeCls[typ]
+			return value if isinstance(value, cls) \
+				else cls._gTypeCls[type(value)](value)
 		except KeyError:
 			raise cls.TypeErr(
-				f"BinON cannot encode object of type: {typ.__name__}"
+				f"BinON cannot encode object of type: {type(value).__name__}"
 			)
-		return objCls._AsObj(value, typ is objCls, specialize)
 	@classmethod
-	def Encode(cls, value, outF, specialize=False):
+	def OptimalObj(cls, value, inList=False):
+		"""
+		OptimalObj() tries to find the best possible codec class for your
+		value by examining it more closely than GeneralObj() does. For
+		example, it would realize that 100 would be better encoded as a UInt
+		than a more general signed IntObj.
+		
+		This optimization does incur some extra processing overhead, however,
+		particularly when dealing with container types (e.g. determining whether
+		an SList could be substituted for a ListObj).
+		
+		If you know what you are dealing with already, you can apply the codec
+		manually to save some time. For example, rather than going
+		BinONObj.OptimalObj([1, 2, 3]), you could wrap your list manually in
+		the appropriate codec class with listobj.SList([1, 2, 3], intobj.UInt).
+		
+		(Note that for floating-point values, it is often better to explicitly
+		wrap your numbers in floatobj.Float32 if you know they are
+		single-precision, since the algorithm OptimalObj() uses in this case is
+		not great.)
+		
+		Args:
+			value (object): a value you want to encode
+				This can be an instance of either a built-in type or a subclass
+				of BinONObj.
+			inList (bool, optional): value is a list element?
+				Generally, this option is used internally and you can leave it
+				with False by default. It is pertinent to the case in which your
+				value is the default value for the codec in question. For
+				example, BinONObj.OptimalObj(0.0) should return a FloatObj.
+				Normally, this general codec writes it's value in 64-bit
+				double-precision, but for the special case of the default 0.0
+				value, it can avoid writing anything at all besides the code
+				byte. But if your 0.0 is part of a simple list (listobj.SList)
+				of 32-bit floats, there is no need for 0.0 to require 64 bits,
+				so BinONObj.OptimalObj(0.0, inList=True) should return a Float32
+				instead.
+		
+		Returns:
+			type: a subclass of BinOnObj
+				This is the most optimal BinOnObj subclass that can be
+				determined algorithmically to encode your value. For example,
+				BinOnObj.OptimalObj(100) would return UInt.
+		"""
+		return value if isinstance(value, cls) \
+			else cls.GeneralObj(value)._OptimalObj(value, inList)
+	@classmethod
+	def Encode(cls, value, outF, optimize=False):
 		"""
 		A high-level class method that serializes a value and writes it to a
 		binary data stream in BinON format.
 		
 		Args:
-			value (object): any type supported by BinON (see AsObj())
+			value (object): any type supported by BinON
 			outF (file object): a writable binary data stream
-			specialize (bool, optional): see AsObj()
+			optimize (bool, optional): see OptimalObj()
 		"""
-		cls.AsObj(value, specialize).encode(outF)
+		obj = cls.OptimalObj(value) if optimize else cls.GeneralObj(value)
+		obj.encode(outF)
 	@classmethod
 	def Decode(cls, inF, asObj=False):
 		"""
@@ -205,8 +247,8 @@ class BinONObj:
 	
 	#	Private class methods (may or may not be overridden).
 	@classmethod
-	def _AsObj(cls, value, isClsObj, specialize):
-		return value if isClsObj else cls(value)
+	def _OptimalObj(cls, value, inList):
+		return value
 	@classmethod
 	def _InitSubcls(cls, baseCls, specClsLst, pyTypes):
 		#	Each subclass module calls this method to register its classes into

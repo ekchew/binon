@@ -15,14 +15,12 @@ class FloatObj(BinONObj):
 		return cls(v) if asObj else v
 	
 	@classmethod
-	def _AsObj(cls, value, isClsObj, specialize):
-		if isClsObj:
-			return value
-		if specialize:
+	def _OptimalObj(cls, value, inList):
+		if value or inList:
 			f32Bin = cls._kF32Struct.pack(value)
 			if cls._kF32Struct.unpack(f32Bin)[0] == value:
 				return Float32(value)
-		return FloatObj(value)
+		return cls(value)
 	
 	def __init__(self, value=0.0):
 		super().__init__(value)
