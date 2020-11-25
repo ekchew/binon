@@ -38,17 +38,18 @@ class ListObj(BinONObj):
 		def subtype(obj):
 			return getattr(type(obj), "kSubtype", CodeByte.kBaseSubtype)
 		if value:
+			value = [cls.OptimalObj(v, inList=True) for v in value]
 			pElem = iter(value)
-			obj0 = cls.OptimalObj(next(pElem), inList=True)
+			obj0 = next(pElem)
 			stp0 = subtype(obj0)
 			try:
-				obj1 = cls.OptimalObj(next(pElem), inList=True)
+				obj1 = next(pElem)
 				while obj1.kBaseType == obj0.kBaseType:
 					stp1 = subtype(obj1)
 					if stp0 > stp1:
 						obj0 = obj1
 						stp0 = stp1
-					obj1 = cls.OptimalObj(next(pElem), inList=True)
+					obj1 = next(pElem)
 			except StopIteration:
 				return SList(value, elemCls=type(obj0))
 		return cls(value)
