@@ -318,8 +318,11 @@ class BinONObj:
 	
 	def __init__(self, value=None):
 		self.value = value
+	def __repr__(self):
+		return f"{type(self).__name__}({self.value!r})"
 	def __bool__(self):
 		return bool(self.value)
+	
 	def asValue(self):
 		"""
 		Returns:

@@ -98,6 +98,8 @@ class SList(ListObj):
 				else type(self.BaseObj(value[0]))
 		except IndexError:
 			raise ValueError("could not determine SList element type")
+	def __repr__(self):
+		return f"SList({self.value!r}, elemCls={self.elemCls.__name__})"
 	
 	@classmethod
 	def DecodeElems(cls, inF, count, asObj=False):

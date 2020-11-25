@@ -55,6 +55,8 @@ class SKDict(DictObj):
 				)
 			except StopIteration:
 				raise ValueError("could not determine SKDict key type")
+	def __repr__(self):
+		return f"SKDict({self.value!r}, keyCls={self.keyCls.__name__})"
 	
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
@@ -90,6 +92,10 @@ class SDict(DictObj):
 				raise ValueError("could not determine SDict key/value types")
 			self.keyCls = keyCls if keyCls else type(self.AsObj(key))
 			self.valCls = valCls if valCls else type(self.AsObj(val))
+	def __repr__(self):
+		return "SKDict({!r}, keyCls={}, valCls={})".format(
+			self.value, self.keyCls.__name__, self.valCls.__name__
+		)
 	
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):

@@ -15,8 +15,6 @@ class BoolObj(BinONObj):
 	
 	def __init__(self, value=False):
 		super().__init__(value)
-	def __bool__(self):
-		return self.value
 	def encode(self, outF):
 		"""
 		Though not strictly necessary, BoolObj's encode() method has been
