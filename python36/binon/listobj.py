@@ -94,7 +94,7 @@ class SList(ListObj):
 		super().__init__(value)
 		try:
 			self.elemCls = elemCls if elemCls \
-				else type(self.GeneralObj(value[0]))
+				else type(self.BaseObj(value[0]))
 		except IndexError:
 			raise ValueError("could not determine SList element type")
 	

@@ -38,15 +38,15 @@ class BinONObj:
 	
 	#	Class methods to call directly on BinONObj.
 	@classmethod
-	def GeneralObj(cls, value):
+	def BaseObj(cls, value):
 		"""
 		Before you can encode a given value in BinON, you need to identify which
 		codec class can handle values of that type. The codec classes are
 		subclasses of BinONObj such as IntObj, StrObj, etc.
 		
-		GeneralObj() looks up the most general codec class that can handle your
+		BaseObj() looks up the most general codec class that can handle your
 		value. This look-up is quick but the class returned is not necessarily
-		optimal. For example, BinONObj.GeneralObj(100) will return an IntObj,
+		optimal. For example, BinONObj.BaseObj(100) will return an IntObj,
 		but a UInt (a subclass of IntObj) would give you a shorter encoding. If
 		you want a UInt instead, you can either call OptimalObj() or simply wrap
 		your value in a UInt manually.
@@ -59,7 +59,7 @@ class BinONObj:
 		Returns:
 			type: a subclass of BinOnObj
 				This is the most general BinOnObj subclass that can encode your
-				value. For example, BinOnObj.GeneralObj(100) would return
+				value. For example, BinOnObj.BaseObj(100) would return
 				IntObj.
 		
 		Raises:
@@ -76,7 +76,7 @@ class BinONObj:
 	def OptimalObj(cls, value, inList=False):
 		"""
 		OptimalObj() tries to find the best possible codec class for your
-		value by examining it more closely than GeneralObj() does. For
+		value by examining it more closely than BaseObj() does. For
 		example, it would realize that 100 would be better encoded as a UInt
 		than a more general signed IntObj.
 		
@@ -118,7 +118,7 @@ class BinONObj:
 				BinOnObj.OptimalObj(100) would return UInt.
 		"""
 		return value if isinstance(value, BinONObj) \
-			else cls.GeneralObj(value)._OptimalObj(value, inList)
+			else cls.BaseObj(value)._OptimalObj(value, inList)
 	@classmethod
 	def Encode(cls, value, outF, optimize=False):
 		"""
@@ -130,7 +130,7 @@ class BinONObj:
 			outF (file object): a writable binary data stream
 			optimize (bool, optional): see OptimalObj()
 		"""
-		obj = cls.OptimalObj(value) if optimize else cls.GeneralObj(value)
+		obj = cls.OptimalObj(value) if optimize else cls.BaseObj(value)
 		obj.encode(outF)
 	@classmethod
 	def Decode(cls, inF, asObj=False):

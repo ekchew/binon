@@ -51,7 +51,7 @@ class SKDict(DictObj):
 		else:
 			try:
 				self.keyCls = type(
-					self.GeneralObj(next(iter(self.value.keys())))
+					self.BaseObj(next(iter(self.value.keys())))
 				)
 			except StopIteration:
 				raise ValueError("could not determine SKDict key type")
