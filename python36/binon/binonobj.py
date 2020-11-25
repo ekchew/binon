@@ -66,7 +66,7 @@ class BinONObj:
 			BinONObj.TypeErr: value is of a type that cannot be encoded
 		"""
 		try:
-			return value if isinstance(value, cls) \
+			return value if isinstance(value, BinONObj) \
 				else cls._gTypeCls[type(value)](value)
 		except KeyError:
 			raise cls.TypeErr(
@@ -117,7 +117,7 @@ class BinONObj:
 				determined algorithmically to encode your value. For example,
 				BinOnObj.OptimalObj(100) would return UInt.
 		"""
-		return value if isinstance(value, cls) \
+		return value if isinstance(value, BinONObj) \
 			else cls.GeneralObj(value)._OptimalObj(value, inList)
 	@classmethod
 	def Encode(cls, value, outF, optimize=False):
