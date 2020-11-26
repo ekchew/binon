@@ -176,10 +176,10 @@ A string object is really nothing more than a [buffer object](#buffer) containin
 
 Binary Encoding:
 
-| Code Byte  | Data            | Python Value                | Class     |
-| :--------- | :-------------- | --------------------------: | :-------- |
-| `01010000` |                 |                         b'' | BufferObj |
-| `01010001` | U `bbbbbbbb`\*U |  bytes(*b…*).decode('utf8') | BufferObj |
+| Code Byte  | Data            | Python Value                | Class  |
+| :--------- | :-------------- | --------------------------: | :----- |
+| `01010000` |                 |                          "" | StrObj |
+| `01010001` | U `bbbbbbbb`\*U |  bytes(*b…*).decode('utf8') | StrObj |
 
 Here, U represents a `UInt` data-encoded byte count.
 
