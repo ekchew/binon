@@ -293,13 +293,13 @@ What you pass in as `value` may be a built-in Python data type.
 	BinONObj.Encode(100, outF)
 	BinONObj.Encode([1,2,3], outF)
 
-It may also be a BinON class-wrapped intrinsic value.
+It may also be a BinON class-wrapped value.
 
 	BinONObj.Encode(UInt(100), outF)
 
 More on that under [Low-Level Interface](#py_low_level).
 
-The main things to remember about `outF` is that it needs to be writable and binary.
+The main thing to remember about `outF` is that it needs to be writable and binary.
 
 	with open("/path/to/foo.bin", "wb") as outF: ...
 
@@ -315,7 +315,7 @@ A third option would be to write into a `BytesIO` buffer and later call its `get
 
 Setting `optimize=True` (it defaults to `False`) tells `Encode()` to look more closely at `value` to determine whether it can apply more optimized subtype classes to encoding to it.
 
-For example, calling `BinONObj.Encode(100, outF)` would ultimately invoke `IntObj(100).encode(myFile)`. But `BinONObj.Encode(100, outF, optimize=True)` would invoke `UInt(100).encode(myFile)` instead. (For the particular value of 100, this will save 1 byte over the signed encoding.)
+For example, calling `BinONObj.Encode(100, outF)` would ultimately invoke `IntObj(100).encode(myFile)`. But `BinONObj.Encode(100, outF, optimize=True)` would invoke `UInt(100).encode(myFile)` instead. (For the particular value of 100, this will save 1 byte over the signed integer encoding.)
 
 `optimize` should give you the tightest encoding in most situations, but it comes at a cost in that it has to run over your data once before deciding what to do. This can be particularly expensive with container types. For example, in encoding a list of integers, it would need to check that all elements are indeed integers before substituting an `SList` for a `ListObj`.
 
@@ -350,7 +350,7 @@ Let's try encoding the number 100 and decoding it again.
 
 With optimized encoding, the number only took 2 bytes to encode. `0x22` is a code byte indicating that an integer follows (0x20) and that it is unsigned (0x02). The actual value is in the second `0x64` (== 100) byte.
 
-Then we make these bytes into an input buffer and decode it back to 100. With `asObj=True`, the UInt wrapper is left on the decoded value. This option may be useful when you are decoding a larger data structure and want to modify just one part of it before re-encoding it. Having the object wrappers already in place should make it quicker to encode.
+Then we make these bytes into an input buffer and decode it back to 100. With `asObj=True`, the `UInt` wrapper is left on the decoded value. This option may be useful when you are decoding a larger data structure and want to modify just one part of it before re-encoding it. Having the object wrappers already in place should make it quicker to encode.
 
 <a name="py_low_level"></a>
 ### Low-Level Interface
