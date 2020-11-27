@@ -4,15 +4,28 @@ class methods BinONObj.Encode() to serialize a data structure and
 BinONObj.Decode() to restore it. If you know you are dealing with a specific
 data type, the other ...obj modules containing subclasses of BinONObj may offer
 a shortcut to encoding/decoding them.
+
+Attributes:
+	gOptimizeLog (file object or None):
+		Setting this a writable text stream if you want some diagnostics on
+		what the optimization algorithm is doing. The idea here is that if
+		you have a fairly static data structure, you can watch how it is
+		being optimized and then do it manually to save time if that matters
+		to you. The default None disables the logging.
 """
 
 from .codebyte import CodeByte
+from contextlib import contextmanager
+import traceback, sys
 
 class BinONObj:
 	"""
 	BinONObj is the abstract base class of all the other ...Obj classes. It
 	includes some class methods for creating instances of the subclasses and
 	working with them to encode your data.
+	
+	Attributes:
+		value (object): value wrapped by BinONObj subclass.
 	"""
 	
 	class ParseErr(RuntimeError):
@@ -50,6 +63,9 @@ class BinONObj:
 		but a UInt (a subclass of IntObj) would give you a shorter encoding. If
 		you want a UInt instead, you can either call OptimalObj() or simply wrap
 		your value in a UInt manually.
+		
+		BaseObj() is typically called internally by Encode() when the optimize
+		option is False.
 		
 		Args:
 			value (object): a value you want to encode
@@ -94,6 +110,9 @@ class BinONObj:
 		single-precision, since the algorithm OptimalObj() uses in this case is
 		not great.)
 		
+		OptimalObj() is typically called internally by Encode() when the
+		optimize option is True.
+		
 		Args:
 			value (object): a value you want to encode
 				This can be an instance of either a built-in type or a subclass
@@ -117,6 +136,14 @@ class BinONObj:
 				determined algorithmically to encode your value. For example,
 				BinOnObj.OptimalObj(100) would return UInt.
 		"""
+		if cls._OptimizeLog():
+			with cls._OptimizeLogIndent() as indent:
+				print(
+					indent + "Assessing for optimization:", repr(value),
+					file=cls._OptimizeLog()
+				)
+				return value if isinstance(value, BinONObj) \
+					else cls.BaseObj(value)._OptimalObj(value, inList)
 		return value if isinstance(value, BinONObj) \
 			else cls.BaseObj(value)._OptimalObj(value, inList)
 	@classmethod
@@ -318,3 +345,27 @@ class BinONObj:
 			outF (file object): a writable binary data stream
 		"""
 		pass
+	
+	@classmethod
+	def _OptimizeLog(cls):
+		#	Convenience method to make gOptimizeLog easily accessible to
+		#	the BinONObj subclasses.
+		return gOptimizeLog
+	@classmethod
+	@contextmanager
+	def _OptimizeLogIndent(cls):
+		#	Context manager of indent levels for printing optimization info on
+		#	hierarchical data structures.
+		global _gIndent
+		_gIndent += 1
+		try:
+			yield cls._IndentStr()
+		finally:
+			_gIndent -= 1
+	@classmethod
+	def _IndentStr(cls):
+		#	Returns a string of _gIndent tab characters.
+		return "\t" * _gIndent
+
+gOptimizeLog = None
+_gIndent = -1

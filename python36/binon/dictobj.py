@@ -26,7 +26,17 @@ class DictObj(BinONObj):
 		vals = ListObj._OptimalObj(value.values(), inList=False)
 		if type(keys) is SList:
 			if type(vals) is SList:
+				if cls._OptimizeLog():
+					print(
+						cls._IndentStr() + "Optimized to: SDict",
+						file=cls._OptimizeLog()
+					)
 				return SDict(value, keyCls=keys.elemCls, valCls=vals.elemCls)
+				if cls._OptimizeLog():
+					print(
+						cls._IndentStr() + "Optimized to: SKList",
+						file=cls._OptimizeLog()
+					)
 			return SKDict(value, keyCls=keys.elemCls)
 		return cls(value)
 	

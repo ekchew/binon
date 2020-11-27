@@ -51,6 +51,11 @@ class ListObj(BinONObj):
 						stp0 = stp1
 					obj1 = next(pElem)
 			except StopIteration:
+				if cls._OptimizeLog():
+					print(
+						cls._IndentStr() + "Optimized to: SList",
+						file=cls._OptimizeLog()
+					)
 				return SList(value, elemCls=type(obj0))
 		return cls(value)
 	

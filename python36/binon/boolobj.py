@@ -6,7 +6,13 @@ class BoolObj(BinONObj):
 	
 	@classmethod
 	def _OptimalObj(cls, value, inList):
-		return TrueObj(value) if value and not inList else cls(value)
+		makeTrueObj = value and not inList
+		if cls._OptimizeLog() and makeTrueObj:
+			print(
+				cls._IndentStr() + "Optimized to: TrueObj",
+				file=cls._OptimizeLog()
+			)
+		return TrueObj(value) if makeTrueObj else cls(value)
 	
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):

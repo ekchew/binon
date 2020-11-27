@@ -19,6 +19,11 @@ class FloatObj(BinONObj):
 		if value or inList:
 			f32Bin = cls._kF32Struct.pack(value)
 			if cls._kF32Struct.unpack(f32Bin)[0] == value:
+				if cls._OptimizeLog():
+					print(
+						cls._IndentStr() + "Optimized to: Float32",
+						file=cls._OptimizeLog()
+					)
 				return Float32(value)
 		return cls(value)
 	

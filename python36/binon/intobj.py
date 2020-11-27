@@ -40,6 +40,11 @@ class IntObj(BinONObj):
 	@classmethod
 	def _OptimalObj(cls, value, inList):
 		isUInt = value > 0 or (inList and value == 0)
+		if cls._OptimizeLog() and isUInt:
+			print(
+				cls._IndentStr() + "Optimized to: UInt",
+				file=cls._OptimizeLog()
+			)
 		return UInt(value) if isUInt else cls(value)
 	
 	def __init__(self, value=0):
