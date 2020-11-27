@@ -22,22 +22,42 @@ class DictObj(BinONObj):
 	
 	@classmethod
 	def _OptimalObj(cls, value, inList):
-		keys = ListObj._OptimalObj(value.keys(), inList=False)
-		vals = ListObj._OptimalObj(value.values(), inList=False)
-		if type(keys) is SList:
-			if type(vals) is SList:
-				if cls._OptimizeLog():
+		if cls._OptimizeLog():
+			with cls._OptimizeLogIndent() as indent:
+				print(
+					indent + "Assessing keys for optimization...",
+					file=cls._OptimizeLog()
+				)
+				keys = ListObj._OptimalObj(value.keys(), inList=False)
+				print(
+					indent + "Assessing values for optimization...",
+					file=cls._OptimizeLog()
+				)
+				vals = ListObj._OptimalObj(value.values(), inList=False)
+			if type(keys) is SList:
+				if type(vals) is SList:
 					print(
-						cls._IndentStr() + "Optimized to: SDict",
+						cls._IndentStr() + "Optimized to: SDict of",
+						keys.elemCls.__name__, ":", vals.elemCls.__name__,
 						file=cls._OptimizeLog()
 					)
-				return SDict(value, keyCls=keys.elemCls, valCls=vals.elemCls)
-				if cls._OptimizeLog():
-					print(
-						cls._IndentStr() + "Optimized to: SKList",
-						file=cls._OptimizeLog()
+					return SDict(
+						value, keyCls=keys.elemCls, valCls=vals.elemCls
 					)
-			return SKDict(value, keyCls=keys.elemCls)
+				print(
+					cls._IndentStr() + "Optimized to: SKList of",
+					keys.elemCls.__name__, file=cls._OptimizeLog()
+				)
+				return SKDict(value, keyCls=keys.elemCls)
+		else:
+			keys = ListObj._OptimalObj(value.keys(), inList=False)
+			vals = ListObj._OptimalObj(value.values(), inList=False)
+			if type(keys) is SList:
+				if type(vals) is SList:
+					return SDict(
+						value, keyCls=keys.elemCls, valCls=vals.elemCls
+					)
+				return SKDict(value, keyCls=keys.elemCls)
 		return cls(value)
 	
 	def __init__(self, value=None):

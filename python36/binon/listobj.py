@@ -53,7 +53,8 @@ class ListObj(BinONObj):
 			except StopIteration:
 				if cls._OptimizeLog():
 					print(
-						cls._IndentStr() + "Optimized to: SList",
+						cls._IndentStr() + "Optimized to: SList of",
+						type(obj0).__name__,
 						file=cls._OptimizeLog()
 					)
 				return SList(value, elemCls=type(obj0))
