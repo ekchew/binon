@@ -231,7 +231,22 @@ class BinONObj:
 	#	Private class methods (may or may not be overridden).
 	@classmethod
 	def _OptimalObj(cls, value, inList):
-		return value
+		#	This method is called by the public OptimalObj(), which should have
+		#	determined by this point what binon base class is suitable for the
+		#	given value. By default, _OptimalObj() simply returns its value
+		#	wrapped in base class, but it may be overriden to perform extra
+		#	optimization checks and possibly substitute a subclass instead. In
+		#	other words, _OptimalObj() does the actual optimizing work.
+		#
+		#	Args:
+		#		cls (type): appropriate base class wrapper for value
+		#		value (object): a raw value not wrapped in a binon class
+		#		inList (bool): value to be considered part of a list?
+		#
+		#	Returns:
+		#		binon class-wrapped value
+		
+		return cls(value)
 	@classmethod
 	def _InitSubcls(cls, baseCls, specClsLst, pyTypes):
 		#	Each subclass module calls this method to register its classes into
