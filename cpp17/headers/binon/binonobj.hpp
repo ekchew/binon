@@ -2,6 +2,7 @@
 #define BINON_BINONOBJ_HPP
 
 #include "codebyte.hpp"
+#include "crtp.hpp"
 #include "floattypes.hpp"
 
 #include <cstdint>
@@ -19,6 +20,7 @@ namespace binon {
 	
 	class BinONObj {
 	public:
+		constexpr auto operator == (const BinONObj&) const { return true; }
 		static auto FromNullValue() -> std::unique_ptr<BinONObj>;
 		static auto FromBoolValue(bool v) -> std::unique_ptr<BinONObj>;
 		
@@ -74,7 +76,6 @@ namespace binon {
 		virtual void encode(OStream& stream, bool requireIO=true);
 		virtual void encodeData(OStream& stream, bool requireIO=true) {}
 		virtual void decodeData(IStream& stream, bool requireIO=true) {}
-		
 		virtual ~BinONObj() {}
 	
 	protected:

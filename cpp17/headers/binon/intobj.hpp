@@ -10,36 +10,46 @@ namespace binon {
 		IntRangeError();
 	};
 	
-	class IntObj: public BinONObj {
+	class IntObj: public BinONObj, public Access_mValue<IntObj,std::int64_t>
+	{
 	public:
-		IntObj(std::int64_t v=0) noexcept: BinONObj{v == 0}, mValue{v} {}
+		TValue mValue;
+		
+		IntObj(TValue v=0) noexcept: BinONObj{v == 0}, mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kIntObjCode;}
-		auto getInt64() const -> std::int64_t final {return mValue;}
-		void setInt64(std::int64_t v) final {mValue = v;}
+		auto getInt64() const -> TValue final {return mValue;}
+		void setInt64(TValue v) final {mValue = v;}
 		auto getUInt64() const -> std::uint64_t final
 			{ return static_cast<std::uint64_t>(mValue); }
 		void setUInt64(std::uint64_t v) final
-			{ mValue = static_cast<std::int64_t>(v); }
+			{ mValue = static_cast<TValue>(v); }
 		void encodeData(OStream& stream, bool requireIO=true) final;
 		void decodeData(IStream& stream, bool requireIO=true) final;
-	
-	private:
-		std::int64_t mValue;
 	};
 	
-	class UInt: public BinONObj {
+	class UInt: public BinONObj, public Access_mValue<UInt,std::uint64_t> {
 	public:
-		UInt(std::uint64_t v=0) noexcept: BinONObj{v == 0}, mValue{v} {}
+		TValue mValue;
+		
+		UInt(TValue v=0) noexcept: BinONObj{v == 0}, mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
-		auto getUInt64() const -> std::uint64_t final {return mValue;}
-		void setUInt64(std::uint64_t v) final {mValue = v;}
+		auto getUInt64() const -> TValue final {return mValue;}
+		void setUInt64(TValue v) final {mValue = v;}
 		void encodeData(OStream& stream, bool requireIO=true) final;
 		void decodeData(IStream& stream, bool requireIO=true) final;
-	
-	private:
-		std::uint64_t mValue;
 	};
 
+}
+
+namespace std {
+	template<> struct hash<binon::IntObj> {
+		constexpr auto operator () (const binon::IntObj& obj) const noexcept
+			-> std::size_t { return obj.hash(); }
+	};
+	template<> struct hash<binon::UInt> {
+		 constexpr auto operator () (const binon::UInt& obj) const noexcept
+			-> std::size_t { return obj.hash(); }
+	};
 }
 
 #endif

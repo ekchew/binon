@@ -31,7 +31,7 @@ obj:
 DEP0 := makefile
 DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${DEP0}
 DEP2 := ${HDR}codebyte.hpp ${DEP1}
-DEP3 := ${HDR}binonobj.hpp ${HDR}floattypes.hpp ${DEP2}
+DEP3 := ${HDR}binonobj.hpp ${HDR}crtp.hpp ${HDR}floattypes.hpp ${DEP2}
 DEP4 := ${HDR}boolobj.hpp ${HDR}intobj.hpp ${HDR}floatobj.hpp \
 	${HDR}nullobj.hpp ${DEP3}
 

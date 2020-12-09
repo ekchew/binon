@@ -4,6 +4,7 @@
 #include "binonobj.hpp"
 #include "boolobj.hpp"
 #include "byteutil.hpp"
+#include "crtp.hpp"
 #include "codebyte.hpp"
 #include "floatobj.hpp"
 #include "floattypes.hpp"
