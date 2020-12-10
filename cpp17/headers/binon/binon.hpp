@@ -3,6 +3,7 @@
 
 #include "binonobj.hpp"
 #include "boolobj.hpp"
+#include "bufferobj.hpp"
 #include "byteutil.hpp"
 #include "crtp.hpp"
 #include "codebyte.hpp"
@@ -10,5 +11,6 @@
 #include "floattypes.hpp"
 #include "intobj.hpp"
 #include "nullobj.hpp"
+#include "strobj.hpp"
 
 #endif

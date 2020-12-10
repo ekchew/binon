@@ -1,7 +1,9 @@
 #include "binon/boolobj.hpp"
+#include "binon/bufferobj.hpp"
 #include "binon/intobj.hpp"
 #include "binon/floatobj.hpp"
 #include "binon/nullobj.hpp"
+#include "binon/strobj.hpp"
 
 namespace binon {
 	
@@ -41,6 +43,9 @@ namespace binon {
 			break;
 		case kFloat32Code.toInt<int>():
 			p = std::make_unique<Float32>();
+			break;
+		case kStrObjCode.toInt<int>():
+			p = std::make_unique<StrObj>();
 			break;
 		default:
 			throw BadCodeByte{cb};

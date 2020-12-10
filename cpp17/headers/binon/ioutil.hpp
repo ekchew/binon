@@ -3,21 +3,34 @@
 
 #include <istream>
 #include <ostream>
+#include <string>
+#include <string_view>
 
 namespace binon {
 
+	//	If, for some reason, you want BinON to use a custom allocator for all
+	//	it's internal memory allocations, you can set this precompiler option.
+	#ifndef BINON_ALLOCATOR
+		#define BINON_ALLOCATOR std::allocator
+	#endif
+	
 	//	BinON I/O is currently hard-wired to the default char-based iostreams.
 	//	In theory, you could change BINON_STREAM_BYTE to a different data type
 	//	but it would need to be byte-length for BinON to work, so it's
-	//	probably best to leave these type definitions alone.
+	//	probably best to leave it alone.
 	#ifndef BINON_STREAM_BYTE
 		#define BINON_STREAM_BYTE std::ios::char_type
 	#endif
+	
 	using StreamByte = BINON_STREAM_BYTE;
 	using StreamTraits = std::char_traits<StreamByte>;
 	using IOS = std::basic_ios<StreamByte,StreamTraits>;
 	using IStream = std::basic_istream<StreamByte,StreamTraits>;
 	using OStream = std::basic_ostream<StreamByte,StreamTraits>;
+	using String = std::basic_string<
+		StreamByte, StreamTraits, BINON_ALLOCATOR<StreamByte>
+		>;
+	using StringView = std::basic_string_view<StreamByte,StreamTraits>;
 	static_assert(
 		sizeof(StreamByte) == 1,
 		"BinON streams must use a 1-byte (binary) character type"

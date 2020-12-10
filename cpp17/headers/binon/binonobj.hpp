@@ -10,8 +10,11 @@
 #include <memory>
 #include <ostream>
 #include <stdexcept>
+#include <vector>
 
 namespace binon {
+	
+	using TBuffer = std::vector<StreamByte, BINON_ALLOCATOR<StreamByte>>;
 	
 	class TypeErr: public std::logic_error {
 	public:
@@ -58,6 +61,10 @@ namespace binon {
 		virtual void setFloat32(TFloat32 v) {typeErr();}
 		virtual auto getFloat64() const -> TFloat64 {return typeErr(), 0;}
 		virtual void setFloat64(TFloat64 v) {typeErr();}
+		virtual auto getStr() const -> const String&
+			{ static String v; return typeErr(), v; }
+		virtual auto getBuffer() const -> const TBuffer&
+			{ static TBuffer v; return typeErr(), v; }
 		
 		template<typename I> auto getInt() const
 			{return static_cast<I>(getInt64());}
