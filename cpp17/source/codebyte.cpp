@@ -5,11 +5,11 @@
 
 namespace binon {
 	
-	auto CodeByte::Read(IStream& stream, bool requireIO) -> CodeByte {
-		return FromInt(ReadWord<StreamByte>(stream, requireIO));
+	auto CodeByte::Read(TIStream& stream, bool requireIO) -> CodeByte {
+		return FromInt(ReadWord<TStreamByte>(stream, requireIO));
 	}
-	void CodeByte::write(OStream& stream, bool requireIO) {
-		WriteWord(toInt<StreamByte>(), stream, requireIO);
+	void CodeByte::write(TOStream& stream, bool requireIO) {
+		WriteWord(toInt<TStreamByte>(), stream, requireIO);
 	}
 	
 	auto BadCodeByte::WhatStr(CodeByte cb) -> std::string {

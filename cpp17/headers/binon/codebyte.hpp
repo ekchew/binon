@@ -16,7 +16,7 @@ namespace binon {
 	public:
 		template<typename I> static constexpr auto FromInt(I i) noexcept
 			{ return CodeByte(ToByte(i)); }
-		static auto Read(IStream& stream, bool requireIO=true) -> CodeByte;
+		static auto Read(TIStream& stream, bool requireIO=true) -> CodeByte;
 		
 		constexpr CodeByte(std::byte value=0x00_byte) noexcept:
 			mValue{value} {}
@@ -43,7 +43,7 @@ namespace binon {
 				}
 				return *this;
 			}
-		void write(OStream& stream, bool requireIO=true);
+		void write(TOStream& stream, bool requireIO=true);
 	
 	private:
 		std::byte mValue;

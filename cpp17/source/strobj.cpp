@@ -3,13 +3,13 @@
 
 namespace binon {
 
-	void StrObj::encodeData(OStream& stream, bool requireIO) {
+	void StrObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		UInt size{mValue.size()};
 		size.encodeData(stream, false);
 		stream.write(mValue.data(), mValue.size());
 	}
-	void StrObj::decodeData(IStream& stream, bool requireIO) {
+	void StrObj::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
 		UInt len;
 		len.decodeData(stream, false);

@@ -23,8 +23,10 @@ namespace binon {
 			{ return static_cast<std::uint64_t>(mValue); }
 		void setUInt64(std::uint64_t v) final
 			{ mValue = static_cast<TValue>(v); }
-		void encodeData(OStream& stream, bool requireIO=true) final;
-		void decodeData(IStream& stream, bool requireIO=true) final;
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<IntObj>(mValue); }
 	};
 	
 	class UInt: public BinONObj, public Access_mValue<UInt,std::uint64_t> {
@@ -35,8 +37,10 @@ namespace binon {
 		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
 		auto getUInt64() const -> TValue final {return mValue;}
 		void setUInt64(TValue v) final {mValue = v;}
-		void encodeData(OStream& stream, bool requireIO=true) final;
-		void decodeData(IStream& stream, bool requireIO=true) final;
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<UInt>(mValue); }
 	};
 
 }

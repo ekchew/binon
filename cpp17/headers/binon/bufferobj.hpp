@@ -6,22 +6,29 @@
 namespace binon {
 
 	class BufferObj:
-		public BinONObj, public Read_mValue<BufferObj,TBuffer>
+		public BinONObj,
+		public AccessContainer_mValue<BufferObj,TBuffer>
 	{
 	public:
 		TValue mValue;
 		
-		BufferObj(const TValue& v): mValue{v} {}
-		BufferObj(TValue&& v) noexcept: mValue{std::forward<TValue>(v)} {}
+		BufferObj(const TValue& v):
+			BinONObj{v.size() == 0}, mValue{v} {}
+		BufferObj(TValue&& v) noexcept:
+			BinONObj{v.size() == 0}, mValue{std::move(v)} {}
+		BufferObj(const BufferObj& v): BufferObj{v.mValue} {}
+		BufferObj(BufferObj&& v) noexcept: BufferObj{std::move(v.mValue)} {}
 		BufferObj() noexcept = default;
-		auto& operator = (BufferObj obj)
-			{ return std::swap(mValue, obj.mValue), *this; }
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kBufferObjCode; }
-		auto getBuffer() const -> const TBuffer& final {return mValue;}
-		void encodeData(OStream& stream, bool requireIO=true) final;
-		void decodeData(IStream& stream, bool requireIO=true) final;
+		auto getBuffer() const& -> const TBuffer& final {return mValue;}
+		auto getBuffer() && -> TBuffer&& final {return std::move(mValue);}
+		void setBuffer(TBuffer v) final {std::swap(mValue, v);}
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hash() const noexcept -> std::size_t;
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<BufferObj>(mValue); }
 	};
 
 }

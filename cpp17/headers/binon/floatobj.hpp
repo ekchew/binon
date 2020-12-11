@@ -17,10 +17,12 @@ namespace binon {
 		auto getFloat32() const -> TFloat32 final
 			{ return static_cast<TFloat32>(mValue); }
 		void setFloat32(TFloat32 v) final {mValue = v;}
-		void encodeData(OStream& stream, bool requireIO=true) final
+		void encodeData(TOStream& stream, bool requireIO=true) const final
 			{ WriteWord(mValue, stream, requireIO); }
-		void decodeData(IStream& stream, bool requireIO=true) final
+		void decodeData(TIStream& stream, bool requireIO=true) final
 		    { mValue = ReadWord<decltype(mValue)>(stream, requireIO); }
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<FloatObj>(mValue); }
 	};
 	
 	class Float32: public BinONObj, public Access_mValue<Float32,TFloat32> {
@@ -31,10 +33,12 @@ namespace binon {
 		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
 		auto getFloat32() const -> TValue final {return mValue;}
 		void setFloat32(TValue v) final {mValue = v;}
-		void encodeData(OStream& stream, bool requireIO=true) final
+		void encodeData(TOStream& stream, bool requireIO=true) const final
 			{ WriteWord(mValue, stream, requireIO); }
-		void decodeData(IStream& stream, bool requireIO=true) final
+		void decodeData(TIStream& stream, bool requireIO=true) final
 		    { mValue = ReadWord<decltype(mValue)>(stream, requireIO); }
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<Float32>(mValue); }
 	};
 
 }

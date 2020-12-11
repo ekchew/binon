@@ -5,6 +5,7 @@
 //	by BinON object classes to reduce boilerplate code.
 
 #include <functional>
+#include <string_view>
 
 namespace binon {
 	
@@ -16,6 +17,7 @@ namespace binon {
 			{ return subcls().mValue; }
 		constexpr operator Value&() noexcept
 			{ return subcls().mValue; }
+		virtual ~Read_mValue() {}
 	
 	protected:
 		constexpr auto& subcls() noexcept
@@ -32,6 +34,21 @@ namespace binon {
 			{ return subcls().mValue = obj.mValue, subcls(); }
 		constexpr auto hash() const noexcept -> std::size_t
 			{ return std::hash<Value>{}(subcls().mValue); }
+	
+	protected:
+		using Read_mValue<Subcls,Value>::subcls;
+	};
+	
+	template<typename Subcls, typename Value>
+		class AccessContainer_mValue: public Read_mValue<Subcls,Value>
+	{
+	public:
+		constexpr operator Value&&() && noexcept
+			{ return std::move(subcls().mValue); }
+		auto& operator = (const Subcls& obj)
+			{ return subcls().mValue = obj.mValue, subcls(); }
+		constexpr auto& operator = (Subcls&& obj) noexcept
+			{ return subcls().mValue = std::move(obj.mValue), subcls(); }
 	
 	protected:
 		using Read_mValue<Subcls,Value>::subcls;

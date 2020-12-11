@@ -1,9 +1,10 @@
+#include "binon/nullobj.hpp"
 #include "binon/boolobj.hpp"
-#include "binon/bufferobj.hpp"
 #include "binon/intobj.hpp"
 #include "binon/floatobj.hpp"
-#include "binon/nullobj.hpp"
+#include "binon/bufferobj.hpp"
 #include "binon/strobj.hpp"
+#include "binon/listobj.hpp"
 
 namespace binon {
 	
@@ -47,13 +48,16 @@ namespace binon {
 		case kStrObjCode.toInt<int>():
 			p = std::make_unique<StrObj>();
 			break;
+		case kBufferObjCode.toInt<int>():
+			p = std::make_unique<BufferObj>();
+			break;
 		default:
 			throw BadCodeByte{cb};
 		}
 		p->mHasDefVal = Subtype{cb} == Subtype::kDefault;
 		return p;
 	}
-	auto BinONObj::Decode(IStream& stream, bool requireIO)
+	auto BinONObj::Decode(TIStream& stream, bool requireIO)
 		-> std::unique_ptr<BinONObj>
 	{
 		RequireIO rio{stream, requireIO};
@@ -63,7 +67,7 @@ namespace binon {
 		}
 		return p;
 	}
-	void BinONObj::encode(OStream& stream, bool requireIO) {
+	void BinONObj::encode(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto cb = typeCode();
 		if(mHasDefVal) {

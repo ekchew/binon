@@ -7,11 +7,11 @@ namespace binon {
 	{
 	}
 	
-	void IntObj::encodeData(OStream& stream, bool requireIO) {
+	void IntObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		if(-0x40 <= mValue && mValue < 0x40) {
 			WriteWord(
-				static_cast<StreamByte>(mValue & 0x7f), stream, false
+				static_cast<TStreamByte>(mValue & 0x7f), stream, false
 				);
 		}
 		else if(-0x2000 <= mValue && mValue < 0x2000) {
@@ -38,7 +38,7 @@ namespace binon {
 			WriteWord(mValue, stream, false);
 		}
 	}
-	void IntObj::decodeData(IStream& stream, bool requireIO) {
+	void IntObj::decodeData(TIStream& stream, bool requireIO) {
 		auto signExtend = [](std::int64_t v, std::int64_t msbMask) {
 			auto sigBits = msbMask | msbMask - 1;
 			if(v & msbMask) {
@@ -50,12 +50,12 @@ namespace binon {
 			return v;
 		};
 		RequireIO rio{stream, requireIO};
-		auto byte0 = ReadWord<StreamByte>(stream, false);
+		auto byte0 = ReadWord<TStreamByte>(stream, false);
 		if((byte0 & 0x80) == 0x00) {
 			mValue = signExtend(byte0, 0x40);
 		}
 		else {
-			std::array<StreamByte,8> buffer;
+			std::array<TStreamByte,8> buffer;
 			buffer[0] = byte0;
 			if((byte0 & 0x40) == 0) {
 				stream.read(buffer.data() + 1, 1);
@@ -85,11 +85,11 @@ namespace binon {
 		}
 	}
 	
-	void UInt::encodeData(OStream& stream, bool requireIO) {
+	void UInt::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		if(mValue < 0x80) {
 			WriteWord(
-				static_cast<StreamByte>(mValue), stream, false
+				static_cast<TStreamByte>(mValue), stream, false
 				);
 		}
 		else if(mValue < 0x4000) {
@@ -115,14 +115,14 @@ namespace binon {
 			WriteWord(mValue, stream, false);
 		}
 	}
-	void UInt::decodeData(IStream& stream, bool requireIO) {
+	void UInt::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
-		auto byte0 = ReadWord<StreamByte>(stream, false);
+		auto byte0 = ReadWord<TStreamByte>(stream, false);
 		if((byte0 & 0x80) == 0x00) {
 			mValue = byte0;
 		}
 		else {
-			std::array<StreamByte,8> buffer;
+			std::array<TStreamByte,8> buffer;
 			buffer[0] = byte0;
 			if((byte0 & 0x40) == 0) {
 				stream.read(buffer.data() + 1, 1);

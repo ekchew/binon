@@ -3,26 +3,34 @@
 
 #include "binonobj.hpp"
 
-#include <utility>
 #include <string_view>
 
 namespace binon {
 
-	class StrObj: public BinONObj, public Read_mValue<StrObj,String> {
+	class StrObj:
+		public BinONObj,
+		public AccessContainer_mValue<StrObj,TString>
+	{
 	public:
 		TValue mValue;
 		
-		StrObj(const TValue& v): mValue{v} {}
-		StrObj(TValue&& v) noexcept: mValue{std::forward<TValue>(v)} {}
+		StrObj(const TValue& v):
+			BinONObj{v.size() == 0}, mValue{v} {}
+		StrObj(TValue&& v) noexcept:
+			BinONObj{v.size() == 0}, mValue{std::move(v)} {}
+		StrObj(const StrObj& v): StrObj{v.mValue} {}
+		StrObj(StrObj&& v) noexcept: StrObj{std::move(v.mValue)} {}
 		StrObj() noexcept = default;
-		auto& operator = (StrObj obj)
-			{ return std::swap(mValue, obj.mValue), *this; }
 		auto typeCode() const noexcept -> CodeByte final {return kStrObjCode;}
-		auto getStr() const -> const String& final {return mValue;}
-		void encodeData(OStream& stream, bool requireIO=true) final;
-		void decodeData(IStream& stream, bool requireIO=true) final;
+		auto getStr() const& -> const TString& final {return mValue;}
+		auto getStr() && -> TString&& final {return std::move(mValue);}
+		void setStr(TString v) final {std::swap(mValue, v);}
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hash() const noexcept -> std::size_t
-			{ return std::hash<String>{}(mValue); }
+			{ return std::hash<TString>{}(mValue); }
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<StrObj>(mValue); }
 	};
 
 }

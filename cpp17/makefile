@@ -1,4 +1,4 @@
-CXX ?= g++
+CXX ?= c++
 DBG_FLAGS ?= -g
 REL_FLAGS ?= -O2
 CMN_FLAGS ?= -std=c++17
@@ -16,7 +16,16 @@ release:
 
 HDR := headers/binon/
 SRC := source/
-SRC_NAMES := boolobj binonobj bufferobj byteutil codebyte intobj ioutil strobj
+SRC_NAMES := \
+	boolobj \
+	binonobj \
+	bufferobj \
+	byteutil \
+	codebyte \
+	intobj \
+	ioutil \
+	listobj \
+	strobj
 OBJS := ${addprefix obj/,${SRC_NAMES}}
 OBJS := ${addsuffix ${SFX}.o,${OBJS}}
 
@@ -32,8 +41,15 @@ DEP0 := makefile
 DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${DEP0}
 DEP2 := ${HDR}codebyte.hpp ${DEP1}
 DEP3 := ${HDR}binonobj.hpp ${HDR}crtp.hpp ${HDR}floattypes.hpp ${DEP2}
-DEP4 := ${HDR}boolobj.hpp ${HDR}bufferobj.hpp ${HDR}intobj.hpp \
-	${HDR}floatobj.hpp ${HDR}nullobj.hpp ${HDR}strobj.hpp ${DEP3}
+DEP4 := \
+	${HDR}boolobj.hpp \
+	${HDR}bufferobj.hpp \
+	${HDR}intobj.hpp \
+	${HDR}floatobj.hpp \
+	${HDR}listobj.hpp \
+	${HDR}nullobj.hpp \
+	${HDR}strobj.hpp \
+	${DEP3}
 
 obj/binonobj${SFX}.o: ${SRC}binonobj.cpp ${DEP4}
 	${CXX} ${FLAGS} ${SRC}binonobj.cpp -o obj/binonobj${SFX}.o
@@ -50,5 +66,8 @@ obj/intobj${SFX}.o: ${SRC}intobj.cpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}intobj.cpp -o obj/intobj${SFX}.o
 obj/ioutil${SFX}.o: ${SRC}ioutil.cpp ${HDR}ioutil.hpp ${DEP0}
 	${CXX} ${FLAGS} ${SRC}ioutil.cpp -o obj/ioutil${SFX}.o
+obj/listobj${SFX}.o: ${SRC}listobj.cpp ${HDR}listobj.hpp \
+	${HDR}intobj.hpp ${DEP3}
+	${CXX} ${FLAGS} ${SRC}listobj.cpp -o obj/listobj${SFX}.o
 obj/strobj${SFX}.o: ${SRC}strobj.cpp ${HDR}strobj.hpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}strobj.cpp -o obj/strobj${SFX}.o

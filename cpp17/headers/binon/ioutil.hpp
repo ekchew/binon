@@ -22,17 +22,17 @@ namespace binon {
 		#define BINON_STREAM_BYTE std::ios::char_type
 	#endif
 	
-	using StreamByte = BINON_STREAM_BYTE;
-	using StreamTraits = std::char_traits<StreamByte>;
-	using IOS = std::basic_ios<StreamByte,StreamTraits>;
-	using IStream = std::basic_istream<StreamByte,StreamTraits>;
-	using OStream = std::basic_ostream<StreamByte,StreamTraits>;
-	using String = std::basic_string<
-		StreamByte, StreamTraits, BINON_ALLOCATOR<StreamByte>
+	using TStreamByte = BINON_STREAM_BYTE;
+	using TStreamTraits = std::char_traits<TStreamByte>;
+	using TIOS = std::basic_ios<TStreamByte,TStreamTraits>;
+	using TIStream = std::basic_istream<TStreamByte,TStreamTraits>;
+	using TOStream = std::basic_ostream<TStreamByte,TStreamTraits>;
+	using TString = std::basic_string<
+		TStreamByte, TStreamTraits, BINON_ALLOCATOR<TStreamByte>
 		>;
-	using StringView = std::basic_string_view<StreamByte,StreamTraits>;
+	using TStringView = std::basic_string_view<TStreamByte,TStreamTraits>;
 	static_assert(
-		sizeof(StreamByte) == 1,
+		sizeof(TStreamByte) == 1,
 		"BinON streams must use a 1-byte (binary) character type"
 	);
 	
@@ -47,13 +47,13 @@ namespace binon {
 		//	when you write a function that takes a requireIO argument. You can
 		//	go through the motions of constructing a RequireIO object without
 		//	necessarily setting the exception bits.
-		RequireIO(IOS& stream, bool enable=true);
+		RequireIO(TIOS& stream, bool enable=true);
 		
 		~RequireIO();
 	
 	private:
-		IOS* mPStream;
-		IOS::iostate mEx0;
+		TIOS* mPStream;
+		TIOS::iostate mEx0;
 	};
 
 }

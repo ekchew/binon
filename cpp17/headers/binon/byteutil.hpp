@@ -77,7 +77,7 @@ namespace binon {
 	//		ReadWord() twice on the same buffer, as you will may a different
 	//		result the second time.
 	template<typename Word>
-		void WriteWord(Word word, StreamByte* buffer) noexcept {
+		void WriteWord(Word word, TStreamByte* buffer) noexcept {
 			std::memcpy(buffer, &word, sizeof(Word));
 		#if __cplusplus > 201703L
 			if constexpr(sizeof(Word) > 1 && LittleEndian())
@@ -89,7 +89,7 @@ namespace binon {
 			}
 		}
 	template<typename Word>
-		auto ReadWord(StreamByte* buffer) noexcept -> Word {
+		auto ReadWord(TStreamByte* buffer) noexcept -> Word {
 		#if __cplusplus > 201703L
 			if constexpr(sizeof(Word) > 1 && LittleEndian())
 		#else
@@ -112,30 +112,30 @@ namespace binon {
 	//	RequireIO class in binon/ioutil.hpp), in which case you make it false.
 	//
 	//	Note that if you are reading/writing a single byte, you may want to
-	//	use the StreamByte (a.k.a. char) type to invoke a template
+	//	use the TStreamByte (a.k.a. char) type to invoke a template
 	//	specialization that is likely faster.
 	template<typename Word>
-		void WriteWord(Word word, OStream& stream, bool requireIO=true) {
+		void WriteWord(Word word, TOStream& stream, bool requireIO=true) {
 			RequireIO rio{stream, requireIO};
-			std::array<StreamByte, sizeof(Word)> buffer;
+			std::array<TStreamByte, sizeof(Word)> buffer;
 			WriteWord(word, buffer.data());
 			stream.write(buffer.data(), buffer.size());
 		}
 	template<> inline
-		void WriteWord<StreamByte>(
-			StreamByte b, OStream& stream, bool requireIO
+		void WriteWord<TStreamByte>(
+			TStreamByte b, TOStream& stream, bool requireIO
 			)
 		{ stream.write(&b, 1); }
 	template<typename Word>
-		auto ReadWord(IStream& stream, bool requireIO=true) -> Word {
+		auto ReadWord(TIStream& stream, bool requireIO=true) -> Word {
 			RequireIO rio{stream, requireIO};
-			std::array<StreamByte, sizeof(Word)> buffer;
+			std::array<TStreamByte, sizeof(Word)> buffer;
 			stream.read(buffer.data(), buffer.size());
 			return ReadWord<Word>(buffer.data());
 		}
 	template<> inline
-		auto ReadWord<StreamByte>(IStream& stream, bool requireIO) -> StreamByte
-		{ StreamByte b; return stream.read(&b, 1), b; }
+		auto ReadWord<TStreamByte>(TIStream& stream, bool requireIO) -> TStreamByte
+		{ TStreamByte b; return stream.read(&b, 1), b; }
 }
 
 #endif

@@ -13,8 +13,10 @@ namespace binon {
 		auto typeCode() const noexcept -> CodeByte final {return kBoolObjCode;}
 		auto getBool() const -> TValue final {return mValue;}
 		void setBool(TValue v) final {mValue = v;}
-		void encodeData(OStream& stream, TValue requireIO=true) final;
-		void decodeData(IStream& stream, TValue requireIO=true) final;
+		void encodeData(TOStream& stream, TValue requireIO=true) const final;
+		void decodeData(TIStream& stream, TValue requireIO=true) final;
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<BoolObj>(mValue); }
 	};
 	
 	class TrueObj: public BinONObj, public Access_mValue<TrueObj,bool> {
@@ -28,6 +30,8 @@ namespace binon {
 			{ return kTrueObjCode; }
 		auto getBool() const -> TValue final {return true;}
 		void setBool(TValue value) final {if(!value) typeErr();}
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<TrueObj>(); }
 	};
 
 }
