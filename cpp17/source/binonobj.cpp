@@ -45,11 +45,14 @@ namespace binon {
 		case kFloat32Code.toInt<int>():
 			p = std::make_unique<Float32>();
 			break;
+		case kBufferObjCode.toInt<int>():
+			p = std::make_unique<BufferObj>();
+			break;
 		case kStrObjCode.toInt<int>():
 			p = std::make_unique<StrObj>();
 			break;
-		case kBufferObjCode.toInt<int>():
-			p = std::make_unique<BufferObj>();
+		case kListObjCode.toInt<int>():
+			p = std::make_unique<ListObj>();
 			break;
 		default:
 			throw BadCodeByte{cb};
