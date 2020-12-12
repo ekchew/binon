@@ -24,7 +24,11 @@ namespace binon {
 		constexpr auto& operator = (std::byte value) noexcept
 			{ return mValue = value, *this; }
 		template<typename I> constexpr auto toInt() const noexcept
-			{ return std::to_integer<I>(*this); }
+			{ return std::to_integer<I>(mValue); }
+		constexpr auto baseType() const noexcept
+			{ return std::to_integer<unsigned int>(mValue >> 4); }
+		constexpr auto subtype() const noexcept
+			{ return std::to_integer<unsigned int>(mValue & 0x0f_byte); }
 		constexpr auto typeCode() const noexcept -> CodeByte
 			//	A type code uniquely identifies the class of BinON object. It
 			//	is identical to a regular CodeByte except it does not allow
@@ -43,7 +47,7 @@ namespace binon {
 				}
 				return *this;
 			}
-		void write(TOStream& stream, bool requireIO=true);
+		void write(TOStream& stream, bool requireIO=true) const;
 	
 	private:
 		std::byte mValue;

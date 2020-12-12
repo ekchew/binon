@@ -21,7 +21,7 @@ namespace binon {
 		}
 		return p;
 	}
-	auto BinONObj::FromCodeByte(CodeByte cb) -> std::unique_ptr<BinONObj> {
+	auto BinONObj::FromTypeCode(CodeByte cb) -> std::unique_ptr<BinONObj> {
 		std::unique_ptr<BinONObj> p;
 		switch(cb.typeCode().toInt<int>()) {
 		case kNullObjCode.toInt<int>():
@@ -54,6 +54,9 @@ namespace binon {
 		case kListObjCode.toInt<int>():
 			p = std::make_unique<ListObj>();
 			break;
+		case kSListCode.toInt<int>():
+			p = std::make_unique<SList>();
+			break;
 		default:
 			throw BadCodeByte{cb};
 		}
@@ -64,7 +67,7 @@ namespace binon {
 		-> std::unique_ptr<BinONObj>
 	{
 		RequireIO rio{stream, requireIO};
-		auto p = FromCodeByte(CodeByte::Read(stream, false));
+		auto p = FromTypeCode(CodeByte::Read(stream, false));
 		if(!p->mHasDefVal) {
 			p->decodeData(stream, false);
 		}

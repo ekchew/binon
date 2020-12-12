@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstring>
+#include <string>
 #if __cplusplus > 201703L
 	#include <bit>
 #endif
@@ -33,12 +34,17 @@ namespace binon {
 			{ return ToByte(i); }
 	}
 	
-	//	AsHex() converts a std::byte into a 0-padded hexadecimal C string. The
+	//	AsHexC() converts a std::byte into a 0-padded hexadecimal C string. The
 	//	captilize option would return "AB" instead of "ab". The C string is
 	//	returned wrapped inside a std::array rather than a std::string to
 	//	avoid dynamic allocation. You can call the array's data() method to
 	//	get at the string.
-	auto AsHex(std::byte value, bool capitalize=false) -> std::array<char,3>;
+	auto AsHexC(std::byte value, bool capitalize=false) noexcept
+		-> std::array<char,3>;
+	
+	//	AsHex() is the same as AsHexC() but returns a std::string instead of
+	//	the lower-level char array.
+	auto AsHex(std::byte value, bool capitalize=false) -> std::string;
 	
 	////////////////////////////////////////////////////////////////////////////
 	//

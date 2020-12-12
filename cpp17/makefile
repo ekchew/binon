@@ -67,7 +67,7 @@ obj/intobj${SFX}.o: ${SRC}intobj.cpp ${HDR}intobj.hpp ${DEP3}
 obj/ioutil${SFX}.o: ${SRC}ioutil.cpp ${HDR}ioutil.hpp ${DEP0}
 	${CXX} ${FLAGS} ${SRC}ioutil.cpp -o obj/ioutil${SFX}.o
 obj/listobj${SFX}.o: ${SRC}listobj.cpp ${HDR}listobj.hpp \
-	${HDR}intobj.hpp ${DEP3}
+	${HDR}boolobj.hpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}listobj.cpp -o obj/listobj${SFX}.o
 obj/strobj${SFX}.o: ${SRC}strobj.cpp ${HDR}strobj.hpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}strobj.cpp -o obj/strobj${SFX}.o

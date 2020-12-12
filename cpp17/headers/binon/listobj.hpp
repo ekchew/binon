@@ -3,8 +3,6 @@
 
 #include "binonobj.hpp"
 
-#include <type_traits>
-
 namespace binon {
 
 	class ListObj:
@@ -20,6 +18,9 @@ namespace binon {
 		ListObj(const ListObj& v): ListObj{v.mValue} {}
 		ListObj(ListObj&& v) noexcept: ListObj{std::move(v.mValue)} {}
 		ListObj() noexcept = default;
+		auto operator = (const ListObj& v) -> ListObj&;
+		auto& operator = (ListObj&& v) noexcept
+			{ return mValue = std::move(v.mValue), *this; }
 		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
 		auto getList() const& -> const TValue& final {return mValue;}
 		auto getList() && -> TValue&& final {return std::move(mValue);}
@@ -30,24 +31,37 @@ namespace binon {
 			{ return std::make_unique<ListObj>(mValue); }
 	};
 	
-	template<typename Elem> class SList:
+	struct SListValue {
+		TList mList;
+		CodeByte mTypeCode;
+		
+		SListValue(const SListValue& v);
+		SListValue(SListValue&& v) noexcept:
+			mList{std::move(v.mList)}, mTypeCode{v.mTypeCode} {}
+		SListValue(CodeByte elemCode=kIntObjCode) noexcept:
+			mTypeCode{elemCode} {}
+		auto operator = (const SListValue& v) -> SListValue&;
+		auto& operator = (SListValue&& v) noexcept;
+	};
+	class SList:
 		public BinONObj,
-		public AccessContainer_mValue<SList<Obj>,TVector<Obj>>
+		public AccessContainer_mValue<ListObj,SListValue>
 	{
-		static_assert(
-			std::is_base_of_v<BinONObj, Elem>,
-			"SList element type must be a subclass of BinONObj"
-			);
 	public:
 		TValue mValue;
 		
-		SList(const TValue& v): BinONObj{v.size() == 0}, mValue{v} {}
+		SList(const TValue& v):
+			BinONObj{v.mList.size() == 0}, mValue{v} {}
 		SList(TValue&& v) noexcept:
-			BinONObj{v.size() == 0}, SList{std::move(v)} {}
+			BinONObj{v.mList.size() == 0}, mValue{std::move(v)} {}
 		SList(const SList& v): SList{v.mValue} {}
 		SList(SList&& v) noexcept: SList{std::move(v.mValue)} {}
-		SList() noexcept = default;
+		SList(CodeByte elemCode=kNullObjCode) noexcept: mValue{elemCode} {}
 		auto typeCode() const noexcept -> CodeByte final {return kSListCode;}
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
+		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+			{ return std::make_unique<SList>(mValue); }
 	};
 
 }

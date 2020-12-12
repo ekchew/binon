@@ -8,7 +8,7 @@ namespace binon {
 	auto CodeByte::Read(TIStream& stream, bool requireIO) -> CodeByte {
 		return FromInt(ReadWord<TStreamByte>(stream, requireIO));
 	}
-	void CodeByte::write(TOStream& stream, bool requireIO) {
+	void CodeByte::write(TOStream& stream, bool requireIO) const {
 		WriteWord(toInt<TStreamByte>(), stream, requireIO);
 	}
 	

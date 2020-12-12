@@ -7,12 +7,15 @@
 
 namespace binon {
 	
-	auto AsHex(std::byte value, bool capitalize) -> std::array<char,3>
+	auto AsHexC(std::byte value, bool capitalize) noexcept -> std::array<char,3>
 	{
 		std::array<char,3> buffer;
 		auto format = capitalize ? "%02X" : "%02x";
 		std::sprintf(buffer.data(), format, value);
 		return buffer;
+	}
+	auto AsHex(std::byte value, bool capitalize) -> std::string {
+		return AsHexC(value, capitalize).data();
 	}
 	
 #if __cplusplus <= 201703L

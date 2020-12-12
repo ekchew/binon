@@ -34,7 +34,7 @@ namespace binon {
 		static auto FromValue() {return FromNullValue();}
 		static auto FromValue(bool v) {return FromBoolValue(v);}
 		
-		static auto FromCodeByte(CodeByte cb) -> std::unique_ptr<BinONObj>;
+		static auto FromTypeCode(CodeByte cb) -> std::unique_ptr<BinONObj>;
 		
 		BinONObj(bool hasDefVal=true) noexcept: mHasDefVal{hasDefVal} {}
 		
