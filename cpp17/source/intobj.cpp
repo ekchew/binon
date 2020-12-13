@@ -16,20 +16,20 @@ namespace binon {
 		}
 		else if(-0x2000 <= mValue && mValue < 0x2000) {
 			WriteWord(
-				static_cast<std::int16_t>(0x8000 | mValue & 0x3fff),
+				static_cast<std::int16_t>(0x8000 | (mValue & 0x3fff)),
 				stream, false
 				);
 		}
 		else if(-0x10000000 <= mValue && mValue < 0x10000000) {
 			WriteWord(
-				static_cast<std::int32_t>(0xC0000000 | mValue & 0x1fffffff),
+				static_cast<std::int32_t>(0xC0000000 | (mValue & 0x1fffffff)),
 				stream, false
 				);
 		}
 		else if(-0x08000000'00000000 <= mValue && mValue < 0x08000000'00000000)
 		{
 			WriteWord(
-				0xE0000000'00000000 | mValue & 0x0fffffff'ffffffff,
+				0xE0000000'00000000 | (mValue & 0x0fffffff'ffffffff),
 				stream, false
 				);
 		}
