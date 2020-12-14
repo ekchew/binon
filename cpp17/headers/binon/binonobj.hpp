@@ -17,7 +17,7 @@ namespace binon {
 	class BinONObj;
 	
 	template<typename T> using TVector = std::vector<T, BINON_ALLOCATOR<T>>;
-	using TBuffer = TVector<TStreamByte>;
+	using TBuffer = TVector<std::byte>;
 	using TList = TVector<std::unique_ptr<BinONObj>>;
 	
 	class TypeErr: public std::logic_error {

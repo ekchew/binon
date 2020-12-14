@@ -75,17 +75,17 @@ namespace binon {
 		size.encodeData(stream, false);
 		mValue.mTypeCode.write(stream, false);
 		if(mValue.mTypeCode.baseType() == kBoolObjCode.baseType()) {
-			TStreamByte b = 0x00;
+			std::byte b = 0x00_byte;
 			TList::size_type i = 0;
 			for(; i < mValue.mList.size(); ++i) {
 				auto& pObj = mValue.mList[i];
 				b <<= 1;
 				if(pObj->getBool()) {
-					b |= 0x01;
+					b |= 0x01_byte;
 				}
 				if((i & 0x7) == 0x7) {
 					WriteWord(b, stream, false);
-					b = 0x00;
+					b = 0x00_byte;
 				}
 			}
 			if(i & 0x7) {
@@ -107,13 +107,13 @@ namespace binon {
 		mValue.mList.resize(len);
 		mValue.mTypeCode = CodeByte::Read(stream, false);
 		if(mValue.mTypeCode.baseType() == kBoolObjCode.baseType()) {
-			TStreamByte b = 0x00;
+			std::byte b = 0x00_byte;
 			for(TList::size_type i = 0; i < mValue.mList.size(); ++i) {
 				if((i & 0x7) == 0) {
 					b = ReadWord<decltype(b)>(stream, false);
 				}
 				auto& pObj = mValue.mList[i];
-				pObj = std::make_unique<BoolObj>((b & 0x80) != 0x00);
+				pObj = std::make_unique<BoolObj>((b & 0x80_byte) != 0x00_byte);
 				b <<= 1;
 			}
 		}

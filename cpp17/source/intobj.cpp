@@ -10,9 +10,7 @@ namespace binon {
 	void IntObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		if(-0x40 <= mValue && mValue < 0x40) {
-			WriteWord(
-				static_cast<TStreamByte>(mValue & 0x7f), stream, false
-				);
+			WriteWord(ToByte(mValue & 0x7f), stream, false);
 		}
 		else if(-0x2000 <= mValue && mValue < 0x2000) {
 			WriteWord(
@@ -89,9 +87,7 @@ namespace binon {
 	void UInt::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		if(mValue < 0x80) {
-			WriteWord(
-				static_cast<TStreamByte>(mValue), stream, false
-				);
+			WriteWord(ToByte(mValue), stream, false);
 		}
 		else if(mValue < 0x4000) {
 			WriteWord(
