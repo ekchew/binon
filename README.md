@@ -228,8 +228,6 @@ Binary Encoding:
 | `10010011`  | U `cccccccc` k\*U `dddddddd` v\*U          |  {*k*:*v* *…*} | SDict   |
 | `10010011`  | U `cccccccc` k\*U `00010001` bbbbbbbb\*U/8 |  {*k*:*v* *…*} | SDict   |
 
-† This most general form of a dictionary may only be supported by the Python implementation, since Python allows dictionary keys to be of differing data types.
-
 Here:
 * U is the list element count encoded as a `UInt`'s data without the code byte.
 * K represents a full encoding (including the code byte) of each dictionary key.
