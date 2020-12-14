@@ -14,4 +14,11 @@ namespace binon {
 
 }
 
+namespace std {
+	template<> struct hash<binon::NullObj> {
+		constexpr auto operator () (const binon::NullObj&) const noexcept
+			-> std::size_t { return 0; }
+	};
+}
+
 #endif

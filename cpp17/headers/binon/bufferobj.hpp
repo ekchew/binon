@@ -33,4 +33,11 @@ namespace binon {
 
 }
 
+namespace std {
+	template<> struct hash<binon::BufferObj> {
+		auto operator () (const binon::BufferObj& obj) const noexcept
+			-> std::size_t { return obj.hash(); }
+	};
+}
+
 #endif

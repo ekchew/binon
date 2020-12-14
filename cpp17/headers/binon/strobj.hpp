@@ -37,7 +37,7 @@ namespace binon {
 
 namespace std {
 	template<> struct hash<binon::StrObj> {
-		constexpr auto operator () (const binon::StrObj& obj) const noexcept
+		auto operator () (const binon::StrObj& obj) const noexcept
 			-> std::size_t { return obj.hash(); }
 	};
 }
