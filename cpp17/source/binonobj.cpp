@@ -8,11 +8,11 @@
 
 namespace binon {
 	
-	auto BinONObj::FromNullValue() -> std::unique_ptr<BinONObj> {
+	auto BinONObj::FromNullValue() -> TUPBinONObj {
 		return std::make_unique<NullObj>();
 	}
-	auto BinONObj::FromBoolValue(bool v) -> std::unique_ptr<BinONObj> {
-		std::unique_ptr<BinONObj> p;
+	auto BinONObj::FromBoolValue(bool v) -> TUPBinONObj {
+		TUPBinONObj p;
 		if(v) {
 			p = std::make_unique<TrueObj>();
 		}
@@ -21,8 +21,8 @@ namespace binon {
 		}
 		return p;
 	}
-	auto BinONObj::FromTypeCode(CodeByte cb) -> std::unique_ptr<BinONObj> {
-		std::unique_ptr<BinONObj> p;
+	auto BinONObj::FromTypeCode(CodeByte cb) -> TUPBinONObj {
+		TUPBinONObj p;
 		switch(cb.typeCode().toInt<int>()) {
 		case kNullObjCode.toInt<int>():
 			p = std::make_unique<NullObj>();
@@ -64,7 +64,7 @@ namespace binon {
 		return p;
 	}
 	auto BinONObj::Decode(TIStream& stream, bool requireIO)
-		-> std::unique_ptr<BinONObj>
+		-> TUPBinONObj
 	{
 		RequireIO rio{stream, requireIO};
 		auto p = FromTypeCode(CodeByte::Read(stream, false));
@@ -86,6 +86,10 @@ namespace binon {
 	}
 	void BinONObj::typeErr() const {
 		throw TypeErr("incorrect accessor called on BinONObj subtype");
+	}
+	
+	auto operator==(const TUPBinONObj& pLHS, const TUPBinONObj& pRHS) {
+		return pLHS->equals(*pRHS);
 	}
 	
 }

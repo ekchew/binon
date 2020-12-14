@@ -3,6 +3,13 @@
 
 namespace binon {
 
+	auto BufferObj::operator==(const BufferObj& rhs) const noexcept -> bool {
+		return
+			mValue.size() == rhs.mValue.size() &&
+			std::equal(BINON_PAR_UNSEQ
+				mValue.begin(), mValue.end(), rhs.mValue.begin()
+				);
+	}
 	void BufferObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		UInt size{mValue.size()};

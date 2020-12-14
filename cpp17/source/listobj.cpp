@@ -9,13 +9,13 @@ namespace binon {
 	ListObj::ListObj(const TValue& v):
 		BinONObj{v.size() == 0}, mValue(v.size())
 	{
-		std::transform(
+		std::transform(BINON_PAR_UNSEQ
 			v.begin(), v.end(), mValue.begin(),
 			[](const TValue::value_type& p) { return p->makeCopy(); }
 			);
 	}
 	auto ListObj::operator = (const ListObj& v) -> ListObj& {
-		std::transform(
+		std::transform(BINON_PAR_UNSEQ
 			v.mValue.begin(), v.mValue.end(), mValue.begin(),
 			[](const TValue::value_type& p) { return p->makeCopy(); }
 			);
@@ -42,13 +42,13 @@ namespace binon {
 	SListValue::SListValue(const SListValue& v):
 		mList(v.mList.size()), mTypeCode{v.mTypeCode}
 	{
-		std::transform(
+		std::transform(BINON_PAR_UNSEQ
 			v.mList.begin(), v.mList.end(), mList.begin(),
 			[](const TList::value_type& p) { return p->makeCopy(); }
 			);
 	}
 	auto SListValue::operator = (const SListValue& v) -> SListValue& {
-		std::transform(
+		std::transform(BINON_PAR_UNSEQ
 			v.mList.begin(), v.mList.end(), mList.begin(),
 			[](const TList::value_type& p) { return p->makeCopy(); }
 			);

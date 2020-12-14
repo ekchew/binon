@@ -11,7 +11,7 @@ namespace binon {
 		TValue mValue;
 		
 		FloatObj(TValue v=0.0) noexcept: BinONObj{v == 0.0}, mValue{v} {}
-		auto typeCode() const noexcept -> CodeByte final {return kIntObjCode;}
+		auto typeCode() const noexcept -> CodeByte final {return kFloatObjCode;}
 		auto getFloat64() const -> TValue final {return mValue;}
 		void setFloat64(TValue v) final {mValue = v;}
 		auto getFloat32() const -> TFloat32 final
@@ -21,7 +21,12 @@ namespace binon {
 			{ WriteWord(mValue, stream, requireIO); }
 		void decodeData(TIStream& stream, bool requireIO=true) final
 		    { mValue = ReadWord<decltype(mValue)>(stream, requireIO); }
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto getHash() const -> std::size_t override {return hash();}
+		auto equals(const BinONObj& other) const -> bool override {
+				return other.typeCode() == kFloatObjCode &&
+					*this == static_cast<const FloatObj&>(other);
+			}
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<FloatObj>(mValue); }
 	};
 	
@@ -30,14 +35,19 @@ namespace binon {
 		TValue mValue;
 		
 		Float32(TValue v=0.0f) noexcept: BinONObj{v == 0.0f}, mValue{v} {}
-		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
+		auto typeCode() const noexcept -> CodeByte final {return kFloat32Code;}
 		auto getFloat32() const -> TValue final {return mValue;}
 		void setFloat32(TValue v) final {mValue = v;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final
 			{ WriteWord(mValue, stream, requireIO); }
 		void decodeData(TIStream& stream, bool requireIO=true) final
 		    { mValue = ReadWord<decltype(mValue)>(stream, requireIO); }
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto getHash() const -> std::size_t override {return hash();}
+		auto equals(const BinONObj& other) const -> bool override {
+				return other.typeCode() == kFloat32Code &&
+					*this == static_cast<const Float32&>(other);
+			}
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<Float32>(mValue); }
 	};
 

@@ -15,7 +15,12 @@ namespace binon {
 		void setBool(TValue v) final {mValue = v;}
 		void encodeData(TOStream& stream, TValue requireIO=true) const final;
 		void decodeData(TIStream& stream, TValue requireIO=true) final;
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto getHash() const -> std::size_t override {return hash();}
+		auto equals(const BinONObj& other) const -> bool override {
+				return other.typeCode() == kBoolObjCode &&
+					*this == static_cast<const BoolObj&>(other);
+			}
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<BoolObj>(mValue); }
 	};
 	
@@ -30,7 +35,10 @@ namespace binon {
 			{ return kTrueObjCode; }
 		auto getBool() const -> TValue final {return true;}
 		void setBool(TValue value) final {if(!value) typeErr();}
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto getHash() const -> std::size_t override {return hash();}
+		auto equals(const BinONObj& other) const -> bool override
+			{ return other.typeCode() == kTrueObjCode; }
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<TrueObj>(); }
 	};
 

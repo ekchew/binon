@@ -27,7 +27,7 @@ namespace binon {
 		void setList(TList v) final {std::swap(mValue, v);}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<ListObj>(mValue); }
 	};
 	
@@ -60,7 +60,7 @@ namespace binon {
 		auto typeCode() const noexcept -> CodeByte final {return kSListCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<SList>(mValue); }
 	};
 

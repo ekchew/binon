@@ -25,7 +25,12 @@ namespace binon {
 			{ mValue = static_cast<TValue>(v); }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto getHash() const -> std::size_t override {return hash();}
+		auto equals(const BinONObj& other) const -> bool override {
+				return other.typeCode() == kIntObjCode &&
+					*this == static_cast<const IntObj&>(other);
+			}
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<IntObj>(mValue); }
 	};
 	
@@ -39,7 +44,12 @@ namespace binon {
 		void setUInt64(TValue v) final {mValue = v;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto getHash() const -> std::size_t override {return hash();}
+		auto equals(const BinONObj& other) const -> bool override {
+				return other.typeCode() == kUIntCode &&
+					*this == static_cast<const UInt&>(other);
+			}
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<UInt>(mValue); }
 	};
 

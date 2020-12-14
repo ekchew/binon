@@ -8,7 +8,10 @@ namespace binon {
 	class NullObj: public BinONObj {
 	public:
 		auto typeCode() const noexcept -> CodeByte final {return kNullObjCode;}
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto getHash() const -> std::size_t override {return 0;}
+		auto equals(const BinONObj& other) const -> bool override
+			{ return other.typeCode() == kNullObjCode; }
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<NullObj>(); }
 	};
 

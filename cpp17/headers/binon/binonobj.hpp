@@ -15,10 +15,10 @@
 
 namespace binon {
 	class BinONObj;
-	
 	template<typename T> using TVector = std::vector<T, BINON_ALLOCATOR<T>>;
 	using TBuffer = TVector<std::byte>;
-	using TList = TVector<std::unique_ptr<BinONObj>>;
+	using TUPBinONObj = std::unique_ptr<BinONObj>;
+	using TList = TVector<TUPBinONObj>;
 	
 	class TypeErr: public std::logic_error {
 	public:
@@ -28,13 +28,13 @@ namespace binon {
 	class BinONObj {
 	public:
 		constexpr auto operator == (const BinONObj&) const { return true; }
-		static auto FromNullValue() -> std::unique_ptr<BinONObj>;
-		static auto FromBoolValue(bool v) -> std::unique_ptr<BinONObj>;
+		static auto FromNullValue() -> TUPBinONObj;
+		static auto FromBoolValue(bool v) -> TUPBinONObj;
 		
 		static auto FromValue() {return FromNullValue();}
 		static auto FromValue(bool v) {return FromBoolValue(v);}
 		
-		static auto FromTypeCode(CodeByte cb) -> std::unique_ptr<BinONObj>;
+		static auto FromTypeCode(CodeByte cb) -> TUPBinONObj;
 		
 		BinONObj(bool hasDefVal=true) noexcept: mHasDefVal{hasDefVal} {}
 		
@@ -90,15 +90,22 @@ namespace binon {
 		
 		virtual auto typeCode() const noexcept -> CodeByte = 0;
 		
+		//	These methods are needed to support BinON objects as dictionary
+		//	keys. They are supported by all types except list and dictionary
+		//	variants.
+		virtual auto getHash() const -> std::size_t {return typeErr(), 0;}
+		virtual auto equals(const BinONObj& other) const -> bool
+			{return typeErr(), false;}
+		
 		////////////////////////////////////////////////////////////////////////
 		
 		static auto Decode(TIStream& stream, bool requireIO=true)
-			-> std::unique_ptr<BinONObj>;
+			-> TUPBinONObj;
 		
 		virtual void encode(TOStream& stream, bool requireIO=true) const;
 		virtual void encodeData(TOStream& stream, bool requireIO=true) const {}
 		virtual void decodeData(TIStream& stream, bool requireIO=true) {}
-		virtual auto makeCopy() const -> std::unique_ptr<BinONObj> = 0;
+		virtual auto makeCopy() const -> TUPBinONObj = 0;
 		virtual ~BinONObj() {}
 	
 	protected:
@@ -107,6 +114,19 @@ namespace binon {
 		void typeErr() const;
 	};
 	
+	auto operator==(const TUPBinONObj& pLHS, const TUPBinONObj& pRHS);
+	
+}
+
+namespace std {
+	template<> struct hash<binon::TUPBinONObj> {
+		auto operator () (
+			const binon::TUPBinONObj& pObj
+			) const noexcept -> std::size_t
+		{
+			return pObj->getHash();
+		}
+	};
 }
 
 #endif

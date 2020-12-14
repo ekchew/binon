@@ -29,7 +29,12 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hash() const noexcept -> std::size_t
 			{ return std::hash<TString>{}(mValue); }
-		auto makeCopy() const -> std::unique_ptr<BinONObj> override
+		auto getHash() const -> std::size_t override {return hash();}
+		auto equals(const BinONObj& other) const -> bool override {
+				return other.typeCode() == kStrObjCode &&
+					*this == static_cast<const StrObj&>(other);
+			}
+		auto makeCopy() const -> TUPBinONObj override
 			{ return std::make_unique<StrObj>(mValue); }
 	};
 
