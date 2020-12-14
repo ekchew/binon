@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <cstring>
 #include <string>
-#if __cplusplus > 201703L
+#if BINON_CPP20
 	#include <bit>
 #endif
 
@@ -54,7 +54,7 @@ namespace binon {
 	
 	//	Returns true if compile target uses a little-endian byte order or
 	//	false if it is big-endian instead.
-#if __cplusplus > 201703L
+#if BINON_CPP20
 	constexpr auto LittleEndian() noexcept -> bool {
 		return std::endian::native == std::endian::little;
 	}
@@ -85,7 +85,7 @@ namespace binon {
 	template<typename Word>
 		void WriteWord(Word word, TStreamByte* buffer) noexcept {
 			std::memcpy(buffer, &word, sizeof(Word));
-		#if __cplusplus > 201703L
+		#if BINON_CPP20
 			if constexpr(sizeof(Word) > 1 && LittleEndian())
 		#else
 			if(sizeof(Word) > 1 && LittleEndian())
@@ -96,7 +96,7 @@ namespace binon {
 		}
 	template<typename Word>
 		auto ReadWord(TStreamByte* buffer) noexcept -> Word {
-		#if __cplusplus > 201703L
+		#if BINON_CPP20
 			if constexpr(sizeof(Word) > 1 && LittleEndian())
 		#else
 			if(sizeof(Word) > 1 && LittleEndian())

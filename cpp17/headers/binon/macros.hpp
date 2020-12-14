@@ -17,8 +17,10 @@
 
 //	Macros that kick in if C++20 or later is available.
 #if __cplusplus > 201703L
+	#define BINON_CPP20 true
 	#define BINON_CPP20_CONSTEXPR constexpr
 #else
+	#define BINON_CPP20 false
 	#define BINON_CPP20_CONSTEXPR
 #endif
 

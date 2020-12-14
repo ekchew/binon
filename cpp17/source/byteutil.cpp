@@ -1,7 +1,7 @@
 #include "binon/byteutil.hpp"
 
 #include <algorithm>
-#if __cplusplus <= 201703L
+#if !BINON_CPP20
 	#include <cstring>
 #endif
 
@@ -18,7 +18,7 @@ namespace binon {
 		return AsHexC(value, capitalize).data();
 	}
 	
-#if __cplusplus <= 201703L
+#if BINON_CPP20
 	auto LittleEndian() noexcept -> bool {
 		static const bool kLittleEndian = []{
 			int i = 0xff;
