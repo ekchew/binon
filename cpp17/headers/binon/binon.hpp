@@ -11,6 +11,7 @@
 #include "floattypes.hpp"
 #include "intobj.hpp"
 #include "listobj.hpp"
+#include "macros.hpp"
 #include "nullobj.hpp"
 #include "strobj.hpp"
 
