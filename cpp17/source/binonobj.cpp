@@ -69,7 +69,7 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		auto p = FromTypeCode(CodeByte::Read(stream, false));
 		if(!p->mHasDefVal) {
-			p->decodeData(stream, false);
+			p->decodeData(stream, kSkipRequireIO);
 		}
 		return p;
 	}
@@ -79,9 +79,9 @@ namespace binon {
 		if(mHasDefVal) {
 			Subtype{cb} = 0;
 		}
-		cb.write(stream, false);
+		cb.write(stream, kSkipRequireIO);
 		if(!mHasDefVal) {
-			encodeData(stream, false);
+			encodeData(stream, kSkipRequireIO);
 		}
 	}
 	void BinONObj::typeErr() const {

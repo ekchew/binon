@@ -43,6 +43,9 @@ namespace binon {
 		TIOS* mPStream;
 		TIOS::iostate mEx0;
 	};
+	
+	//	Named constant to set second arg of RequireIO constructor false.
+	constexpr bool kSkipRequireIO = false;
 
 }
 

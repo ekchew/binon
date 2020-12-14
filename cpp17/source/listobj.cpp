@@ -24,18 +24,18 @@ namespace binon {
 	void ListObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		UInt size{mValue.size()};
-		size.encodeData(stream, false);
+		size.encodeData(stream, kSkipRequireIO);
 		for(auto&& pObj: mValue) {
-			pObj->encode(stream, false);
+			pObj->encode(stream, kSkipRequireIO);
 		}
 	}
 	void ListObj::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
 		UInt len;
-		len.decodeData(stream, false);
+		len.decodeData(stream, kSkipRequireIO);
 		mValue.resize(len);
 		for(auto&& pObj: mValue) {
-			pObj = Decode(stream, false);
+			pObj = Decode(stream, kSkipRequireIO);
 		}
 	}
 	
@@ -72,8 +72,8 @@ namespace binon {
 		};
 		RequireIO rio{stream, requireIO};
 		UInt size{mValue.mList.size()};
-		size.encodeData(stream, false);
-		mValue.mTypeCode.write(stream, false);
+		size.encodeData(stream, kSkipRequireIO);
+		mValue.mTypeCode.write(stream, kSkipRequireIO);
 		if(mValue.mTypeCode.baseType() == kBoolObjCode.baseType()) {
 			std::byte b = 0x00_byte;
 			TList::size_type i = 0;
@@ -84,33 +84,33 @@ namespace binon {
 					b |= 0x01_byte;
 				}
 				if((i & 0x7) == 0x7) {
-					WriteWord(b, stream, false);
+					WriteWord(b, stream, kSkipRequireIO);
 					b = 0x00_byte;
 				}
 			}
 			if(i & 0x7) {
 				b <<= 8 - i;
-				WriteWord(b, stream, false);
+				WriteWord(b, stream, kSkipRequireIO);
 			}
 		}
 		else {
 			for(auto& pObj: mValue.mList) {
 				checkType(pObj);
-				pObj->encodeData(stream, false);
+				pObj->encodeData(stream, kSkipRequireIO);
 			}
 		}
 	}
 	void SList::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
 		UInt len;
-		len.decodeData(stream, false);
+		len.decodeData(stream, kSkipRequireIO);
 		mValue.mList.resize(len);
-		mValue.mTypeCode = CodeByte::Read(stream, false);
+		mValue.mTypeCode = CodeByte::Read(stream, kSkipRequireIO);
 		if(mValue.mTypeCode.baseType() == kBoolObjCode.baseType()) {
 			std::byte b = 0x00_byte;
 			for(TList::size_type i = 0; i < mValue.mList.size(); ++i) {
 				if((i & 0x7) == 0) {
-					b = ReadWord<decltype(b)>(stream, false);
+					b = ReadWord<decltype(b)>(stream, kSkipRequireIO);
 				}
 				auto& pObj = mValue.mList[i];
 				pObj = std::make_unique<BoolObj>((b & 0x80_byte) != 0x00_byte);
@@ -120,7 +120,7 @@ namespace binon {
 		else {
 			for(auto& pObj: mValue.mList) {
 				pObj = FromTypeCode(mValue.mTypeCode);
-				pObj->decodeData(stream, false);
+				pObj->decodeData(stream, kSkipRequireIO);
 			}
 		}
 	}
