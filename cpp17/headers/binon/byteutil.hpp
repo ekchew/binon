@@ -83,29 +83,29 @@ namespace binon {
 	//		ReadWord() twice on the same buffer, as you will may a different
 	//		result the second time.
 	template<typename Word>
-		void WriteWord(Word word, TStreamByte* buffer) noexcept {
-			std::memcpy(buffer, &word, sizeof(Word));
-		#if BINON_CPP20
-			if constexpr(sizeof(Word) > 1 && LittleEndian())
-		#else
-			if(sizeof(Word) > 1 && LittleEndian())
-		#endif
-			{
-				std::reverse(buffer, buffer + sizeof(Word));
+		void WriteWord(Word word, std::byte* buffer) noexcept {
+			if constexpr(sizeof word == 1U) {
+				buffer[0] = reinterpret_cast<std::byte&>(word);
+			}
+			else if constexpr(sizeof word > 1U) {
+				std::memcpy(buffer, &word, sizeof(Word));
+				if BINON_CPP20_CONSTEXPR(LittleEndian()) {
+					std::reverse(buffer, buffer + sizeof(Word));
+				}
 			}
 		}
 	template<typename Word>
-		auto ReadWord(TStreamByte* buffer) noexcept -> Word {
-		#if BINON_CPP20
-			if constexpr(sizeof(Word) > 1 && LittleEndian())
-		#else
-			if(sizeof(Word) > 1 && LittleEndian())
-		#endif
-			{
-				std::reverse(buffer, buffer + sizeof(Word));
-			}
+		auto ReadWord(std::byte* buffer) noexcept -> Word {
 			Word word;
-			std::memcpy(&word, buffer, sizeof(Word));
+			if constexpr(sizeof word == 1U) {
+				word = reinterpret_cast<const Word*>(buffer)[0];
+			}
+			else if constexpr(sizeof word > 1U) {
+				if BINON_CPP20_CONSTEXPR(LittleEndian()) {
+					std::reverse(buffer, buffer + sizeof word);
+				}
+				std::memcpy(&word, buffer, sizeof word);
+			}
 			return word;
 		}
 	
@@ -116,32 +116,38 @@ namespace binon {
 	//	any sort of error code, you probably want this and it is set true by
 	//	default. But perhaps you have already set the exception bits (see the
 	//	RequireIO class in binon/ioutil.hpp), in which case you make it false.
-	//
-	//	Note that if you are reading/writing a single byte, you may want to
-	//	use the TStreamByte (a.k.a. char) type to invoke a template
-	//	specialization that is likely faster.
 	template<typename Word>
 		void WriteWord(Word word, TOStream& stream, bool requireIO=true) {
 			RequireIO rio{stream, requireIO};
-			std::array<TStreamByte, sizeof(Word)> buffer;
-			WriteWord(word, buffer.data());
-			stream.write(buffer.data(), buffer.size());
+			if constexpr(sizeof word == 1U) {
+				stream.write(reinterpret_cast<TStreamByte*>(&word), 1);
+			}
+			else if constexpr(sizeof word > 1U) {
+				std::array<std::byte, sizeof word> buffer;
+				WriteWord(word, buffer.data());
+				stream.write(
+					reinterpret_cast<TStreamByte*>(buffer.data()),
+					sizeof word
+				);
+			}
 		}
-	template<> inline
-		void WriteWord<TStreamByte>(
-			TStreamByte b, TOStream& stream, bool requireIO
-			)
-		{ stream.write(&b, 1); }
 	template<typename Word>
 		auto ReadWord(TIStream& stream, bool requireIO=true) -> Word {
+			Word word{};
 			RequireIO rio{stream, requireIO};
-			std::array<TStreamByte, sizeof(Word)> buffer;
-			stream.read(buffer.data(), buffer.size());
-			return ReadWord<Word>(buffer.data());
+			if constexpr(sizeof word == 1U) {
+				stream.read(reinterpret_cast<TStreamByte*>(&word), 1);
+			}
+			else if constexpr(sizeof word > 1U) {
+				std::array<std::byte, sizeof word> buffer;
+				stream.read(
+					reinterpret_cast<TStreamByte*>(buffer.data()),
+					sizeof word
+				);
+				word = ReadWord<Word>(buffer.data());
+			}
+			return word;
 		}
-	template<> inline
-		auto ReadWord<TStreamByte>(TIStream& stream, bool requireIO) -> TStreamByte
-		{ TStreamByte b; return stream.read(&b, 1), b; }
 }
 
 #endif

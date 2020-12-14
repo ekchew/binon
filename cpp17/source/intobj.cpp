@@ -50,33 +50,34 @@ namespace binon {
 			return v;
 		};
 		RequireIO rio{stream, requireIO};
-		auto byte0 = ReadWord<TStreamByte>(stream, false);
-		if((byte0 & 0x80) == 0x00) {
-			mValue = signExtend(byte0, 0x40);
+		auto byte0 = ReadWord<std::byte>(stream, false);
+		if((byte0 & 0x80_byte) == 0x00_byte) {
+			mValue = signExtend(ReadWord<std::int8_t>(&byte0), 0x40);
 		}
 		else {
-			std::array<TStreamByte,8> buffer;
+			std::array<std::byte,8> buffer;
+			auto bufPlus1 = reinterpret_cast<TStreamByte*>(buffer.data()) + 1;
 			buffer[0] = byte0;
-			if((byte0 & 0x40) == 0) {
-				stream.read(buffer.data() + 1, 1);
+			if((byte0 & 0x40_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 1);
 				mValue = signExtend(
 					ReadWord<std::int16_t>(buffer.data()), 0x2000
 					);
 			}
-			else if((byte0 & 0x20) == 0) {
-				stream.read(buffer.data() + 1, 3);
+			else if((byte0 & 0x20_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 3);
 				mValue = signExtend(
 					ReadWord<std::int32_t>(buffer.data()), 0x10000000
 					);
 			}
-			else if((byte0 & 0x10) == 0) {
-				stream.read(buffer.data() + 1, 7);
+			else if((byte0 & 0x10_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 7);
 				mValue = signExtend(
 					ReadWord<std::int64_t>(buffer.data()),
 					0x08000000'00000000
 					);
 			}
-			else if((byte0 & 0x01) == 0) {
+			else if((byte0 & 0x01_byte) == 0x00_byte) {
 				mValue = ReadWord<std::int64_t>(stream, false);
 			}
 			else {
@@ -117,29 +118,30 @@ namespace binon {
 	}
 	void UInt::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
-		auto byte0 = ReadWord<TStreamByte>(stream, false);
-		if((byte0 & 0x80) == 0x00) {
-			mValue = byte0;
+		auto byte0 = ReadWord<std::byte>(stream, false);
+		if((byte0 & 0x80_byte) == 0x00_byte) {
+			mValue = ReadWord<std::uint8_t>(&byte0);
 		}
 		else {
-			std::array<TStreamByte,8> buffer;
+			std::array<std::byte,8> buffer;
+			auto bufPlus1 = reinterpret_cast<TStreamByte*>(buffer.data()) + 1;
 			buffer[0] = byte0;
-			if((byte0 & 0x40) == 0) {
-				stream.read(buffer.data() + 1, 1);
+			if((byte0 & 0x40_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 1);
 				mValue = ReadWord<std::uint16_t>(buffer.data())
 					& 0x3fffu;
 			}
-			else if((byte0 & 0x20) == 0) {
-				stream.read(buffer.data() + 1, 3);
+			else if((byte0 & 0x20_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 3);
 				mValue = ReadWord<std::uint32_t>(buffer.data())
 					& 0x1fffffffu;
 			}
-			else if((byte0 & 0x10) == 0) {
-				stream.read(buffer.data() + 1, 7);
+			else if((byte0 & 0x10_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 7);
 				mValue = ReadWord<std::uint64_t>(buffer.data())
 					& 0x0fffffff'ffffffffu;
 			}
-			else if((byte0 & 0x01) == 0) {
+			else if((byte0 & 0x01_byte) == 0x00_byte) {
 				mValue = ReadWord<std::uint64_t>(stream, false);
 			}
 			else {
