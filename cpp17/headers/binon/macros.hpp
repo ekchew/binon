@@ -19,7 +19,7 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 
 //	Macros that kick in if C++20 or later is available.
 #if __cplusplus > 201703L
-	#pragma message "C++20 detected."
+	#include <version>
 	#define BINON_CPP20 true
 	#define BINON_CPP20_CONSTEXPR constexpr
 #else
@@ -28,10 +28,17 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 #endif
 
 //	Some purported C++17 compilers do not seem to support execution policies,
-//	so here we check if the <execution> header is available.
+//	so here we check if they are available. (Note that you may want to go
+//	-ltbb when you're linking your app to get any actual parallelism
+//	happening.)
 #if defined(__has_include) && __has_include(<execution>)
 	#include <execution>
-	#define BINON_PAR_UNSEQ std::execution::par_unseq,
+	#ifdef __cpp_lib_execution
+		#define BINON_PAR_UNSEQ std::execution::par_unseq,
+	#else
+		#pragma message "C++17 execution policies unavailable."
+		#define BINON_PAR_UNSEQ
+	#endif
 #else
 	#pragma message "C++17 execution policies unavailable."
 	#define BINON_PAR_UNSEQ
