@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <climits>
 #include <cstddef>
 #include <cstring>
 #include <string>
@@ -13,6 +14,7 @@
 #endif
 
 namespace binon {
+	static_assert(CHAR_BIT == 8, "binon requires 8-bit bytes");
 	
 	////////////////////////////////////////////////////////////////////////////
 	//

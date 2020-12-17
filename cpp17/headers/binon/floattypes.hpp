@@ -24,9 +24,7 @@
 //	somewhere in your own code before including this header.
 
 #include <cfloat>
-#include <climits>
 
-static_assert(CHAR_BIT == 8, "binon requires 8-bit bytes");
 static_assert(FLT_RADIX == 2, "binon expects IEEE 754 floating-point types");
 
 #ifndef BINON_FLOAT32
