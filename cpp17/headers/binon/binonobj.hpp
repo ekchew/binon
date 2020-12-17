@@ -10,6 +10,7 @@
 #include <memory>
 #include <ostream>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,7 @@ namespace binon {
 	using TBuffer = TVector<std::byte>;
 	using TUPBinONObj = std::unique_ptr<BinONObj>;
 	using TList = TVector<TUPBinONObj>;
+	using TDict = std::unordered_map<TUPBinONObj, TUPBinONObj>;
 	
 	class TypeErr: public std::logic_error {
 	public:
@@ -101,6 +103,24 @@ namespace binon {
 		
 		static auto Decode(TIStream& stream, bool requireIO=true)
 			-> TUPBinONObj;
+		
+		//	While the lower level Decode() returns a unique pointer to a
+		//	BinONObj, DecodeType() assumes you know which BinONObj subtype to
+		//	expect already and returns the IntObj or whatever it is by value.
+		//	(It will throw a TypeErr if you guess wrong.)
+		template<typename Subtype>
+			static auto DecodeType(TIStream& stream, bool requireIO=true)
+				-> Subtype
+			{
+				auto pBaseObj = Decode(stream, requireIO);
+				auto pSubobj = dynamic_cast<Subtype*>(pBaseObj.get());
+				if(!pSubobj) {
+					throw TypeErr{
+						"could not decode BinON object as requested type"
+					};
+				}
+				return std::move(*pSubobj);
+			}
 		
 		virtual void encode(TOStream& stream, bool requireIO=true) const;
 		virtual void encodeData(TOStream& stream, bool requireIO=true) const {}
