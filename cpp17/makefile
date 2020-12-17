@@ -39,7 +39,7 @@ obj:
 
 DEP0 := ${HDR}macros.hpp makefile
 DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${DEP0}
-DEP2 := ${HDR}codebyte.hpp ${DEP1}
+DEP2 := ${HDR}codebyte.hpp ${HDR}literals.hpp ${DEP1}
 DEP3 := ${HDR}binonobj.hpp ${HDR}crtp.hpp ${HDR}floattypes.hpp ${DEP2}
 DEP4 := \
 	${HDR}boolobj.hpp \

@@ -16,6 +16,12 @@
 //	double". Then you could use the compiler option:
 //
 //		-D"BINON_FLOAT64=short double"
+//
+//	Alternatively, you could
+//
+//		#define BINON_FLOAT64 short double
+//
+//	somewhere in your own code before including this header.
 
 #include <cfloat>
 #include <climits>

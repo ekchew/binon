@@ -25,15 +25,7 @@ namespace binon {
 	//	corresponding to_byte(), so binon::ToByte() fills that void.
 	template<typename I> constexpr auto ToByte(I i)
 		{ return std::byte{static_cast<unsigned char>(i)}; }
-	
-	//	std::byte's implementation does not seem to include a format for byte
-	//	literals. So with this user-defined literal, you can now write
-	//	0x42_byte instead of std::byte{0x42}.
-	inline namespace byte_literal {
-		inline constexpr auto operator ""_byte(unsigned long long i)
-			{ return ToByte(i); }
-	}
-	
+		
 	//	AsHexC() converts a std::byte into a 0-padded hexadecimal C string. The
 	//	captilize option would return "AB" instead of "ab". The C string is
 	//	returned wrapped inside a std::array rather than a std::string to

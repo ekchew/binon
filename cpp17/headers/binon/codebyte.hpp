@@ -3,6 +3,7 @@
 
 #include "byteutil.hpp"
 #include "ioutil.hpp"
+#include "literals.hpp"
 
 #include <stdexcept>
 #include <istream>
