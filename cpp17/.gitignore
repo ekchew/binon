@@ -1,2 +1,4 @@
-*.[ao]
+bin/
+lib/
+obj/
 test/
