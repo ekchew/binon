@@ -29,7 +29,7 @@ SRC_NAMES := \
 OBJS := ${addprefix obj/,${SRC_NAMES}}
 OBJS := ${addsuffix ${SFX}.o,${OBJS}}
 
-lib/libbinon${SFX}.a: lib obj ${OBJS}
+lib/libbinon${SFX}.a: lib obj ${HDR}binon.hpp ${OBJS}
 	ar -crs lib/libbinon${SFX}.a ${OBJS}
 
 lib:
@@ -50,6 +50,8 @@ DEP4 := \
 	${HDR}nullobj.hpp \
 	${HDR}strobj.hpp \
 	${DEP3}
+${HDR}binon.hpp: ${DEP4}
+	touch ${HDR}binon.hpp
 
 obj/binonobj${SFX}.o: ${SRC}binonobj.cpp ${DEP4}
 	${CXX} ${FLAGS} ${SRC}binonobj.cpp -o obj/binonobj${SFX}.o
@@ -58,7 +60,7 @@ obj/boolobj${SFX}.o: ${SRC}boolobj.cpp ${HDR}boolobj.hpp ${DEP3}
 obj/bufferobj${SFX}.o: ${SRC}bufferobj.cpp ${HDR}bufferobj.hpp \
 	${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}bufferobj.cpp -o obj/bufferobj${SFX}.o
-obj/byteutil${SFX}.o: ${SRC}byteutil.cpp ${DEP1}
+obj/byteutil${SFX}.o: ${SRC}byteutil.cpp ${HDR}literals.hpp ${DEP1}
 	${CXX} ${FLAGS} ${SRC}byteutil.cpp -o obj/byteutil${SFX}.o
 obj/codebyte${SFX}.o: ${SRC}codebyte.cpp ${DEP2}
 	${CXX} ${FLAGS} ${SRC}codebyte.cpp -o obj/codebyte${SFX}.o

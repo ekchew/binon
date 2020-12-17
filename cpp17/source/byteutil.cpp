@@ -1,4 +1,5 @@
 #include "binon/byteutil.hpp"
+#include "binon/literals.hpp"
 
 #include <algorithm>
 #if !BINON_CPP20
@@ -18,7 +19,7 @@ namespace binon {
 		return AsHexC(value, capitalize).data();
 	}
 	
-#if BINON_CPP20
+#if !BINON_CPP20
 	auto LittleEndian() noexcept -> bool {
 		static const bool kLittleEndian = []{
 			int i = 0xff;
