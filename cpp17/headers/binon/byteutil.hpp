@@ -83,7 +83,7 @@ namespace binon {
 			}
 			else if constexpr(sizeof word > 1U) {
 				std::memcpy(buffer, &word, sizeof(Word));
-				if BINON_CPP20_CONSTEXPR(LittleEndian()) {
+				if BINON_IF_CPP20(constexpr)(LittleEndian()) {
 					std::reverse(buffer, buffer + sizeof(Word));
 				}
 			}
@@ -95,7 +95,7 @@ namespace binon {
 				word = reinterpret_cast<const Word*>(buffer)[0];
 			}
 			else if constexpr(sizeof word > 1U) {
-				if BINON_CPP20_CONSTEXPR(LittleEndian()) {
+				if BINON_IF_CPP20(constexpr)(LittleEndian()) {
 					std::reverse(buffer, buffer + sizeof word);
 				}
 				std::memcpy(&word, buffer, sizeof word);

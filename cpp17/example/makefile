@@ -1,7 +1,7 @@
-CXX ?= c++
-DBG_FLAGS ?= -g
-REL_FLAGS ?= -O2
-CMN_FLAGS ?= -std=c++17
+CXX := c++ #g++-10
+DBG_FLAGS := -g
+REL_FLAGS := -O2
+CMN_FLAGS := -std=c++17
 
 BINON_DIR := ../..
 CPP17_DIR := ${BINON_DIR}/cpp17
@@ -41,6 +41,7 @@ OBJS := ${addsuffix ${SFX}.o,${OBJS}}
 OBJS := ${OBJS} ${CPP17_DIR}/lib/libbinon${SFX}.a
 bin/example${SFX}: bin obj ${OBJS}
 	${CXX} ${OBJS} ${LD_FLAGS} ${LD_TGT_FLAGS} -o bin/example${SFX}
+${CPP17_DIR}/lib/libbinon${SFX}.a:
 
 bin:
 	mkdir bin

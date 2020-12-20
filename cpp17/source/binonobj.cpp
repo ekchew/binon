@@ -88,7 +88,7 @@ namespace binon {
 		throw TypeErr("incorrect accessor called on BinONObj subtype");
 	}
 	
-	auto operator==(const TUPBinONObj& pLHS, const TUPBinONObj& pRHS) {
+	auto operator==(const TUPBinONObj& pLHS, const TUPBinONObj& pRHS) -> bool {
 		return pLHS->equals(*pRHS);
 	}
 	

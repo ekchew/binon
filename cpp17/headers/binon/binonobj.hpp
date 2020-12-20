@@ -4,6 +4,7 @@
 #include "codebyte.hpp"
 #include "crtp.hpp"
 #include "floattypes.hpp"
+#include "hashutil.hpp"
 
 #include <cstdint>
 #include <istream>
@@ -134,7 +135,7 @@ namespace binon {
 		void typeErr() const;
 	};
 	
-	auto operator==(const TUPBinONObj& pLHS, const TUPBinONObj& pRHS);
+	auto operator==(const TUPBinONObj& pLHS, const TUPBinONObj& pRHS) -> bool;
 	
 }
 

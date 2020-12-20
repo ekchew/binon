@@ -22,6 +22,7 @@ SRC_NAMES := \
 	bufferobj \
 	byteutil \
 	codebyte \
+	dictobj \
 	intobj \
 	ioutil \
 	listobj \
@@ -40,10 +41,12 @@ obj:
 DEP0 := ${HDR}macros.hpp makefile
 DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${DEP0}
 DEP2 := ${HDR}codebyte.hpp ${HDR}literals.hpp ${DEP1}
-DEP3 := ${HDR}binonobj.hpp ${HDR}crtp.hpp ${HDR}floattypes.hpp ${DEP2}
+DEP3 := ${HDR}binonobj.hpp \
+	${HDR}crtp.hpp ${HDR}floattypes.hpp ${HDR}hashutil.hpp ${DEP2}
 DEP4 := \
 	${HDR}boolobj.hpp \
 	${HDR}bufferobj.hpp \
+	${HDR}dictobj.hpp \
 	${HDR}intobj.hpp \
 	${HDR}floatobj.hpp \
 	${HDR}listobj.hpp \
@@ -64,6 +67,8 @@ obj/byteutil${SFX}.o: ${SRC}byteutil.cpp ${HDR}literals.hpp ${DEP1}
 	${CXX} ${FLAGS} ${SRC}byteutil.cpp -o obj/byteutil${SFX}.o
 obj/codebyte${SFX}.o: ${SRC}codebyte.cpp ${DEP2}
 	${CXX} ${FLAGS} ${SRC}codebyte.cpp -o obj/codebyte${SFX}.o
+obj/dictobj${SFX}.o: ${SRC}dictobj.cpp ${HDR}dictobj.hpp ${DEP3}
+	${CXX} ${FLAGS} ${SRC}dictobj.cpp -o obj/dictobj${SFX}.o
 obj/intobj${SFX}.o: ${SRC}intobj.cpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}intobj.cpp -o obj/intobj${SFX}.o
 obj/ioutil${SFX}.o: ${SRC}ioutil.cpp ${HDR}ioutil.hpp ${DEP0}

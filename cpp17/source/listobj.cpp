@@ -3,6 +3,13 @@
 #include "binon/intobj.hpp"
 
 #include <sstream>
+#if BINON_LIB_EXECUTION
+	#include <execution>
+	#define BINON_PAR_UNSEQ std::execution::par_unseq,
+#else
+	#pragma message "C++17 execution policies unavailable"
+	#define BINON_PAR_UNSEQ
+#endif
 
 namespace binon {
 
@@ -15,11 +22,7 @@ namespace binon {
 			);
 	}
 	auto ListObj::operator = (const ListObj& v) -> ListObj& {
-		std::transform(BINON_PAR_UNSEQ
-			v.mValue.begin(), v.mValue.end(), mValue.begin(),
-			[](const TValue::value_type& p) { return p->makeCopy(); }
-			);
-		return *this;
+		return *this = ListObj{v};
 	}
 	void ListObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
