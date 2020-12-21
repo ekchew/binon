@@ -25,6 +25,11 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 #ifndef BINON_THREAD_SAFE
 	#define BINON_THREAD_SAFE false
 #endif
+#if BINON_THREAD_SAFE
+	#define BINON_IF_THREAD_SAFE(code) code
+#else
+	#define BINON_IF_THREAD_SAFE(code)
+#endif
 
 //	If, for some reason, you want BinON to use a custom allocator for all
 //	it's internal memory allocations, you can set this precompiler option.

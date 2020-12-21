@@ -31,7 +31,6 @@ namespace binon {
 	
 	class BinONObj: public SharedObj<Polymorphic, BINON_THREAD_SAFE> {
 	public:
-		constexpr auto operator == (const BinONObj&) const { return true; }
 		static auto FromNullValue() -> TSPBinONObj;
 		static auto FromBoolValue(bool v) -> TSPBinONObj;
 		
@@ -40,7 +39,9 @@ namespace binon {
 		
 		static auto FromTypeCode(CodeByte cb) -> TSPBinONObj;
 		
-		////////////////////////////////////////////////////////////////////////
+		constexpr auto operator == (const BinONObj&) const { return true; }
+		
+		//----------------------------------------------------------------------
 		//
 		//	Subclass value accessors
 		//
@@ -55,7 +56,6 @@ namespace binon {
 		//				//...
 		//			}
 		//
-		////////////////////////////////////////////////////////////////////////
 		
 		virtual auto getBool() const -> bool {return typeErr(), false;}
 		virtual void setBool(bool v) { typeErr(); }
@@ -99,7 +99,7 @@ namespace binon {
 		virtual auto equals(const BinONObj& other) const -> bool
 			{return typeErr(), false;}
 		
-		////////////////////////////////////////////////////////////////////////
+		//----------------------------------------------------------------------
 		
 		static auto Decode(TIStream& stream, bool requireIO=true)
 			-> TSPBinONObj;
