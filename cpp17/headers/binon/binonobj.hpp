@@ -29,6 +29,8 @@ namespace binon {
 		using std::logic_error::logic_error;
 	};
 	
+	constexpr bool kDeepCopy = true;
+	
 	class BinONObj: public SharedObj<Polymorphic, BINON_THREAD_SAFE> {
 	public:
 		static auto FromNullValue() -> TSPBinONObj;

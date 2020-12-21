@@ -5,6 +5,8 @@
 
 namespace binon {
 
+	auto DeepCopyTList(const TList& list) -> TList;
+	
 	class ListObj:
 		public BinONObj,
 		public AccessContainer_mValue<ListObj,TList>
@@ -14,54 +16,60 @@ namespace binon {
 		
 		ListObj(const TValue& v);
 		ListObj(TValue&& v) noexcept: mValue{std::move(v)} {}
-		ListObj(const ListObj& v): ListObj{v.mValue} {}
+		ListObj(const ListObj& v);
 		ListObj(ListObj&& v) noexcept: ListObj{std::move(v.mValue)} {}
 		ListObj() noexcept = default;
 		auto operator = (const ListObj& v) -> ListObj&;
 		auto& operator = (ListObj&& v) noexcept
 			{ return mValue = std::move(v.mValue), *this; }
-		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
-		auto getList() const& -> const TValue& final {return mValue;}
-		auto getList() && -> TValue&& final {return std::move(mValue);}
-		void setList(TList v) final {std::swap(mValue, v);}
+		auto typeCode() const noexcept -> CodeByte final;
+		auto getList() const& -> const TValue& final;
+		auto getList() && -> TValue&& final;
+		void setList(TList v) final;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return MakeSharedPtr<ListObj>(mValue); }
-		auto hasDefVal() const -> bool final { return mValue.size() == 0; }
+		
+		//	encodeElems() is like encodeData() except that it does not encode
+		//	the length of the list. It jumps straight to encoding the
+		//	elements. These methods, then, are useful if you can already tell
+		//	what the length is through some other means.
+		void encodeElems(TOStream& stream, bool requireIO=true) const;
+		void decodeElems(TIStream& stream, TValue::size_type count,
+			bool requireIO=true);
+		
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+		auto hasDefVal() const -> bool final;
 	};
 	
 	struct SListValue {
+		CodeByte mElemCode = kNullObjCode;
 		TList mList;
-		CodeByte mTypeCode;
-		
-		SListValue(const SListValue& v);
-		SListValue(SListValue&& v) noexcept:
-			mList{std::move(v.mList)}, mTypeCode{v.mTypeCode} {}
-		SListValue(CodeByte elemCode=kIntObjCode) noexcept:
-			mTypeCode{elemCode} {}
-		auto operator = (const SListValue& v) -> SListValue&;
-		auto& operator = (SListValue&& v) noexcept;
 	};
 	class SList:
 		public BinONObj,
-		public AccessContainer_mValue<ListObj,SListValue>
+		public AccessContainer_mValue<SList,SListValue>
 	{
 	public:
+		static constexpr bool kSkipAssertTypes = false;
+		
 		TValue mValue;
 		
-		SList(const TValue& v): mValue{v} {}
+		SList(const TValue& v);
 		SList(TValue&& v) noexcept: mValue{std::move(v)} {}
-		SList(const SList& v): SList{v.mValue} {}
+		SList(const SList& v);
 		SList(SList&& v) noexcept: SList{std::move(v.mValue)} {}
-		SList(CodeByte elemCode=kNullObjCode) noexcept: mValue{elemCode} {}
-		auto typeCode() const noexcept -> CodeByte final {return kSListCode;}
+		SList(CodeByte elemCode) noexcept: mValue{elemCode} {}
+		SList() noexcept = default;
+		auto typeCode() const noexcept -> CodeByte final;
+		void assertElemTypes() const;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return MakeSharedPtr<SList>(mValue); }
-		auto hasDefVal() const -> bool final
-			{ return mValue.mList.size() == 0; }
+		void encodeElems(TOStream& stream,
+			bool requireIO=true, bool assertTypes=BINON_DEBUG) const;
+		void decodeElems(TIStream& stream, TList::size_type count,
+			bool requireIO=true);
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+		auto hasDefVal() const -> bool final;
 	};
 
 }

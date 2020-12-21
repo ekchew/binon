@@ -12,118 +12,191 @@
 #endif
 
 namespace binon {
-
-	ListObj::ListObj(const TValue& v): mValue(v.size()) {
+	
+	auto DeepCopyTList(const TList& list) -> TList {
+		TList copy(list.size());
 		std::transform(BINON_PAR_UNSEQ
-			v.begin(), v.end(), mValue.begin(),
-			[](const TValue::value_type& p) { return p->makeCopy(); }
+			list.begin(), list.end(), copy.begin(),
+			[](const TList::value_type& p)
+				{ return p->makeCopy(kDeepCopy); }
 			);
+		return std::move(copy);
+	}
+	
+	//---- ListObj -------------------------------------------------------------
+	
+	ListObj::ListObj(const TValue& v): mValue{v} {
+	}
+	ListObj::ListObj(const ListObj& v): mValue{v.mValue} {
 	}
 	auto ListObj::operator = (const ListObj& v) -> ListObj& {
 		return *this = ListObj{v};
 	}
+	auto ListObj::typeCode() const noexcept -> CodeByte {
+		return kListObjCode;
+	}
+	auto ListObj::getList() const& -> const TValue& {
+		return mValue;
+	}
+	auto ListObj::getList() && -> TValue&& {
+		return std::move(mValue);
+	}
+	void ListObj::setList(TList v) {
+		std::swap(mValue, v);
+	}
 	void ListObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
-		UInt size{mValue.size()};
-		size.encodeData(stream, kSkipRequireIO);
+		UInt count{mValue.size()};
+		count.encodeData(stream, kSkipRequireIO);
+		encodeElems(stream, kSkipRequireIO);
+	}
+	void ListObj::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		UInt count;
+		count.decodeData(stream, kSkipRequireIO);
+		decodeElems(stream, count, kSkipRequireIO);
+	}
+	void ListObj::encodeElems(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
 		for(auto&& pObj: mValue) {
 			pObj->encode(stream, kSkipRequireIO);
 		}
 	}
-	void ListObj::decodeData(TIStream& stream, bool requireIO) {
+	void ListObj::decodeElems(
+		TIStream& stream, TValue::size_type count, bool requireIO)
+	{
 		RequireIO rio{stream, requireIO};
-		UInt len;
-		len.decodeData(stream, kSkipRequireIO);
-		mValue.resize(len);
+		mValue.resize(count);
 		for(auto&& pObj: mValue) {
 			pObj = Decode(stream, kSkipRequireIO);
 		}
 	}
-	
-	SListValue::SListValue(const SListValue& v):
-		mList(v.mList.size()), mTypeCode{v.mTypeCode}
-	{
-		std::transform(BINON_PAR_UNSEQ
-			v.mList.begin(), v.mList.end(), mList.begin(),
-			[](const TList::value_type& p) { return p->makeCopy(); }
-			);
+	auto ListObj::makeCopy(bool deep) const -> TSPBinONObj {
+		if(deep) {
+			return MakeSharedPtr<ListObj>(DeepCopyTList(mValue));
+		}
+		return MakeSharedPtr<ListObj>(*this);
 	}
-	auto SListValue::operator = (const SListValue& v) -> SListValue& {
-		std::transform(BINON_PAR_UNSEQ
-			v.mList.begin(), v.mList.end(), mList.begin(),
-			[](const TList::value_type& p) { return p->makeCopy(); }
-			);
-		mTypeCode = v.mTypeCode;
-		return *this;
-	}
-	auto& SListValue::operator = (SListValue&& v) noexcept {
-		mList = std::move(v.mList);
-		mTypeCode = v.mTypeCode;
-		return *this;
+	auto ListObj::hasDefVal() const -> bool {
+		return mValue.size() == 0;
 	}
 	
-	void SList::encodeData(TOStream& stream, bool requireIO) const {
-		auto checkType = [this](const TList::value_type& pObj) {
-			if(pObj->typeCode() != mValue.mTypeCode) {
+	//---- SList ---------------------------------------------------------------
+	
+	SList::SList(const TValue& v): mValue{v} {
+	}
+	SList::SList(const SList& v): mValue{v.mValue} {
+	}
+	auto SList::typeCode() const noexcept -> CodeByte {
+		return kSListCode;
+	}
+	void SList::assertElemTypes() const {
+		auto n = mValue.mList.size();
+		for(decltype(n) i = 0; i < n; ++i) {
+			auto tc = mValue.mList[i]->typeCode();
+			if(tc != mValue.mElemCode) {
 				std::ostringstream oss;
-				oss << "SList expected type code " << AsHex(mValue.mTypeCode)
-					<< " but encountered " << AsHex(pObj->typeCode());
+				auto hex0 = AsHex(mValue.mElemCode);
+				auto hex1 = AsHex(tc);
+				oss	<< "SList element " << i << " type code 0x" << hex1
+					<< " does not match expected 0x" << hex0;
 				throw TypeErr{oss.str()};
 			}
-		};
+		}
+	}
+	void SList::encodeData(TOStream& stream, bool requireIO) const {
+		BINON_IF_DEBUG(assertElemTypes();)
 		RequireIO rio{stream, requireIO};
-		UInt size{mValue.mList.size()};
-		size.encodeData(stream, kSkipRequireIO);
-		mValue.mTypeCode.write(stream, kSkipRequireIO);
-		if(mValue.mTypeCode.baseType() == kBoolObjCode.baseType()) {
-			std::byte b = 0x00_byte;
-			TList::size_type i = 0;
-			for(; i < mValue.mList.size(); ++i) {
-				auto& pObj = mValue.mList[i];
-				b <<= 1;
+		UInt count{mValue.mList.size()};
+		count.encodeData(stream, kSkipRequireIO);
+		encodeElems(stream, kSkipRequireIO, kSkipAssertTypes);
+	}
+	void SList::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		UInt count;
+		count.decodeData(stream, kSkipRequireIO);
+		mValue.mList.resize(count);
+		decodeElems(stream, count, kSkipRequireIO);
+	}
+	void SList::encodeElems(
+		TOStream& stream, bool requireIO, bool assertTypes) const
+	{
+		if(assertTypes) {
+			assertElemTypes();
+		}
+		
+		//	Write element code.
+		RequireIO rio{stream, requireIO};
+		mValue.mElemCode.write(stream, kSkipRequireIO);
+		
+		//	Write data of all elements consecutively.
+		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
+			
+			//	Special case for booleans which get packed 8 to a byte.
+			std::byte byt = 0x00_byte;
+			auto n = mValue.mList.size();
+			decltype(n) i;
+			for(i = 0; i < n; ++i) {
+				auto&& pObj = mValue.mList[i];
+				byt <<= 1;
 				if(pObj->getBool()) {
-					b |= 0x01_byte;
+					byt |= 0x01_byte;
 				}
 				if((i & 0x7) == 0x7) {
-					WriteWord(b, stream, kSkipRequireIO);
-					b = 0x00_byte;
+					WriteWord(byt, stream, kSkipRequireIO);
+					byt = 0x00_byte;
 				}
 			}
 			if(i & 0x7) {
-				b <<= 8 - i;
-				WriteWord(b, stream, kSkipRequireIO);
+				byt <<= 8 - i;
+				WriteWord(byt, stream, kSkipRequireIO);
 			}
 		}
 		else {
-			for(auto& pObj: mValue.mList) {
-				checkType(pObj);
+			for(auto&& pObj: mValue.mList) {
 				pObj->encodeData(stream, kSkipRequireIO);
 			}
 		}
 	}
-	void SList::decodeData(TIStream& stream, bool requireIO) {
+	void SList::decodeElems(
+		TIStream& stream, TList::size_type count, bool requireIO)
+	{
+		//	Read element code.
 		RequireIO rio{stream, requireIO};
-		UInt len;
-		len.decodeData(stream, kSkipRequireIO);
-		mValue.mList.resize(len);
-		mValue.mTypeCode = CodeByte::Read(stream, kSkipRequireIO);
-		if(mValue.mTypeCode.baseType() == kBoolObjCode.baseType()) {
-			std::byte b = 0x00_byte;
-			for(TList::size_type i = 0; i < mValue.mList.size(); ++i) {
+		mValue.mElemCode = CodeByte::Read(stream, kSkipRequireIO);
+		auto pBaseObj = FromTypeCode(mValue.mElemCode);
+		
+		//	Read data of all elements consecutively.
+		mValue.mList.resize(count);
+		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
+			
+			//	Special case for booleans packed 8 to a byte.
+			std::byte byt = 0x00_byte;
+			for(decltype(count) i = 0; i < count; ++i) {
 				if((i & 0x7) == 0) {
-					b = ReadWord<decltype(b)>(stream, kSkipRequireIO);
+					byt = ReadWord<decltype(byt)>(stream, kSkipRequireIO);
 				}
-				auto& pObj = mValue.mList[i];
-				pObj = MakeSharedPtr<BoolObj>((b & 0x80_byte) != 0x00_byte);
-				b <<= 1;
+				mValue.mList[i] = MakeSharedPtr<BoolObj>(
+					(byt & 0x80_byte) != 0x00_byte);
+				byt <<= 1;
 			}
 		}
 		else {
-			for(auto& pObj: mValue.mList) {
-				pObj = FromTypeCode(mValue.mTypeCode);
+			for(auto&& pObj: mValue.mList) {
+				pObj = pBaseObj->makeCopy();
 				pObj->decodeData(stream, kSkipRequireIO);
 			}
 		}
+	}
+	auto SList::makeCopy(bool deep) const -> TSPBinONObj {
+		if(deep) {
+			return MakeSharedPtr<SList>(
+				TValue{mValue.mElemCode, DeepCopyTList(mValue.mList)});
+		}
+		return MakeSharedPtr<SList>(*this);
+	}
+	auto SList::hasDefVal() const -> bool {
+		return mValue.mList.size() == 0;
 	}
 
 }
