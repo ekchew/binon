@@ -26,6 +26,7 @@ SRC_NAMES := \
 	intobj \
 	ioutil \
 	listobj \
+	sharedptr \
 	strobj
 OBJS := ${addprefix obj/,${SRC_NAMES}}
 OBJS := ${addsuffix ${SFX}.o,${OBJS}}
@@ -76,5 +77,7 @@ obj/ioutil${SFX}.o: ${SRC}ioutil.cpp ${HDR}ioutil.hpp ${DEP0}
 obj/listobj${SFX}.o: ${SRC}listobj.cpp ${HDR}listobj.hpp \
 	${HDR}boolobj.hpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}listobj.cpp -o obj/listobj${SFX}.o
+obj/sharedptr${SFX}.o: ${SRC}sharedptr.cpp ${HDR}sharedptr.hpp ${DEP0}
+	${CXX} ${FLAGS} ${SRC}sharedptr.cpp -o obj/sharedptr${SFX}.o
 obj/strobj${SFX}.o: ${SRC}strobj.cpp ${HDR}strobj.hpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}strobj.cpp -o obj/strobj${SFX}.o

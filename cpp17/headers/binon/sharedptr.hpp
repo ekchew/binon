@@ -3,32 +3,133 @@
 
 //	std::shared_ptr<T> is a general purpose class template that makes few
 //	assumptions about the nature of its data type T. As such, it must carry
-//	around extra data with each pointer to manager a reference count.
-//
-//	binon::SharedPtr<T> assumes its data type T provides retain() and
-//	discard() methods to manage an internal reference count (or some other
-//	shared resource tracking system). This reduces the burden on the pointer
-//	class, which need only be a wrapper around a raw pointer to T.
-//
-//	Typically, you would inherit your custom class from binon::Shared and call
-//	its Make() class method to allocate it dynamically. This will set up your
+//	around extra data with each pointer to manage a reference count.
+
+//	binon::SharedPtr<T> assumes T provides retain() and discard() methods to
+//	manage an internal reference count (or some other shared resource tracking
+//	system). This reduces the burden on the pointer class, which need only be
+//	a wrapper around a raw pointer to T.
+
+//	Typically, you would inherit your custom class from SharedObj and call
+//	MakeSharedPtr() to allocate it dynamically. This will set up your
 //	reference counter and give your class the retain() and discard() methods
-//	it needs.
+//	SharedPtr needs.
 
 #include "macros.hpp"
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <new>
 #include <stdexcept>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #if BINON_CONCEPTS
 	#include <concepts>
 #endif
 
 namespace binon {
-
+	
+	//--------------------------------------------------------------------------
+	//
+	//	AllocatorNew() and AllocatorDelete() should be more-or-less equivalent
+	//	to the new and delete operators when used to allocate scalar objects.
+	//	They give you the option to use a custom allocator, however.
+	
+	template<typename T, typename Allocator=std::allocator<T>, typename... Args>
+		auto AllocatorNew(Args&&... args) -> T* {
+			T* p;
+			if constexpr(std::is_same_v<Allocator, std::allocator<T>>) {
+				p = new T(std::forward<Args>(args)...);
+			}
+			else {
+				p = new(Allocator{}.allocate(1))
+			    	T(std::forward<Args>(args)...);
+			}
+			return p;
+		}
+	
+	template<typename T, typename Allocator=std::allocator<T>>
+		void AllocatorDelete(T* p) {
+			if constexpr(std::is_same_v<Allocator, std::allocator<T>>) {
+				delete p;
+			}
+			else {
+				std::destroy_at(p);
+				Allocator{}.deallocate(p, 1);
+			}
+		}
+	
+	//--------------------------------------------------------------------------
+	//
+	//	RefCount is a class which manages a std::size_t reference count for
+	//	tracking a shareable resource. If you set its optional boolean
+	//	template argument to kThreadSafe (true), it will store a
+	//	std::atomic_size_t internally rather than a plain std::size_t.
+	
+	struct DiscardErr: std::out_of_range {
+		DiscardErr():
+			std::out_of_range{"discarded object with zero reference count"} {}
+	};
+	
+	namespace details { void AssertDiscardable(std::size_t refCount); }
+	
+	constexpr bool kThreadSafe = true;
+	
+	//	Single-threaded case.
+	template<bool ThreadSafe=false>
+	class RefCount {
+		mutable std::size_t mCount = 0;
+	public:
+		//	The type returned by all methods is always size_t, regardless of
+		//	what is actually stored internally.
+		using Type = std::size_t;
+		
+		static constexpr bool kThreadSafe = false;
+		
+		//	The reference count value can be read at any time without any
+		//	explicit casting or accessor methods.
+		constexpr operator Type() const noexcept { return mCount; }
+		
+		//	Note that both the retain() and discard() methods are marked
+		//	const, event though they modify the count. This is by design.
+		//	Reference counts are generally considered meta-data that can be
+		//	altered even when the object on the whole is a constant.
+		constexpr auto retain() const noexcept -> Type { return ++mCount; }
+		
+		//	In debug mode, discard() will throw a DiscardErr if the count has
+		//	already reached zero.
+	#if BINON_DEBUG
+		auto discard() const -> Type
+			{ return details::AssertDiscardable(mCount--); }
+	#else
+		constexpr auto discard() const noexcept -> Type { return --mCount; }
+	#endif
+	};
+	
+	//	Multithreaded case.
+	template<>
+	class RefCount<kThreadSafe> {
+		mutable std::atomic_size_t mCount{0};
+	public:
+		using Type = std::size_t;
+		static constexpr bool kThreadSafe = true;
+		operator Type() const noexcept;
+		auto retain() const noexcept -> Type;
+		auto discard() const BINON_IF_RELEASE(noexcept) -> Type;
+	};
+	
+	//--------------------------------------------------------------------------
+	//
+	//	SharedPtr is designed to work with any classes that implement retain()
+	//	and discard() methods. Typically, you would use it with classes that
+	//	inherit from SharedObj (see further down).
+	//
+	//	Note that SharedPtr expects the discard() method to free the object once
+	//	its last reference is eliminated. In fact, SharedPtr never even looks at
+	//	reference counts and such.
+	
 	BINON_IF_CONCEPTS(
 		template<typename T> concept Shareable = requires(T v) {
 			{ v.retain() };
@@ -40,7 +141,7 @@ namespace binon {
 		NullPtrDeref(): std::out_of_range{"null pointer dereferenced"} {}
 	};
 	
-	template<typename T> BINON_IF_CONCEPTS(requires Shareable<T>)
+	template<class T> BINON_IF_CONCEPTS(requires Shareable<T>)
 	class SharedPtr
 	{
 		T* mPRaw;
@@ -49,16 +150,18 @@ namespace binon {
 					mPRaw->retain();
 				}
 			}
-		void discard() const {
+		void discard() {
 				if(mPRaw) {
 					mPRaw->discard();
 					mPRaw = nullptr;
 				}
 			}
 	public:
+		using TRaw = T;
+		
 		SharedPtr(T* pRaw=nullptr) noexcept: mPRaw{pRaw} { retain(); }
-		SharedPtr(const SharedPtr& sp): mPRaw{p.mPRaw} { retain(); }
-		constexpr SharedPtr(SharedPtr&& sp) noexcept: mPRaw{sp.mPRaw}
+		SharedPtr(const SharedPtr& sp): mPRaw{sp.mPRaw} { retain(); }
+		SharedPtr(SharedPtr&& sp) noexcept: mPRaw{sp.mPRaw}
 			{ sp.mPRaw = nullptr; }
 		auto& operator = (const SharedPtr& sp)
 			{ return *this = SharedPtr{sp}; }
@@ -73,29 +176,26 @@ namespace binon {
 		
 		//	get() returns the raw pointer managed by SharedPtr.
 		//	Note that this may be the nullptr.	
-		constexpr auto get() const noexcept { return mPRaw; }
-		constexpr auto get() noexcept { return mPRaw; }
+		auto get() const noexcept { return mPRaw; }
+		auto get() noexcept { return mPRaw; }
 		
-		BINON_IF_RELEASE(constexpr)
-			auto& operator * () const BINON_IF_RELEASE(noexcept) {
-				BINON_IF_DEBUG(assertPtr();)
-				return *mPRaw;
-			}
-		BINON_IF_RELEASE(constexpr)
-			auto& operator * () BINON_IF_RELEASE(noexcept) {
-				BINON_IF_DEBUG(assertPtr();)
-				return *mPRaw;
-			}
-		BINON_IF_RELEASE(constexpr)
-			auto operator -> () const BINON_IF_RELEASE(noexcept) {
-				BINON_IF_DEBUG(assertPtr();)
-				return mPRaw;
-			}
-		BINON_IF_RELEASE(constexpr)
-			auto operator -> () BINON_IF_RELEASE(noexcept) {
-				BINON_IF_DEBUG(assertPtr();)
-				return mPRaw;
-			}
+		auto& operator * () const BINON_IF_RELEASE(noexcept) {
+			BINON_IF_DEBUG(assertPtr();)
+			return *mPRaw;
+		}
+		auto& operator * () BINON_IF_RELEASE(noexcept) {
+			BINON_IF_DEBUG(assertPtr();)
+			return *mPRaw;
+		}
+		auto operator -> () const BINON_IF_RELEASE(noexcept) {
+			BINON_IF_DEBUG(assertPtr();)
+			return mPRaw;
+			
+		}
+		auto operator -> () BINON_IF_RELEASE(noexcept) {
+			BINON_IF_DEBUG(assertPtr();)
+			return mPRaw;
+		}
 		
 		//	Called by operators * and -> in debug mode only.
 		void assertPtr() const {
@@ -105,110 +205,83 @@ namespace binon {
 			}
 	};
 	
-	//	These functions should be more-or-less equivalent to the new and delete
-	//	operators on scalars except they use the designated Allocator class
-	//	which could potentially be customized.
-	template<typename T, Allocator=std::allocator<T>, typename... Args>
-		auto AllocatorNew(Args&&... args) {
-			return new(Allocator{}.allocate(1))
-			    T(std::forward<Args>(args)...);
-		}
-	template<typename T, Allocator=std::allocator<T>>
-		void AllocatorDelete(T* p) {
-			std::destroy_at(p);
-			Allocator{}.deallocate(p, 1);
-		}
-	
-	
-	//	This is a convenience class template for a base class in your hierarchy
-	//	that can be made polymorphic (using a trivial virtual destructor) or
-	//	not based on a bool template argument.
-	enum: bool { kMonomorphic, kPolymorphic };
-	template<bool Morphism=kMonomorphic>
-		struct BaseClass {};
-	template<>
-		struct BaseClass<kPolymorphic>
-	{
-		virtual ~BaseClass() noexcept {}
-	};
-	
-	//	TReferenceCount gives you the suitable type for a shared object
-	//	reference count depending on whether you need thread safety.
-	//	The choice comes down to either std::atomic_size_t for multithreaded
-	//	access or simply std::size_t for single-threaded access.
-	enum: bool { kSingleThreaded, kMultithreaded };
-	template<bool ThreadSafety=kSingleThreaded>
-	struct ReferenceCount {
-		using Type = std::size_t;
-	};
-	template<>
-	struct ReferenceCount<kMultithreaded> {
-		using Type = std::atomic_size_t;
-	};
-	template<typename ThreadSafety=false>
-	using TReferenceCount = typename ReferenceCount<ThreadSafety>::Type;
-	
-	//	The Shared class template is meant to provide shareable functionality
-	//	to your own classes to make them compatible with SharedPtr.
-	//
-	//	You inherit from it using CRTP (Curiously Recurrring Template Pattern)
-	//	semantics.
-	//
-	//		class Foo: public Shared<Foo> {/*...*/};
-	//
-	//	If you have several levels of inheritance, Shared's first template
-	//	argument needs to be the final class in the inheritance chain.
-	//
-	//		template<class Child>
-	//			class Foo: public Shared<Child> {/*...*/};
-	//		class Bar: public Foo<Bar> {/*...*/};
-	//
-	//	Shared uses an internal reference count to manage ownership, and its
-	//	discard() method automatically deallocates itself which the count drops
-	//	to zero. SharedPtr calls the exposed retain() and discard() methods for
-	//	you automatically, so you should never have to do so yourself.
-	//
-	//	There are some optional boolean template arguments to consider.
-	//	ThreadSafety should be set to kMultithreaded (true) if your shared
-	//	pointers may be accessed by more than one thread. Morphism should be
-	//	set to kPolymorphic (true) if your class is polymorphic (has virtual
-	//	methods).
-	//
 	template<
-		class Child,
-		bool ThreadSafety=kSingleThreaded,
-		bool Morphism=kMonomorphic,
-		typename Allocator=std::allocator<Child>
+		class T, typename Allocator=std::allocator<T>,
+		typename... Args
 		>
-	class Shared: public BaseClass<Morphism> {
-		mutable TReferenceCount<ThreadSafety> mRefCnt = 0;
-		constexpr auto pChild() const noexcept
-			{ return const_cast<Child*>(static_cast<const Child*>(this)); }
+		auto MakeSharedPtr(Args&&... args) -> SharedPtr<T> {
+			return AllocatorNew<T,Allocator>(std::forward<Args>(args)...);
+		}
+	
+	//--------------------------------------------------------------------------
+	//
+	//	SharedObj is a base class you can inherit to make your class shareable
+	//	by SharedPtr. Essentially, it manages an internal RefCount and
+	//	implements retain() and discard() methods for SharedPtr's sake.
+	//
+	//	If your class is polymorphic (uses virtual methods), the first
+	//	template argument (Cls) should be the specially defined Polymorphic
+	//	data type (it is by default). Otherwise, Cls should be your own class
+	//	type that you allocated. For example, you could write a
+	//	non-polymorphic Foo class like so:
+	//
+	//		class Foo: public SharedObj<Foo> {/* no virtual methods */};
+	
+	using Polymorphic = int;
+	
+	//	Non-polymorphic (monomorphic?) case.
+	template<
+		typename Cls=Polymorphic, bool ThreadSafe=false,
+		typename Allocator=std::allocator<Cls>
+		>
+	class SharedObj {
+		RefCount<ThreadSafe> mRefCount;
 	public:
+		using TClsType = Cls;
+		using TAllocator = Allocator;
+		using TRefCount = typename RefCount<ThreadSafe>::Type; // size_t
+		static constexpr bool kThreadSafeRefCount = ThreadSafe;
 		
-		//	Make() is a class method that returns a dynamically allocated
-		//	instance of your class as a SharedPtr.
-		//
-		//		auto pFoo = Foo::Make(/* Foo constructor args... */);
-		//
-		//	Assuming your Foo class inherited from Shared, it should have the
-		//	Make() method.
-		//
-		template<typename... Args>
-			static auto Make(Args&&... args) {
-				auto p = AllocatorNew<Child,Allocator>(
-					std::forward<Args>(args)...);
-				return SharedPtr<Child>{p};
-			}
+		//	Techincally, SharedPtr does not need this method, but it's there
+		//	for you anyway in case you want to inspect the reference count
+		//	value for some reason?
+		auto refCount() const -> TRefCount { return mRefCount; }
 		
-		void retain() const noexcept { ++mRefCnt; }
-		void discard() const {
-				if(--mRefCnt == 0) {
-					AllocatorDelete<Child, Allocator>(pChild());
+		//	SharedPtr calls these methods. As a rule, you should not!
+		auto retain() const { return mRefCount.retain(); }
+		auto discard() const {
+				auto refCount = mRefCount.discard();
+				if(refCount == 0) {
+					auto pCls = static_cast<Cls*>(const_cast<SharedObj*>(this));
+					AllocatorDelete<Cls,Allocator>(pCls);
 				}
 			}
 	};
-
+	
+	//	Polymorphic case. (Note that the allocator is ingored in this case.)
+	template<bool ThreadSafe>
+	class SharedObj<Polymorphic, ThreadSafe, std::allocator<Polymorphic>> {
+		RefCount<ThreadSafe> mRefCount;
+	public:
+		using TClsType = Polymorphic;
+		using TRefCount = typename RefCount<ThreadSafe>::Type; // size_t
+		static constexpr bool kThreadSafeRefCount = ThreadSafe;
+		auto refCount() const -> TRefCount { return mRefCount; }
+		auto retain() const { return mRefCount.retain(); }
+		auto discard() const {
+				auto refCount = mRefCount.discard();
+				if(refCount == 0) {
+					const_cast<SharedObj*>(this)->free();
+				}
+			}
+		
+		//	If your polymorphic class uses a custom allocator, you may need to
+		//	override free() to dispose of the current instance.
+		virtual void free() { delete this; }
+		
+		virtual ~SharedObj() {}
+	};
+	
 }
 
 #endif

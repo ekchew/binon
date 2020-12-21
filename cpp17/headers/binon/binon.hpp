@@ -21,6 +21,7 @@
 #include "literals.hpp"
 #include "macros.hpp"
 #include "nullobj.hpp"
+#include "sharedptr.hpp"
 #include "strobj.hpp"
 
 #endif
