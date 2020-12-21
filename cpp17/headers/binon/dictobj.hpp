@@ -18,8 +18,8 @@ namespace binon {
 		DictObj(DictObj&& v) noexcept: DictObj{std::move(v.mValue)} {}
 		DictObj() noexcept = default;
 		auto typeCode() const noexcept -> CodeByte final {return kDictObjCode;}
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<DictObj>(mValue); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<DictObj>(mValue); }
 	};
 
 }

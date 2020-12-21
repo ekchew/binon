@@ -8,54 +8,54 @@
 
 namespace binon {
 	
-	auto BinONObj::FromNullValue() -> TUPBinONObj {
-		return std::make_unique<NullObj>();
+	auto BinONObj::FromNullValue() -> TSPBinONObj {
+		return MakeSharedPtr<NullObj>();
 	}
-	auto BinONObj::FromBoolValue(bool v) -> TUPBinONObj {
-		TUPBinONObj p;
+	auto BinONObj::FromBoolValue(bool v) -> TSPBinONObj {
+		TSPBinONObj p;
 		if(v) {
-			p = std::make_unique<TrueObj>();
+			p = MakeSharedPtr<TrueObj>();
 		}
 		else {
-			p = std::make_unique<BoolObj>(false);
+			p = MakeSharedPtr<BoolObj>(false);
 		}
 		return p;
 	}
-	auto BinONObj::FromTypeCode(CodeByte cb) -> TUPBinONObj {
-		TUPBinONObj p;
+	auto BinONObj::FromTypeCode(CodeByte cb) -> TSPBinONObj {
+		TSPBinONObj p;
 		switch(cb.typeCode().toInt<int>()) {
 		case kNullObjCode.toInt<int>():
-			p = std::make_unique<NullObj>();
+			p = MakeSharedPtr<NullObj>();
 			break;
 		case kBoolObjCode.toInt<int>():
-			p = std::make_unique<BoolObj>();
+			p = MakeSharedPtr<BoolObj>();
 			break;
 		case kTrueObjCode.toInt<int>():
-			p = std::make_unique<TrueObj>();
+			p = MakeSharedPtr<TrueObj>();
 			break;
 		case kIntObjCode.toInt<int>():
-			p = std::make_unique<IntObj>();
+			p = MakeSharedPtr<IntObj>();
 			break;
 		case kUIntCode.toInt<int>():
-			p = std::make_unique<UInt>();
+			p = MakeSharedPtr<UInt>();
 			break;
 		case kFloatObjCode.toInt<int>():
-			p = std::make_unique<FloatObj>();
+			p = MakeSharedPtr<FloatObj>();
 			break;
 		case kFloat32Code.toInt<int>():
-			p = std::make_unique<Float32>();
+			p = MakeSharedPtr<Float32>();
 			break;
 		case kBufferObjCode.toInt<int>():
-			p = std::make_unique<BufferObj>();
+			p = MakeSharedPtr<BufferObj>();
 			break;
 		case kStrObjCode.toInt<int>():
-			p = std::make_unique<StrObj>();
+			p = MakeSharedPtr<StrObj>();
 			break;
 		case kListObjCode.toInt<int>():
-			p = std::make_unique<ListObj>();
+			p = MakeSharedPtr<ListObj>();
 			break;
 		case kSListCode.toInt<int>():
-			p = std::make_unique<SList>();
+			p = MakeSharedPtr<SList>();
 			break;
 		default:
 			throw BadCodeByte{cb};
@@ -64,7 +64,7 @@ namespace binon {
 		return p;
 	}
 	auto BinONObj::Decode(TIStream& stream, bool requireIO)
-		-> TUPBinONObj
+		-> TSPBinONObj
 	{
 		RequireIO rio{stream, requireIO};
 		auto p = FromTypeCode(CodeByte::Read(stream, false));
@@ -88,7 +88,7 @@ namespace binon {
 		throw TypeErr("incorrect accessor called on BinONObj subtype");
 	}
 	
-	auto operator==(const TUPBinONObj& pLHS, const TUPBinONObj& pRHS) -> bool {
+	auto operator==(const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool {
 		return pLHS->equals(*pRHS);
 	}
 	

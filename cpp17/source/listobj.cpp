@@ -116,7 +116,7 @@ namespace binon {
 					b = ReadWord<decltype(b)>(stream, kSkipRequireIO);
 				}
 				auto& pObj = mValue.mList[i];
-				pObj = std::make_unique<BoolObj>((b & 0x80_byte) != 0x00_byte);
+				pObj = MakeSharedPtr<BoolObj>((b & 0x80_byte) != 0x00_byte);
 				b <<= 1;
 			}
 		}

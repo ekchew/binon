@@ -30,8 +30,8 @@ namespace binon {
 				return other.typeCode() == kIntObjCode &&
 					*this == static_cast<const IntObj&>(other);
 			}
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<IntObj>(mValue); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<IntObj>(mValue); }
 	};
 	
 	class UInt: public BinONObj, public Access_mValue<UInt,std::uint64_t> {
@@ -49,8 +49,8 @@ namespace binon {
 				return other.typeCode() == kUIntCode &&
 					*this == static_cast<const UInt&>(other);
 			}
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<UInt>(mValue); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<UInt>(mValue); }
 	};
 
 }

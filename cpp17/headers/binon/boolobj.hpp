@@ -20,8 +20,8 @@ namespace binon {
 				return other.typeCode() == kBoolObjCode &&
 					*this == static_cast<const BoolObj&>(other);
 			}
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<BoolObj>(mValue); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<BoolObj>(mValue); }
 	};
 	
 	class TrueObj: public BinONObj, public Access_mValue<TrueObj,bool> {
@@ -38,8 +38,8 @@ namespace binon {
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override
 			{ return other.typeCode() == kTrueObjCode; }
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<TrueObj>(); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<TrueObj>(); }
 	};
 
 }

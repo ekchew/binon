@@ -5,6 +5,7 @@
 #include "crtp.hpp"
 #include "floattypes.hpp"
 #include "hashutil.hpp"
+#include "sharedptr.hpp"
 
 #include <cstdint>
 #include <istream>
@@ -19,25 +20,25 @@ namespace binon {
 	class BinONObj;
 	template<typename T> using TVector = std::vector<T, BINON_ALLOCATOR<T>>;
 	using TBuffer = TVector<std::byte>;
-	using TUPBinONObj = std::unique_ptr<BinONObj>;
-	using TList = TVector<TUPBinONObj>;
-	using TDict = std::unordered_map<TUPBinONObj, TUPBinONObj>;
+	using TSPBinONObj = SharedPtr<BinONObj>;
+	using TList = TVector<TSPBinONObj>;
+	using TDict = std::unordered_map<TSPBinONObj, TSPBinONObj>;
 	
 	class TypeErr: public std::logic_error {
 	public:
 		using std::logic_error::logic_error;
 	};
 	
-	class BinONObj {
+	class BinONObj: public SharedObj<Polymorphic, BINON_THREAD_SAFE> {
 	public:
 		constexpr auto operator == (const BinONObj&) const { return true; }
-		static auto FromNullValue() -> TUPBinONObj;
-		static auto FromBoolValue(bool v) -> TUPBinONObj;
+		static auto FromNullValue() -> TSPBinONObj;
+		static auto FromBoolValue(bool v) -> TSPBinONObj;
 		
 		static auto FromValue() {return FromNullValue();}
 		static auto FromValue(bool v) {return FromBoolValue(v);}
 		
-		static auto FromTypeCode(CodeByte cb) -> TUPBinONObj;
+		static auto FromTypeCode(CodeByte cb) -> TSPBinONObj;
 		
 		BinONObj(bool hasDefVal=true) noexcept: mHasDefVal{hasDefVal} {}
 		
@@ -103,7 +104,7 @@ namespace binon {
 		////////////////////////////////////////////////////////////////////////
 		
 		static auto Decode(TIStream& stream, bool requireIO=true)
-			-> TUPBinONObj;
+			-> TSPBinONObj;
 		
 		//	While the lower level Decode() returns a unique pointer to a
 		//	BinONObj, DecodeType() assumes you know which BinONObj subtype to
@@ -126,7 +127,7 @@ namespace binon {
 		virtual void encode(TOStream& stream, bool requireIO=true) const;
 		virtual void encodeData(TOStream& stream, bool requireIO=true) const {}
 		virtual void decodeData(TIStream& stream, bool requireIO=true) {}
-		virtual auto makeCopy() const -> TUPBinONObj = 0;
+		virtual auto makeCopy(bool deep=false) const -> TSPBinONObj = 0;
 		virtual ~BinONObj() {}
 	
 	protected:
@@ -135,14 +136,14 @@ namespace binon {
 		void typeErr() const;
 	};
 	
-	auto operator==(const TUPBinONObj& pLHS, const TUPBinONObj& pRHS) -> bool;
+	auto operator==(const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool;
 	
 }
 
 namespace std {
-	template<> struct hash<binon::TUPBinONObj> {
+	template<> struct hash<binon::TSPBinONObj> {
 		auto operator () (
-			const binon::TUPBinONObj& pObj
+			const binon::TSPBinONObj& pObj
 			) const noexcept -> std::size_t
 		{
 			return pObj->getHash();

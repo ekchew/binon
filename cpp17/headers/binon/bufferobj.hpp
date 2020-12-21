@@ -33,8 +33,8 @@ namespace binon {
 				return other.typeCode() == kBufferObjCode &&
 					*this == static_cast<const BufferObj&>(other);
 			}
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<BufferObj>(mValue); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<BufferObj>(mValue); }
 	};
 
 }

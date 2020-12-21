@@ -26,8 +26,8 @@ namespace binon {
 				return other.typeCode() == kFloatObjCode &&
 					*this == static_cast<const FloatObj&>(other);
 			}
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<FloatObj>(mValue); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<FloatObj>(mValue); }
 	};
 	
 	class Float32: public BinONObj, public Access_mValue<Float32,TFloat32> {
@@ -47,8 +47,8 @@ namespace binon {
 				return other.typeCode() == kFloat32Code &&
 					*this == static_cast<const Float32&>(other);
 			}
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<Float32>(mValue); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<Float32>(mValue); }
 	};
 
 }

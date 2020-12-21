@@ -142,8 +142,8 @@ namespace binon {
 	};
 	
 	template<class T> BINON_IF_CONCEPTS(requires Shareable<T>)
-	class SharedPtr
-	{
+	class SharedPtr {
+		template<class U> friend class SharedPtr;
 		T* mPRaw;
 		void retain() noexcept {
 				if(mPRaw) {
@@ -160,8 +160,15 @@ namespace binon {
 		using TRaw = T;
 		
 		SharedPtr(T* pRaw=nullptr) noexcept: mPRaw{pRaw} { retain(); }
+		template<typename U>
+			SharedPtr(U* pRaw) noexcept: mPRaw{pRaw} { retain(); }
 		SharedPtr(const SharedPtr& sp): mPRaw{sp.mPRaw} { retain(); }
+		template<typename U>
+			SharedPtr(const SharedPtr<U>& sp): mPRaw{sp.mPRaw} { retain(); }
 		SharedPtr(SharedPtr&& sp) noexcept: mPRaw{sp.mPRaw}
+			{ sp.mPRaw = nullptr; }
+		template<typename U>
+			SharedPtr(SharedPtr<U>&& sp): mPRaw{sp.mPRaw}
 			{ sp.mPRaw = nullptr; }
 		auto& operator = (const SharedPtr& sp)
 			{ return *this = SharedPtr{sp}; }

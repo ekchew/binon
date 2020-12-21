@@ -11,8 +11,8 @@ namespace binon {
 		auto getHash() const -> std::size_t override {return 0;}
 		auto equals(const BinONObj& other) const -> bool override
 			{ return other.typeCode() == kNullObjCode; }
-		auto makeCopy() const -> TUPBinONObj override
-			{ return std::make_unique<NullObj>(); }
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override
+			{ return MakeSharedPtr<NullObj>(); }
 	};
 
 }
