@@ -13,9 +13,7 @@
 
 namespace binon {
 
-	ListObj::ListObj(const TValue& v):
-		BinONObj{v.size() == 0}, mValue(v.size())
-	{
+	ListObj::ListObj(const TValue& v): mValue(v.size()) {
 		std::transform(BINON_PAR_UNSEQ
 			v.begin(), v.end(), mValue.begin(),
 			[](const TValue::value_type& p) { return p->makeCopy(); }

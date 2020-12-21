@@ -15,7 +15,7 @@ namespace binon {
 	public:
 		TValue mValue;
 		
-		IntObj(TValue v=0) noexcept: BinONObj{v == 0}, mValue{v} {}
+		IntObj(TValue v=0) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kIntObjCode;}
 		auto getInt64() const -> TValue final {return mValue;}
 		void setInt64(TValue v) final {mValue = v;}
@@ -32,13 +32,14 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<IntObj>(mValue); }
+		auto hasDefVal() const -> bool final { return mValue == 0; }
 	};
 	
 	class UInt: public BinONObj, public Access_mValue<UInt,std::uint64_t> {
 	public:
 		TValue mValue;
 		
-		UInt(TValue v=0) noexcept: BinONObj{v == 0}, mValue{v} {}
+		UInt(TValue v=0) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
 		auto getUInt64() const -> TValue final {return mValue;}
 		void setUInt64(TValue v) final {mValue = v;}
@@ -51,6 +52,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<UInt>(mValue); }
+		auto hasDefVal() const -> bool final { return mValue == 0; }
 	};
 
 }

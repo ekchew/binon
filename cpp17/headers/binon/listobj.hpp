@@ -13,8 +13,7 @@ namespace binon {
 		TValue mValue;
 		
 		ListObj(const TValue& v);
-		ListObj(TValue&& v) noexcept:
-			BinONObj{v.size() == 0}, mValue{std::move(v)} {}
+		ListObj(TValue&& v) noexcept: mValue{std::move(v)} {}
 		ListObj(const ListObj& v): ListObj{v.mValue} {}
 		ListObj(ListObj&& v) noexcept: ListObj{std::move(v.mValue)} {}
 		ListObj() noexcept = default;
@@ -29,6 +28,7 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<ListObj>(mValue); }
+		auto hasDefVal() const -> bool final { return mValue.size() == 0; }
 	};
 	
 	struct SListValue {
@@ -50,10 +50,8 @@ namespace binon {
 	public:
 		TValue mValue;
 		
-		SList(const TValue& v):
-			BinONObj{v.mList.size() == 0}, mValue{v} {}
-		SList(TValue&& v) noexcept:
-			BinONObj{v.mList.size() == 0}, mValue{std::move(v)} {}
+		SList(const TValue& v): mValue{v} {}
+		SList(TValue&& v) noexcept: mValue{std::move(v)} {}
 		SList(const SList& v): SList{v.mValue} {}
 		SList(SList&& v) noexcept: SList{std::move(v.mValue)} {}
 		SList(CodeByte elemCode=kNullObjCode) noexcept: mValue{elemCode} {}
@@ -62,6 +60,8 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<SList>(mValue); }
+		auto hasDefVal() const -> bool final
+			{ return mValue.mList.size() == 0; }
 	};
 
 }

@@ -12,14 +12,14 @@ namespace binon {
 	public:
 		TValue mValue;
 		DictObj(const TValue& v);
-		DictObj(TValue&& v) noexcept:
-			BinONObj{v.size() == 0}, mValue{std::move(v)} {}
+		DictObj(TValue&& v) noexcept: mValue{std::move(v)} {}
 		DictObj(const DictObj& v): DictObj{v.mValue} {}
 		DictObj(DictObj&& v) noexcept: DictObj{std::move(v.mValue)} {}
 		DictObj() noexcept = default;
 		auto typeCode() const noexcept -> CodeByte final {return kDictObjCode;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<DictObj>(mValue); }
+		auto hasDefVal() const -> bool final { return mValue.size() == 0; }
 	};
 
 }

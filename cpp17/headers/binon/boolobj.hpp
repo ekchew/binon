@@ -9,7 +9,7 @@ namespace binon {
 	public:
 		TValue mValue;
 		
-		BoolObj(TValue v=false) noexcept: BinONObj{!v}, mValue{v} {}
+		BoolObj(TValue v=false) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kBoolObjCode;}
 		auto getBool() const -> TValue final {return mValue;}
 		void setBool(TValue v) final {mValue = v;}
@@ -22,6 +22,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<BoolObj>(mValue); }
+		auto hasDefVal() const -> bool final { return !mValue; }
 	};
 	
 	class TrueObj: public BinONObj, public Access_mValue<TrueObj,bool> {
@@ -40,6 +41,7 @@ namespace binon {
 			{ return other.typeCode() == kTrueObjCode; }
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<TrueObj>(); }
+		auto hasDefVal() const -> bool final { return false; }
 	};
 
 }

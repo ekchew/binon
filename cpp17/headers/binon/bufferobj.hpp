@@ -12,10 +12,8 @@ namespace binon {
 	public:
 		TValue mValue;
 		
-		BufferObj(const TValue& v):
-			BinONObj{v.size() == 0}, mValue{v} {}
-		BufferObj(TValue&& v) noexcept:
-			BinONObj{v.size() == 0}, mValue{std::move(v)} {}
+		BufferObj(const TValue& v): mValue{v} {}
+		BufferObj(TValue&& v) noexcept: mValue{std::move(v)} {}
 		BufferObj(const BufferObj& v): BufferObj{v.mValue} {}
 		BufferObj(BufferObj&& v) noexcept: BufferObj{std::move(v.mValue)} {}
 		BufferObj() noexcept = default;
@@ -35,6 +33,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<BufferObj>(mValue); }
+		auto hasDefVal() const -> bool final { return mValue.size() == 0; }
 	};
 
 }

@@ -60,7 +60,6 @@ namespace binon {
 		default:
 			throw BadCodeByte{cb};
 		}
-		p->mHasDefVal = Subtype{cb} == Subtype::kDefault;
 		return p;
 	}
 	auto BinONObj::Decode(TIStream& stream, bool requireIO)
@@ -68,7 +67,7 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto p = FromTypeCode(CodeByte::Read(stream, false));
-		if(!p->mHasDefVal) {
+		if(!p->hasDefVal()) {
 			p->decodeData(stream, kSkipRequireIO);
 		}
 		return p;
@@ -76,11 +75,12 @@ namespace binon {
 	void BinONObj::encode(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto cb = typeCode();
-		if(mHasDefVal) {
+		bool hasDefV = hasDefVal();
+		if(hasDefV) {
 			Subtype{cb} = 0;
 		}
 		cb.write(stream, kSkipRequireIO);
-		if(!mHasDefVal) {
+		if(!hasDefV) {
 			encodeData(stream, kSkipRequireIO);
 		}
 	}

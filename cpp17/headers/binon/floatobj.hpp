@@ -10,7 +10,7 @@ namespace binon {
 	public:
 		TValue mValue;
 		
-		FloatObj(TValue v=0.0) noexcept: BinONObj{v == 0.0}, mValue{v} {}
+		FloatObj(TValue v=0.0) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kFloatObjCode;}
 		auto getFloat64() const -> TValue final {return mValue;}
 		void setFloat64(TValue v) final {mValue = v;}
@@ -28,13 +28,14 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<FloatObj>(mValue); }
+		auto hasDefVal() const -> bool final { return mValue == 0; }
 	};
 	
 	class Float32: public BinONObj, public Access_mValue<Float32,TFloat32> {
 	public:
 		TValue mValue;
 		
-		Float32(TValue v=0.0f) noexcept: BinONObj{v == 0.0f}, mValue{v} {}
+		Float32(TValue v=0.0f) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kFloat32Code;}
 		auto getFloat32() const -> TValue final {return mValue;}
 		void setFloat32(TValue v) final {mValue = v;}
@@ -49,6 +50,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return MakeSharedPtr<Float32>(mValue); }
+		auto hasDefVal() const -> bool final { return mValue == 0; }
 	};
 
 }

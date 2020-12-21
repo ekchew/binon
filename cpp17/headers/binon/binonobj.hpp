@@ -40,8 +40,6 @@ namespace binon {
 		
 		static auto FromTypeCode(CodeByte cb) -> TSPBinONObj;
 		
-		BinONObj(bool hasDefVal=true) noexcept: mHasDefVal{hasDefVal} {}
-		
 		////////////////////////////////////////////////////////////////////////
 		//
 		//	Subclass value accessors
@@ -128,10 +126,10 @@ namespace binon {
 		virtual void encodeData(TOStream& stream, bool requireIO=true) const {}
 		virtual void decodeData(TIStream& stream, bool requireIO=true) {}
 		virtual auto makeCopy(bool deep=false) const -> TSPBinONObj = 0;
+		virtual auto hasDefVal() const -> bool = 0;
 		virtual ~BinONObj() {}
 	
 	protected:
-		bool mHasDefVal;
 		
 		void typeErr() const;
 	};
