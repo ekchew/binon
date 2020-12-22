@@ -26,12 +26,11 @@ clean:
 	rm -fv bin/*
 	rm -fv obj/*
 
-#	Check if binon needs to be rebuilt before building the current project.
-target: makeBinON bin/example${SFX}
-makeBinON: ${CPP17_DIR}/makefile
+target: ${CPP17_DIR}/makefile
 	${MAKE} -C ${CPP17_DIR} ${TARGET} \
 		CXX="${CXX}" DBG_FLAGS=${DBG_FLAGS} REL_FLAGS=${REL_FLAGS} \
 		CMN_FLAGS=${CMN_FLAGS}
+	${MAKE} bin/example${SFX}
 
 #	This should force binon to rebuild after the current makefile is modified.
 #	This is in case you say modified some compiler flags and want those to be
