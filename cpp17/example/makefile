@@ -1,9 +1,9 @@
-#CXX := c++
-CXX := xcrun g++-10
+CXX := c++
+#CXX := xcrun g++-10
 DBG_FLAGS := -g
 REL_FLAGS := -O2
-#CMN_FLAGS := -std=c++17
-CMN_FLAGS := -std=c++20
+CMN_FLAGS := -std=c++17
+#CMN_FLAGS := -std=c++20
 
 BINON_DIR := ../..
 CPP17_DIR := ${BINON_DIR}/cpp17
@@ -11,8 +11,6 @@ HEADERS_DIR := ${CPP17_DIR}/headers
 
 BASE_FLAGS := -c -I${HEADERS_DIR} ${CMN_FLAGS}
 LD_FLAGS := -L/usr/local/lib -ltbb
-
-#export SDKROOT=`xcrun --show-sdk-path`
 
 all: mk_dirs
 	${MAKE} all_target
