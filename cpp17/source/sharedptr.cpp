@@ -17,11 +17,11 @@ namespace binon {
 		return ++mCount;
 	}
 #if BINON_DEBUG
-	auto RefCount<kThreadSafe>::discard() const -> Type {
+	auto RefCount<kThreadSafe>::release() const -> Type {
 		return details::AssertDiscardable(mCount--);
 	}
 #else
-	auto RefCount<kThreadSafe>::discard() const noexcept -> Type {
+	auto RefCount<kThreadSafe>::release() const noexcept -> Type {
 		return --mCount;
 	}
 #endif

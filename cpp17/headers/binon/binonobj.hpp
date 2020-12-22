@@ -31,7 +31,7 @@ namespace binon {
 	
 	constexpr bool kDeepCopy = true;
 	
-	class BinONObj: public SharedObj<Polymorphic, BINON_THREAD_SAFE> {
+	class BinONObj: public SharedObj<TPolymorphic, BINON_THREAD_SAFE> {
 	public:
 		static auto FromNullValue() -> TSPBinONObj;
 		static auto FromBoolValue(bool v) -> TSPBinONObj;

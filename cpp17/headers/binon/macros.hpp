@@ -104,4 +104,7 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 	#define BINON_IF_CONCEPTS(code)
 #endif
 
+//	Comma escape for macros that take arguments.
+#define BINON_COMMA ,
+
 #endif

@@ -41,13 +41,13 @@ namespace binon {
 		auto hasDefVal() const -> bool final;
 	};
 	
-	struct SListValue {
+	struct SListVal {
 		CodeByte mElemCode = kNullObjCode;
 		TList mList;
 	};
 	class SList:
 		public BinONObj,
-		public AccessContainer_mValue<SList,SListValue>
+		public AccessContainer_mValue<SList,SListVal>
 	{
 	public:
 		static constexpr bool kSkipAssertTypes = false;
