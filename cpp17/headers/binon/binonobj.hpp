@@ -5,7 +5,6 @@
 #include "crtp.hpp"
 #include "floattypes.hpp"
 #include "hashutil.hpp"
-#include "sharedptr.hpp"
 
 #include <cstdint>
 #include <istream>
@@ -20,7 +19,7 @@ namespace binon {
 	class BinONObj;
 	template<typename T> using TVector = std::vector<T, BINON_ALLOCATOR<T>>;
 	using TBuffer = TVector<std::byte>;
-	using TSPBinONObj = SharedPtr<BinONObj>;
+	using TSPBinONObj = std::shared_ptr<BinONObj>;
 	using TList = TVector<TSPBinONObj>;
 	using TDict = std::unordered_map<TSPBinONObj, TSPBinONObj>;
 	
@@ -31,7 +30,7 @@ namespace binon {
 	
 	constexpr bool kDeepCopy = true;
 	
-	class BinONObj: public SharedObj<TPolymorphic, BINON_THREAD_SAFE> {
+	class BinONObj {
 	public:
 		static auto FromNullValue() -> TSPBinONObj;
 		static auto FromBoolValue(bool v) -> TSPBinONObj;

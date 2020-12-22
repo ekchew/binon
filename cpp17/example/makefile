@@ -1,9 +1,9 @@
-CXX := c++
-#CXX := "xcrun g++-10"
+#CXX := c++
+CXX := xcrun g++-10
 DBG_FLAGS := -g
 REL_FLAGS := -O2
-CMN_FLAGS := -std=c++17
-#CMN_FLAGS := -std=c++20
+#CMN_FLAGS := -std=c++17
+CMN_FLAGS := -std=c++20
 
 BINON_DIR := ../..
 CPP17_DIR := ${BINON_DIR}/cpp17
@@ -30,7 +30,7 @@ clean:
 target: makeBinON bin/example${SFX}
 makeBinON: ${CPP17_DIR}/makefile
 	${MAKE} -C ${CPP17_DIR} ${TARGET} \
-		CXX=${CXX} DBG_FLAGS=${DBG_FLAGS} REL_FLAGS=${REL_FLAGS} \
+		CXX="${CXX}" DBG_FLAGS=${DBG_FLAGS} REL_FLAGS=${REL_FLAGS} \
 		CMN_FLAGS=${CMN_FLAGS}
 
 #	This should force binon to rebuild after the current makefile is modified.

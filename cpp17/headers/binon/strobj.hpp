@@ -33,7 +33,7 @@ namespace binon {
 					*this == static_cast<const StrObj&>(other);
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return MakeSharedPtr<StrObj>(mValue); }
+			{ return std::make_shared<StrObj>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue.size() == 0; }
 	};
 

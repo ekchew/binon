@@ -2,6 +2,7 @@
 
 namespace binon {
 
+	/*
 	//---- DictObjVal ----------------------------------------------------------
 	
 	DictObjVal::DictObjVal(const TDict& dict, bool useMutex):
@@ -62,8 +63,9 @@ namespace binon {
 	}
 	auto DictObj::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {
-			return MakeSharedPtr<DictObj>(std::move(mValue.deepCopy()));
+			return std::make_shared<DictObj>(std::move(mValue.deepCopy()));
 		}
-		return MakeSharedPtr<DictObj>(*this);
+		return std::make_shared<DictObj>(*this);
 	}
+	*/
 }

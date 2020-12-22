@@ -9,15 +9,15 @@
 namespace binon {
 	
 	auto BinONObj::FromNullValue() -> TSPBinONObj {
-		return MakeSharedPtr<NullObj>();
+		return std::make_shared<NullObj>();
 	}
 	auto BinONObj::FromBoolValue(bool v) -> TSPBinONObj {
 		TSPBinONObj p;
 		if(v) {
-			p = MakeSharedPtr<TrueObj>();
+			p = std::make_shared<TrueObj>();
 		}
 		else {
-			p = MakeSharedPtr<BoolObj>(false);
+			p = std::make_shared<BoolObj>(false);
 		}
 		return p;
 	}
@@ -25,37 +25,37 @@ namespace binon {
 		TSPBinONObj p;
 		switch(cb.typeCode().toInt<int>()) {
 		case kNullObjCode.toInt<int>():
-			p = MakeSharedPtr<NullObj>();
+			p = std::make_shared<NullObj>();
 			break;
 		case kBoolObjCode.toInt<int>():
-			p = MakeSharedPtr<BoolObj>();
+			p = std::make_shared<BoolObj>();
 			break;
 		case kTrueObjCode.toInt<int>():
-			p = MakeSharedPtr<TrueObj>();
+			p = std::make_shared<TrueObj>();
 			break;
 		case kIntObjCode.toInt<int>():
-			p = MakeSharedPtr<IntObj>();
+			p = std::make_shared<IntObj>();
 			break;
 		case kUIntCode.toInt<int>():
-			p = MakeSharedPtr<UInt>();
+			p = std::make_shared<UInt>();
 			break;
 		case kFloatObjCode.toInt<int>():
-			p = MakeSharedPtr<FloatObj>();
+			p = std::make_shared<FloatObj>();
 			break;
 		case kFloat32Code.toInt<int>():
-			p = MakeSharedPtr<Float32>();
+			p = std::make_shared<Float32>();
 			break;
 		case kBufferObjCode.toInt<int>():
-			p = MakeSharedPtr<BufferObj>();
+			p = std::make_shared<BufferObj>();
 			break;
 		case kStrObjCode.toInt<int>():
-			p = MakeSharedPtr<StrObj>();
+			p = std::make_shared<StrObj>();
 			break;
 		case kListObjCode.toInt<int>():
-			p = MakeSharedPtr<ListObj>();
+			p = std::make_shared<ListObj>();
 			break;
 		case kSListCode.toInt<int>():
-			p = MakeSharedPtr<SList>();
+			p = std::make_shared<SList>();
 			break;
 		default:
 			throw BadCodeByte{cb};

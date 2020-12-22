@@ -12,7 +12,7 @@ namespace binon {
 		auto equals(const BinONObj& other) const -> bool override
 			{ return other.typeCode() == kNullObjCode; }
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return MakeSharedPtr<NullObj>(); }
+			{ return std::make_shared<NullObj>(); }
 		auto hasDefVal() const -> bool final { return true; }
 	};
 

@@ -73,9 +73,9 @@ namespace binon {
 	}
 	auto ListObj::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {
-			return MakeSharedPtr<ListObj>(DeepCopyTList(mValue));
+			return std::make_shared<ListObj>(DeepCopyTList(mValue));
 		}
-		return MakeSharedPtr<ListObj>(*this);
+		return std::make_shared<ListObj>(*this);
 	}
 	auto ListObj::hasDefVal() const -> bool {
 		return mValue.size() == 0;
@@ -176,7 +176,7 @@ namespace binon {
 				if((i & 0x7) == 0) {
 					byt = ReadWord<decltype(byt)>(stream, kSkipRequireIO);
 				}
-				mValue.mList[i] = MakeSharedPtr<BoolObj>(
+				mValue.mList[i] = std::make_shared<BoolObj>(
 					(byt & 0x80_byte) != 0x00_byte);
 				byt <<= 1;
 			}
@@ -190,10 +190,10 @@ namespace binon {
 	}
 	auto SList::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {
-			return MakeSharedPtr<SList>(
+			return std::make_shared<SList>(
 				TValue{mValue.mElemCode, DeepCopyTList(mValue.mList)});
 		}
-		return MakeSharedPtr<SList>(*this);
+		return std::make_shared<SList>(*this);
 	}
 	auto SList::hasDefVal() const -> bool {
 		return mValue.mList.size() == 0;

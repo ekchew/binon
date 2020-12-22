@@ -27,7 +27,7 @@ namespace binon {
 					*this == static_cast<const FloatObj&>(other);
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return MakeSharedPtr<FloatObj>(mValue); }
+			{ return std::make_shared<FloatObj>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue == 0; }
 	};
 	
@@ -49,7 +49,7 @@ namespace binon {
 					*this == static_cast<const Float32&>(other);
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return MakeSharedPtr<Float32>(mValue); }
+			{ return std::make_shared<Float32>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue == 0; }
 	};
 

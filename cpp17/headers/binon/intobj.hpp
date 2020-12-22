@@ -31,7 +31,7 @@ namespace binon {
 					*this == static_cast<const IntObj&>(other);
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return MakeSharedPtr<IntObj>(mValue); }
+			{ return std::make_shared<IntObj>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue == 0; }
 	};
 	
@@ -51,7 +51,7 @@ namespace binon {
 					*this == static_cast<const UInt&>(other);
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return MakeSharedPtr<UInt>(mValue); }
+			{ return std::make_shared<UInt>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue == 0; }
 	};
 

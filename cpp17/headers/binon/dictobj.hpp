@@ -7,7 +7,7 @@
 
 namespace binon {
 	
-	enum: bool { kSkipMutex, kUseMutex };
+	/*enum: bool { kSkipMutex, kUseMutex };
 	
 	struct DictObjVal {
 		TDict mDict;
@@ -45,6 +45,7 @@ namespace binon {
 			}
 			return fn(val, std::forward<Args>(args)...);
 		}
+	*/
 		
 }
 
