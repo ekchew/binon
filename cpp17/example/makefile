@@ -14,23 +14,35 @@ LD_FLAGS := -L/usr/local/lib -ltbb
 
 #export SDKROOT=`xcrun --show-sdk-path`
 
-all: debug release
-debug:
-	${MAKE} target FLAGS="${BASE_FLAGS} ${DBG_FLAGS}" \
-		TARGET="debug" SFX="_dbg" LD_TGT_FLAGS="-g"
-release:
-	${MAKE} target FLAGS="${BASE_FLAGS} ${REL_FLAGS}" \
-		TARGET="release" SFX="" LD_TGT_FLAGS=""
+all: mk_dirs
+	${MAKE} all_target
+all_target: debug_target release_target
+
+debug: mk_dirs
+	${MAKE} debug_target
+debug_target:
+	${MAKE} final_target FLAGS="${BASE_FLAGS} ${DBG_FLAGS}" \
+		TARGET="debug_target" SFX="_dbg" LD_TGT_FLAGS="-g"
+
+release: mk_dirs
+	${MAKE} release_target
+release_target:
+	${MAKE} final_target FLAGS="${BASE_FLAGS} ${REL_FLAGS}" \
+		TARGET="release_target" SFX="" LD_TGT_FLAGS=""
+
+mk_dirs: bin obj
+	${MAKE} -C "${CPP17_DIR}" mk_dirs
+
 clean:
 	${MAKE} -C ${CPP17_DIR} clean
-	rm -fv bin/*
-	rm -fv obj/*
+	rm -frv bin
+	rm -frv obj
 
-target: ${CPP17_DIR}/makefile
-	${MAKE} -C ${CPP17_DIR} ${TARGET} \
-		CXX="${CXX}" DBG_FLAGS=${DBG_FLAGS} REL_FLAGS=${REL_FLAGS} \
-		CMN_FLAGS=${CMN_FLAGS}
-	${MAKE} bin/example${SFX}
+final_target: ${CPP17_DIR}/makefile
+	${MAKE} -C "${CPP17_DIR}" "${TARGET}" \
+		CXX="${CXX}" DBG_FLAGS="${DBG_FLAGS}" REL_FLAGS="${REL_FLAGS}" \
+		CMN_FLAGS="${CMN_FLAGS}"
+	${MAKE} "bin/example${SFX}"
 
 #	This should force binon to rebuild after the current makefile is modified.
 #	This is in case you say modified some compiler flags and want those to be
@@ -41,10 +53,9 @@ ${CPP17_DIR}/makefile: makefile
 SRC_NAMES := example
 OBJS := ${addprefix obj/,${SRC_NAMES}}
 OBJS := ${addsuffix ${SFX}.o,${OBJS}}
-OBJS := ${OBJS} ${CPP17_DIR}/lib/libbinon${SFX}.a
-bin/example${SFX}: bin obj ${OBJS}
-	${CXX} ${OBJS} ${LD_FLAGS} ${LD_TGT_FLAGS} -o bin/example${SFX}
-${CPP17_DIR}/lib/libbinon${SFX}.a:
+bin/example${SFX}: ${OBJS}
+	${CXX} ${OBJS} ${CPP17_DIR}/lib/libbinon${SFX}.a \
+	${LD_FLAGS} ${LD_TGT_FLAGS} -o bin/example${SFX}
 
 bin:
 	mkdir bin

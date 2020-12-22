@@ -5,14 +5,44 @@ CMN_FLAGS ?= -std=c++17
 
 BASE_FLAGS := -c -I headers -${CMN_FLAGS}
 
-all: debug release
+#	You can see that in addition to the usual all, debug, and release targets,
+#	there are also all_target, debug_target, and release_target. The latter do
+#	not check whether or not the output lib and obj directories exist.
+#
+#	If you are building binon directly from the command line, you should go
+#	with the regular targets that do not end in _target.
+#
+#	If you are building a separate project that also makes binon, it may be
+#	best to target mk_dirs first, followed by the relevant _target target. This
+#	will ensure that the directories are only made once. (It can be a problem
+#	when you use make -j# that it may try to build the same directories several
+#	times simultaneously if you are not careful.) Look at the example project's
+#	makefile to see how this can be done.
+
+all: mk_dirs
+	${MAKE} all_target
+all_target: debug_target release_target
+
+debug: mk_dirs
+	${MAKE} debug_target
+debug_target:
+	${MAKE} lib/libbinon_dbg.a FLAGS="${BASE_FLAGS} ${DBG_FLAGS}" SFX="_dbg"
+
+release: mk_dirs
+	${MAKE} release_target
+release_target:
+	${MAKE} lib/libbinon.a FLAGS="${BASE_FLAGS} ${REL_FLAGS}" SFX=""
+
+mk_dirs: lib obj
+
 clean:
 	rm -frv lib
 	rm -frv obj
-debug:
-	${MAKE} lib/libbinon_dbg.a FLAGS="${BASE_FLAGS} ${DBG_FLAGS}" SFX="_dbg"
-release:
-	${MAKE} lib/libbinon.a FLAGS="${BASE_FLAGS} ${REL_FLAGS}" SFX=""
+
+lib:
+	mkdir lib
+obj:
+	mkdir obj
 
 HDR := headers/binon/
 SRC := source/
@@ -30,13 +60,8 @@ SRC_NAMES := \
 OBJS := ${addprefix obj/,${SRC_NAMES}}
 OBJS := ${addsuffix ${SFX}.o,${OBJS}}
 
-lib/libbinon${SFX}.a: lib obj ${HDR}binon.hpp ${OBJS}
+lib/libbinon${SFX}.a: ${HDR}binon.hpp ${OBJS}
 	ar -crs lib/libbinon${SFX}.a ${OBJS}
-
-lib:
-	mkdir lib
-obj:
-	mkdir obj
 
 DEP0 := ${HDR}macros.hpp makefile
 DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${DEP0}
