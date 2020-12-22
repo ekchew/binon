@@ -25,25 +25,6 @@ namespace binon {
 	
 	//---- ListObj -------------------------------------------------------------
 	
-	ListObj::ListObj(const TValue& v): mValue{v} {
-	}
-	ListObj::ListObj(const ListObj& v): mValue{v.mValue} {
-	}
-	auto ListObj::operator = (const ListObj& v) -> ListObj& {
-		return *this = ListObj{v};
-	}
-	auto ListObj::typeCode() const noexcept -> CodeByte {
-		return kListObjCode;
-	}
-	auto ListObj::getList() const& -> const TValue& {
-		return mValue;
-	}
-	auto ListObj::getList() && -> TValue&& {
-		return std::move(mValue);
-	}
-	void ListObj::setList(TList v) {
-		std::swap(mValue, v);
-	}
 	void ListObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		UInt count{mValue.size()};
@@ -71,22 +52,18 @@ namespace binon {
 			pObj = Decode(stream, kSkipRequireIO);
 		}
 	}
+	auto ListObj::hasDefVal() const -> bool {
+		return mValue.size() == 0;
+	}
 	auto ListObj::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {
 			return std::make_shared<ListObj>(DeepCopyTList(mValue));
 		}
 		return std::make_shared<ListObj>(*this);
 	}
-	auto ListObj::hasDefVal() const -> bool {
-		return mValue.size() == 0;
-	}
 	
 	//---- SList ---------------------------------------------------------------
 	
-	SList::SList(const TValue& v): mValue{v} {
-	}
-	SList::SList(const SList& v): mValue{v.mValue} {
-	}
 	auto SList::typeCode() const noexcept -> CodeByte {
 		return kSListCode;
 	}
@@ -139,7 +116,7 @@ namespace binon {
 			for(i = 0; i < n; ++i) {
 				auto&& pObj = mValue.mList[i];
 				byt <<= 1;
-				if(pObj->getBool()) {
+				if(!pObj->hasDefVal()) {
 					byt |= 0x01_byte;
 				}
 				if((i & 0x7) == 0x7) {

@@ -14,18 +14,12 @@ namespace binon {
 	public:
 		TValue mValue;
 		
-		ListObj(const TValue& v);
+		ListObj(const TValue& v): mValue{v} {}
 		ListObj(TValue&& v) noexcept: mValue{std::move(v)} {}
-		ListObj(const ListObj& v);
-		ListObj(ListObj&& v) noexcept: ListObj{std::move(v.mValue)} {}
+		ListObj(ListObj&& v) noexcept = default;
+		ListObj(const ListObj& v) = default;
 		ListObj() noexcept = default;
-		auto operator = (const ListObj& v) -> ListObj&;
-		auto& operator = (ListObj&& v) noexcept
-			{ return mValue = std::move(v.mValue), *this; }
-		auto typeCode() const noexcept -> CodeByte final;
-		auto getList() const& -> const TValue& final;
-		auto getList() && -> TValue&& final;
-		void setList(TList v) final;
+		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		
@@ -37,8 +31,8 @@ namespace binon {
 		void decodeElems(TIStream& stream, TValue::size_type count,
 			bool requireIO=true);
 		
-		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto hasDefVal() const -> bool final;
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 	};
 	
 	struct SListVal {
@@ -54,11 +48,11 @@ namespace binon {
 		
 		TValue mValue;
 		
-		SList(const TValue& v);
+		SList(const TValue& v): mValue{v} {}
 		SList(TValue&& v) noexcept: mValue{std::move(v)} {}
-		SList(const SList& v);
-		SList(SList&& v) noexcept: SList{std::move(v.mValue)} {}
 		SList(CodeByte elemCode) noexcept: mValue{elemCode} {}
+		SList(const SList& v) = default;
+		SList(SList&& v) noexcept = default;
 		SList() noexcept = default;
 		auto typeCode() const noexcept -> CodeByte final;
 		void assertElemTypes() const;

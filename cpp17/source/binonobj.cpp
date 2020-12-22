@@ -5,22 +5,10 @@
 #include "binon/bufferobj.hpp"
 #include "binon/strobj.hpp"
 #include "binon/listobj.hpp"
+#include "binon/dictobj.hpp"
 
 namespace binon {
 	
-	auto BinONObj::FromNullValue() -> TSPBinONObj {
-		return std::make_shared<NullObj>();
-	}
-	auto BinONObj::FromBoolValue(bool v) -> TSPBinONObj {
-		TSPBinONObj p;
-		if(v) {
-			p = std::make_shared<TrueObj>();
-		}
-		else {
-			p = std::make_shared<BoolObj>(false);
-		}
-		return p;
-	}
 	auto BinONObj::FromTypeCode(CodeByte cb) -> TSPBinONObj {
 		TSPBinONObj p;
 		switch(cb.typeCode().toInt<int>()) {
@@ -57,6 +45,9 @@ namespace binon {
 		case kSListCode.toInt<int>():
 			p = std::make_shared<SList>();
 			break;
+		case kDictObjCode.toInt<int>():
+			p = std::make_shared<DictObj>();
+			break;
 		default:
 			throw BadCodeByte{cb};
 		}
@@ -83,9 +74,6 @@ namespace binon {
 		if(!hasDefV) {
 			encodeData(stream, kSkipRequireIO);
 		}
-	}
-	void BinONObj::typeErr() const {
-		throw TypeErr("incorrect accessor called on BinONObj subtype");
 	}
 	
 	auto operator==(const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool {

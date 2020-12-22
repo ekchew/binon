@@ -20,9 +20,6 @@ namespace binon {
 		auto operator==(const BufferObj& rhs) const noexcept -> bool;
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kBufferObjCode; }
-		auto getBuffer() const& -> const TBuffer& final {return mValue;}
-		auto getBuffer() && -> TBuffer&& final {return std::move(mValue);}
-		void setBuffer(TBuffer v) final {std::swap(mValue, v);}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hash() const noexcept -> std::size_t;

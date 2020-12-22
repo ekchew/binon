@@ -11,8 +11,6 @@ namespace binon {
 		
 		BoolObj(TValue v=false) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kBoolObjCode;}
-		auto getBool() const -> TValue final {return mValue;}
-		void setBool(TValue v) final {mValue = v;}
 		void encodeData(TOStream& stream, TValue requireIO=true) const final;
 		void decodeData(TIStream& stream, TValue requireIO=true) final;
 		auto getHash() const -> std::size_t override {return hash();}
@@ -34,8 +32,6 @@ namespace binon {
 		
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kTrueObjCode; }
-		auto getBool() const -> TValue final {return true;}
-		void setBool(TValue value) final {if(!value) typeErr();}
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override
 			{ return other.typeCode() == kTrueObjCode; }

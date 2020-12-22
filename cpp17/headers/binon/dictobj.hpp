@@ -7,6 +7,21 @@
 
 namespace binon {
 	
+	auto DeepCopyTDict(const TDict& dict) -> TDict;
+	
+	struct DictObj: BinONObj, AccessContainer_mValue<DictObj,TDict> {
+		TValue mValue;
+		
+		DictObj(const TDict& v): mValue{v} {}
+		DictObj(TDict&& v) noexcept: mValue{std::move(v)} {}
+		DictObj(const DictObj& obj) = default;
+		DictObj(DictObj&& obj) noexcept = default;
+		DictObj() noexcept = default;
+		auto typeCode() const noexcept -> CodeByte final;
+		auto hasDefVal() const -> bool final;
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+	};
+	
 	/*enum: bool { kSkipMutex, kUseMutex };
 	
 	struct DictObjVal {

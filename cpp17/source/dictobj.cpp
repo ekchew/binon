@@ -2,6 +2,30 @@
 
 namespace binon {
 
+	auto DeepCopyTDict(const TDict& dict) -> TDict {
+		TDict copy;
+		for(auto&& pair: dict) {
+			copy[pair.first->makeCopy(kDeepCopy)]
+				= pair.second->makeCopy(kDeepCopy);
+		}
+		return std::move(copy);
+	}
+	
+	//---- DictObj -------------------------------------------------------------
+	
+	auto DictObj::typeCode() const noexcept -> CodeByte {
+		return kDictObjCode;
+	}
+	auto DictObj::hasDefVal() const -> bool {
+		return mValue.size() == 0;
+	}
+	auto DictObj::makeCopy(bool deep) const -> TSPBinONObj {
+		if(deep) {
+			return std::make_shared<DictObj>(DeepCopyTDict(mValue));
+		}
+		return std::make_shared<DictObj>(*this);
+	}
+	
 	/*
 	//---- DictObjVal ----------------------------------------------------------
 	

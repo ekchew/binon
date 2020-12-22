@@ -20,9 +20,6 @@ namespace binon {
 		StrObj(StrObj&& v) noexcept: StrObj{std::move(v.mValue)} {}
 		StrObj() noexcept = default;
 		auto typeCode() const noexcept -> CodeByte final {return kStrObjCode;}
-		auto getStr() const& -> const TString& final {return mValue;}
-		auto getStr() && -> TString&& final {return std::move(mValue);}
-		void setStr(TString v) final {std::swap(mValue, v);}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hash() const noexcept -> std::size_t
@@ -30,7 +27,7 @@ namespace binon {
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kStrObjCode &&
-					*this == static_cast<const StrObj&>(other);
+					mValue == static_cast<const StrObj&>(other).mValue;
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<StrObj>(mValue); }

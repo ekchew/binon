@@ -12,11 +12,6 @@ namespace binon {
 		
 		FloatObj(TValue v=0.0) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kFloatObjCode;}
-		auto getFloat64() const -> TValue final {return mValue;}
-		void setFloat64(TValue v) final {mValue = v;}
-		auto getFloat32() const -> TFloat32 final
-			{ return static_cast<TFloat32>(mValue); }
-		void setFloat32(TFloat32 v) final {mValue = v;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final
 			{ WriteWord(mValue, stream, requireIO); }
 		void decodeData(TIStream& stream, bool requireIO=true) final
@@ -37,8 +32,6 @@ namespace binon {
 		
 		Float32(TValue v=0.0f) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kFloat32Code;}
-		auto getFloat32() const -> TValue final {return mValue;}
-		void setFloat32(TValue v) final {mValue = v;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final
 			{ WriteWord(mValue, stream, requireIO); }
 		void decodeData(TIStream& stream, bool requireIO=true) final

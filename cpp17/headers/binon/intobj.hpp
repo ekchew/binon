@@ -17,12 +17,6 @@ namespace binon {
 		
 		IntObj(TValue v=0) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kIntObjCode;}
-		auto getInt64() const -> TValue final {return mValue;}
-		void setInt64(TValue v) final {mValue = v;}
-		auto getUInt64() const -> std::uint64_t final
-			{ return static_cast<std::uint64_t>(mValue); }
-		void setUInt64(std::uint64_t v) final
-			{ mValue = static_cast<TValue>(v); }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto getHash() const -> std::size_t override {return hash();}
@@ -41,8 +35,6 @@ namespace binon {
 		
 		UInt(TValue v=0) noexcept: mValue{v} {}
 		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
-		auto getUInt64() const -> TValue final {return mValue;}
-		void setUInt64(TValue v) final {mValue = v;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto getHash() const -> std::size_t override {return hash();}
