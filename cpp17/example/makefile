@@ -12,53 +12,39 @@ HEADERS_DIR := ${CPP17_DIR}/headers
 BASE_FLAGS := -c -I${HEADERS_DIR} ${CMN_FLAGS}
 LD_FLAGS := -L/usr/local/lib -ltbb
 
-all: mk_dirs
-	${MAKE} all_target
-all_target: debug_target release_target
+all: debug release
 
-debug: mk_dirs
-	${MAKE} debug_target
-debug_target:
-	${MAKE} final_target FLAGS="${BASE_FLAGS} ${DBG_FLAGS}" \
-		TARGET="debug_target" SFX="_dbg" LD_TGT_FLAGS="-g"
-
-release: mk_dirs
-	${MAKE} release_target
-release_target:
-	${MAKE} final_target FLAGS="${BASE_FLAGS} ${REL_FLAGS}" \
-		TARGET="release_target" SFX="" LD_TGT_FLAGS=""
-
-mk_dirs: bin obj
-	${MAKE} -C "${CPP17_DIR}" mk_dirs
-
+debug: ${CPP17_DIR}/makefile
+	${MAKE} -C ${CPP17_DIR} debug
+	${MAKE} DEST_DIR="build/debug" FLAGS="${BASE_FLAGS} ${DBG_FLAGS}" target
+release: ${CPP17_DIR}/makefile
+	${MAKE} -C ${CPP17_DIR} release
+	${MAKE} DEST_DIR="build/release" FLAGS="${BASE_FLAGS} ${REL_FLAGS}" target
 clean:
-	${MAKE} -C ${CPP17_DIR} clean
-	rm -frv bin
-	rm -frv obj
+	rm -rfv build
 
-final_target: ${CPP17_DIR}/makefile
-	${MAKE} -C "${CPP17_DIR}" "${TARGET}" \
-		CXX="${CXX}" DBG_FLAGS="${DBG_FLAGS}" REL_FLAGS="${REL_FLAGS}" \
-		CMN_FLAGS="${CMN_FLAGS}"
-	${MAKE} "bin/example${SFX}"
-
-#	This should force binon to rebuild after the current makefile is modified.
-#	This is in case you say modified some compiler flags and want those to be
-#	applied to the binon library as well.
+#	If this makefile is modified, trigger binon to rebuild by touching its
+#	makefile also. This is done in case you altered some compiler settings that
+#	should propogate back to the binon library.
 ${CPP17_DIR}/makefile: makefile
 	touch ${CPP17_DIR}/makefile
 
+target:
+	${MAKE} TEST_DIR=${DEST_DIR}/bin ${DEST_DIR}/bin
+	${MAKE} TEST_DIR=${DEST_DIR}/obj ${DEST_DIR}/obj
+	${MAKE} ${DEST_DIR}/bin/example
+
+${TEST_DIR}:
+	mkdir -p ${TEST_DIR}
+
 SRC_NAMES := example
-OBJS := ${addprefix obj/,${SRC_NAMES}}
-OBJS := ${addsuffix ${SFX}.o,${OBJS}}
-bin/example${SFX}: ${OBJS}
-	${CXX} ${OBJS} ${CPP17_DIR}/lib/libbinon${SFX}.a \
-	${LD_FLAGS} ${LD_TGT_FLAGS} -o bin/example${SFX}
+OBJ := ${DEST_DIR}/obj/
+OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
+OBJS := ${addsuffix .o,${OBJS}}
 
-bin:
-	mkdir bin
-obj:
-	mkdir obj
+${DEST_DIR}/bin/example: ${OBJS}
+	${CXX} ${OBJS} ${CPP17_DIR}/${DEST_DIR}/lib/libbinon.a \
+		${LD_FLAGS} ${LD_TGT_FLAGS} -o ${DEST_DIR}/bin/example
 
-obj/example${SFX}.o: example.cpp makefile ${HEADERS_DIR}/binon/binon.hpp
-	${CXX} ${FLAGS} example.cpp -o obj/example${SFX}.o
+${OBJ}example.o: example.cpp makefile ${HEADERS_DIR}/binon/binon.hpp
+	${CXX} ${FLAGS} example.cpp -o ${OBJ}example.o
