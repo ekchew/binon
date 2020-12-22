@@ -1,4 +1,5 @@
 #include "binon/dictobj.hpp"
+#include "binon/listobj.hpp"
 
 namespace binon {
 
@@ -13,11 +14,29 @@ namespace binon {
 	
 	//---- DictObj -------------------------------------------------------------
 	
-	auto DictObj::typeCode() const noexcept -> CodeByte {
-		return kDictObjCode;
+	void DictObj::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto n = mValue.size();
+		ListObj keys{TList(n)}, vals{TList(n)};
+		decltype(n) i = 0;
+		for(auto&& pair: mValue) {
+			keys.mValue[i] = pair.first;
+			vals.mValue[i] = pair.second;
+		}
+		keys.encodeData(stream, kSkipRequireIO);
+		vals.encodeElems(stream, kSkipRequireIO);
 	}
-	auto DictObj::hasDefVal() const -> bool {
-		return mValue.size() == 0;
+	void DictObj::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		ListObj keys;
+		keys.decodeData(stream, kSkipRequireIO);
+		auto n = keys.mValue.size();
+		ListObj vals{TList(n)};
+		vals.decodeElems(stream, n, kSkipRequireIO);
+		mValue.clear();
+		for(decltype(n) i = 0; i < n; ++i) {
+			mValue[keys.mValue[i]] = vals.mValue[i];
+		}
 	}
 	auto DictObj::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {
@@ -26,70 +45,78 @@ namespace binon {
 		return std::make_shared<DictObj>(*this);
 	}
 	
-	/*
-	//---- DictObjVal ----------------------------------------------------------
+	//---- SKDict --------------------------------------------------------------
 	
-	DictObjVal::DictObjVal(const TDict& dict, bool useMutex):
-		mDict{dict},
-		mUseMutex{useMutex}
-	{
-	}
-	DictObjVal::DictObjVal(TDict&& dict, bool useMutex) noexcept:
-		mDict{std::move(dict)},
-		mUseMutex{useMutex}
-	{
-	}
-	DictObjVal::DictObjVal(bool useMutex) noexcept:
-		mUseMutex{useMutex}
-	{
-	}
-	DictObjVal::DictObjVal(const DictObjVal& val):
-		mDict{val.mDict},
-		mUseMutex{val.mUseMutex}
-	{
-	}
-	DictObjVal::DictObjVal(DictObjVal&& val) noexcept:
-		mDict{std::move(val.mDict)},
-		mUseMutex{val.mUseMutex}
-	{
-	}
-	auto DictObjVal::operator = (DictObjVal val) -> DictObjVal& {
-		std::swap(mDict, val.mDict);
-		mUseMutex = val.mUseMutex;
-		return *this;
-	}
-	auto DictObjVal::deepCopy() const -> DictObjVal {
-		TDict dict;
-		for(auto&& pair: mDict) {
-			dict[pair.first->makeCopy(kDeepCopy)]
-				= pair.second->makeCopy(kDeepCopy);
+	void SKDict::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto n = mValue.mDict.size();
+		SList keys{SListVal{mValue.mKeyCode, TList(n)}};
+		ListObj vals{TList(n)};
+		decltype(n) i = 0;
+		for(auto&& pair: mValue.mDict) {
+			keys.mValue.mList[i] = pair.first;
+			vals.mValue[i] = pair.second;
 		}
-		return DictObjVal{std::move(dict), mUseMutex};
+		keys.encodeData(stream, kSkipRequireIO);
+		vals.encodeElems(stream, kSkipRequireIO);
 	}
-	DictObjVal::~DictObjVal() {
+	void SKDict::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		SList keys;
+		keys.decodeData(stream, kSkipRequireIO);
+		mValue.mKeyCode = keys.mValue.mElemCode;
+		auto n = keys.mValue.mList.size();
+		ListObj vals{TList(n)};
+		vals.decodeElems(stream, n, kSkipRequireIO);
+		mValue.mDict.clear();
+		for(decltype(n) i = 0; i < n; ++i) {
+			mValue.mDict[keys.mValue.mList[i]] = vals.mValue[i];
+		}
 	}
-	
-	//---- DictObj -------------------------------------------------------------
-	
-	DictObj::DictObj(const DictObjVal& v):
-		mValue{v}
-	{
-	}
-	DictObj::DictObj(DictObjVal&& v) noexcept:
-		mValue{std::move(v)}
-	{
-	}
-	auto DictObj::typeCode() const noexcept -> CodeByte {
-		return kDictObjCode;
-	}
-	auto DictObj::hasDefVal() const -> bool {
-		return mValue.mDict.size() == 0;
-	}
-	auto DictObj::makeCopy(bool deep) const -> TSPBinONObj {
+	auto SKDict::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {
-			return std::make_shared<DictObj>(std::move(mValue.deepCopy()));
+			return std::make_shared<SKDict>(
+				SKDictVal{mValue.mKeyCode, DeepCopyTDict(mValue.mDict)}
+			);
 		}
-		return std::make_shared<DictObj>(*this);
+		return std::make_shared<SKDict>(*this);
+	}	
+	
+	//---- SDict ---------------------------------------------------------------
+	
+	void SDict::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto n = mValue.mDict.size();
+		SList keys{SListVal{mValue.mKeyCode, TList(n)}};
+		SList vals{SListVal{mValue.mValCode, TList(n)}};
+		decltype(n) i = 0;
+		for(auto&& pair: mValue.mDict) {
+			keys.mValue.mList[i] = pair.first;
+			vals.mValue.mList[i] = pair.second;
+		}
+		keys.encodeData(stream, kSkipRequireIO);
+		vals.encodeElems(stream, kSkipRequireIO);
 	}
-	*/
+	void SDict::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		SList keys;
+		keys.decodeData(stream, kSkipRequireIO);
+		mValue.mKeyCode = keys.mValue.mElemCode;
+		auto n = keys.mValue.mList.size();
+		SList vals{SListVal{kIntObjCode, TList(n)}};
+		vals.decodeElems(stream, n, kSkipRequireIO);
+		mValue.mValCode = vals.mValue.mElemCode;
+		mValue.mDict.clear();
+		for(decltype(n) i = 0; i < n; ++i) {
+			mValue.mDict[keys.mValue.mList[i]] = vals.mValue.mList[i];
+		}
+	}
+	auto SDict::makeCopy(bool deep) const -> TSPBinONObj {
+		if(deep) {
+			return std::make_shared<SDict>(SDictVal{
+				mValue.mKeyCode, mValue.mValCode, DeepCopyTDict(mValue.mDict)
+			});
+		}
+		return std::make_shared<SDict>(*this);
+	}	
 }

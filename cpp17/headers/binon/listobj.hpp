@@ -36,7 +36,7 @@ namespace binon {
 	};
 	
 	struct SListVal {
-		CodeByte mElemCode = kNullObjCode;
+		CodeByte mElemCode = kIntObjCode;
 		TList mList;
 	};
 	class SList:
@@ -48,9 +48,9 @@ namespace binon {
 		
 		TValue mValue;
 		
+		SList(CodeByte elemCode) noexcept: mValue{elemCode} {}
 		SList(const TValue& v): mValue{v} {}
 		SList(TValue&& v) noexcept: mValue{std::move(v)} {}
-		SList(CodeByte elemCode) noexcept: mValue{elemCode} {}
 		SList(const SList& v) = default;
 		SList(SList&& v) noexcept = default;
 		SList() noexcept = default;

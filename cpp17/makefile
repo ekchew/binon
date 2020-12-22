@@ -76,7 +76,7 @@ ${OBJ}byteutil.o: ${SRC}byteutil.cpp ${HDR}literals.hpp ${DEP1}
 	${CXX} ${FLAGS} ${SRC}byteutil.cpp -o ${OBJ}byteutil.o
 ${OBJ}codebyte.o: ${SRC}codebyte.cpp ${DEP2}
 	${CXX} ${FLAGS} ${SRC}codebyte.cpp -o ${OBJ}codebyte.o
-${OBJ}dictobj.o: ${SRC}dictobj.cpp ${HDR}dictobj.hpp ${DEP3}
+${OBJ}dictobj.o: ${SRC}dictobj.cpp ${HDR}dictobj.hpp ${HDR}listobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}dictobj.cpp -o ${OBJ}dictobj.o
 ${OBJ}intobj.o: ${SRC}intobj.cpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}intobj.cpp -o ${OBJ}intobj.o

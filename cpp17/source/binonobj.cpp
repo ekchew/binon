@@ -48,6 +48,12 @@ namespace binon {
 		case kDictObjCode.toInt<int>():
 			p = std::make_shared<DictObj>();
 			break;
+		case kSKDictCode.toInt<int>():
+			p = std::make_shared<SKDict>();
+			break;
+		case kSDictCode.toInt<int>():
+			p = std::make_shared<SDict>();
+			break;
 		default:
 			throw BadCodeByte{cb};
 		}

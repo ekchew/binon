@@ -17,51 +17,54 @@ namespace binon {
 		DictObj(const DictObj& obj) = default;
 		DictObj(DictObj&& obj) noexcept = default;
 		DictObj() noexcept = default;
-		auto typeCode() const noexcept -> CodeByte final;
-		auto hasDefVal() const -> bool final;
+		auto typeCode() const noexcept -> CodeByte final {return kDictObjCode;}
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
+		auto hasDefVal() const -> bool final {return mValue.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 	};
 	
-	/*enum: bool { kSkipMutex, kUseMutex };
-	
-	struct DictObjVal {
+	struct SKDictVal {
+		CodeByte mKeyCode = kIntObjCode;
 		TDict mDict;
-		bool mUseMutex;
-		mutable std::recursive_mutex mMutex;
-		
-		DictObjVal(const TDict& dict, bool useMutex=BINON_THREAD_SAFE);
-		DictObjVal(TDict&& dict, bool useMutex=BINON_THREAD_SAFE) noexcept;
-		DictObjVal(bool useMutex=BINON_THREAD_SAFE) noexcept;
-		DictObjVal(const DictObjVal& val);
-		DictObjVal(DictObjVal&& val) noexcept;
-		auto operator = (DictObjVal val) -> DictObjVal&;
-		virtual auto deepCopy() const -> DictObjVal;
-		virtual ~DictObjVal();
 	};
-	struct DictObj: BinONObj, AccessContainer_mValue<DictObj,DictObjVal> {
+	struct SKDict: BinONObj, AccessContainer_mValue<SKDict,SKDictVal> {
 		TValue mValue;
 		
-		DictObj(const DictObjVal& v);
-		DictObj(DictObjVal&& v) noexcept;
-		DictObj(const DictObj& obj) = default;
-		DictObj(DictObj&& obj) noexcept = default;
-		auto typeCode() const noexcept -> CodeByte final;
-		auto hasDefVal() const -> bool final;
+		SKDict(CodeByte keyCode) noexcept: mValue{keyCode} {}
+		SKDict(const SKDictVal& v): mValue{v} {}
+		SKDict(SKDictVal&& v) noexcept: mValue{std::move(v)} {}
+		SKDict(const SKDict& obj) = default;
+		SKDict(SKDict&& obj) noexcept = default;
+		SKDict() noexcept = default;
+		auto typeCode() const noexcept -> CodeByte final {return kSKDictCode;}
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
+		auto hasDefVal() const -> bool final {return mValue.mDict.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 	};
-	
-	template<typename Val, typename Fn, typename Res=void, typename... Args>
-		BINON_IF_CONCEPTS(requires
-			std::derived_from<Val BINON_COMMA DictObjVal>)
-		auto AccessValDict(Val& val, Fn fn, Args&&... args) -> Res {
-			if(val.mUseMutex) {
-				std::lock_guard<decltype(val.mMutex)> lock{val.mMutex};
-				return fn(val, std::forward<Args>(args)...);
-			}
-			return fn(val, std::forward<Args>(args)...);
-		}
-	*/
+
+	struct SDictVal {
+		CodeByte mKeyCode = kIntObjCode;
+		CodeByte mValCode = kIntObjCode;
+		TDict mDict;
+	};
+	struct SDict: BinONObj, AccessContainer_mValue<SDict,SDictVal> {
+		TValue mValue;
 		
+		SDict(CodeByte keyCode, CodeByte valCode=kIntObjCode) noexcept:
+			mValue{keyCode, valCode} {}
+		SDict(const SDictVal& v): mValue{v} {}
+		SDict(SDictVal&& v) noexcept: mValue{std::move(v)} {}
+		SDict(const SDict& obj) = default;
+		SDict(SDict&& obj) noexcept = default;
+		SDict() noexcept = default;
+		auto typeCode() const noexcept -> CodeByte final {return kSDictCode;}
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
+		auto hasDefVal() const -> bool final {return mValue.mDict.size() == 0;}
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+	};
 }
 
 #endif
