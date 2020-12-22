@@ -15,10 +15,12 @@ LD_FLAGS := -L/usr/local/lib -ltbb
 all: debug release
 
 debug: ${CPP17_DIR}/makefile
-	${MAKE} -C ${CPP17_DIR} debug
+	${MAKE} -C ${CPP17_DIR} CXX="${CXX}" \
+		DBG_FLAGS="${DBG_FLAGS}" CMN_FLAGS=${CMN_FLAGS} debug
 	${MAKE} DEST_DIR="build/debug" FLAGS="${BASE_FLAGS} ${DBG_FLAGS}" target
 release: ${CPP17_DIR}/makefile
-	${MAKE} -C ${CPP17_DIR} release
+	${MAKE} -C ${CPP17_DIR} CXX="${CXX}" \
+		REL_FLAGS="${REL_FLAGS}" CMN_FLAGS=${CMN_FLAGS} release
 	${MAKE} DEST_DIR="build/release" FLAGS="${BASE_FLAGS} ${REL_FLAGS}" target
 clean:
 	rm -rfv build

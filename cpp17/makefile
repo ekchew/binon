@@ -1,14 +1,16 @@
 CXX ?= c++
 DBG_FLAGS ?= -g
 REL_FLAGS ?= -O2
-CMN_FLAGS ?= -c -std=c++17 -Iheaders
+CMN_FLAGS ?= -std=c++17
+
+BASE_FLAGS := -c -Iheaders ${CMN_FLAGS}
 
 all: debug release
 
 debug:
-	${MAKE} DEST_DIR="build/debug" FLAGS="${CMN_FLAGS} ${DBG_FLAGS}" target
+	${MAKE} DEST_DIR="build/debug" FLAGS="${BASE_FLAGS} ${DBG_FLAGS}" target
 release:
-	${MAKE} DEST_DIR="build/release" FLAGS="${CMN_FLAGS} ${REL_FLAGS}" target
+	${MAKE} DEST_DIR="build/release" FLAGS="${BASE_FLAGS} ${REL_FLAGS}" target
 clean:
 	rm -rfv build
 
