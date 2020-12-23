@@ -34,5 +34,19 @@ namespace binon {
 		};
 		return std::hash<TStringView>{}(sv);
 	}
+	void BufferObj::printRepr(std::ostream& stream) const {
+		stream << "BufferObj{{";
+		bool first = true;
+		for(auto byt: mValue) {
+			if(first) {
+				first = false;
+			}
+			else {
+				stream << ", ";
+			}
+			PrintByte(byt);
+		}
+		stream << "}}";
+	}
 
 }

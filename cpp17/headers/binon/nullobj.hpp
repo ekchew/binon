@@ -14,6 +14,8 @@ namespace binon {
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<NullObj>(); }
 		auto hasDefVal() const -> bool final { return true; }
+		void printRepr(std::ostream& stream) const override
+			{ stream << "NullObj{" << mValue << '}'; }
 	};
 
 }

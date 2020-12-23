@@ -49,6 +49,7 @@ namespace binon {
 				return *this;
 			}
 		void write(TOStream& stream, bool requireIO=true) const;
+		void printRepr(std::ostream& stream) const;
 	
 	private:
 		std::byte mValue;

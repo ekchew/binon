@@ -72,6 +72,7 @@ namespace binon {
 		virtual void decodeData(TIStream& stream, bool requireIO=true) {}
 		virtual auto makeCopy(bool deep=false) const -> TSPBinONObj = 0;
 		virtual auto hasDefVal() const -> bool = 0;
+		virtual void printRepr(std::ostream& stream) const = 0;
 		virtual ~BinONObj() {}
 	};
 	

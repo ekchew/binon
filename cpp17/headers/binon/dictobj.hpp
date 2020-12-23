@@ -8,6 +8,7 @@
 namespace binon {
 	
 	auto DeepCopyTDict(const TDict& dict) -> TDict;
+	void PrintTDictRepr(const TDict& list, std::ostream& stream);
 	
 	struct DictObj: BinONObj, AccessContainer_mValue<DictObj,TDict> {
 		TValue mValue;
@@ -22,6 +23,7 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hasDefVal() const -> bool final {return mValue.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+		void printRepr(std::ostream& stream) const override;
 	};
 	
 	struct SKDictVal {
@@ -42,6 +44,7 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hasDefVal() const -> bool final {return mValue.mDict.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+		void printRepr(std::ostream& stream) const override;
 	};
 
 	struct SDictVal {
@@ -64,6 +67,7 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hasDefVal() const -> bool final {return mValue.mDict.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+		void printRepr(std::ostream& stream) const override;
 	};
 }
 

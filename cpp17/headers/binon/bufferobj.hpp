@@ -31,6 +31,7 @@ namespace binon {
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BufferObj>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue.size() == 0; }
+		void printRepr(std::ostream& stream) const override;
 	};
 
 }

@@ -6,12 +6,14 @@
 namespace binon {
 
 	auto DeepCopyTList(const TList& list) -> TList;
+	void PrintTListRepr(const TList& list, std::ostream& stream);
 	
 	class ListObj:
 		public BinONObj,
 		public AccessContainer_mValue<ListObj,TList>
 	{
 	public:
+		
 		TValue mValue;
 		
 		ListObj(const TValue& v): mValue{v} {}
@@ -33,6 +35,7 @@ namespace binon {
 		
 		auto hasDefVal() const -> bool final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+		void printRepr(std::ostream& stream) const override;
 	};
 	
 	struct SListVal {
@@ -64,6 +67,7 @@ namespace binon {
 			bool requireIO=true);
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto hasDefVal() const -> bool final;
+		void printRepr(std::ostream& stream) const override;
 	};
 
 }

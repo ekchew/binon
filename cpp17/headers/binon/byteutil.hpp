@@ -40,6 +40,9 @@ namespace binon {
 	//	the lower-level char array.
 	auto AsHex(std::byte value, bool capitalize=false) -> std::string;
 	
+	//	Prints a byte in the literal form "0xa5_byte".
+	void PrintByte(std::byte value, std::ostream& stream);
+	
 	////////////////////////////////////////////////////////////////////////////
 	//
 	//	Byte Order Functions

@@ -18,6 +18,9 @@ namespace binon {
 	auto AsHex(std::byte value, bool capitalize) -> std::string {
 		return AsHexC(value, capitalize).data();
 	}
+	void PrintByte(std::byte value, std::ostream& stream) {
+		stream << "0x" << AsHexC(value).data() << "_byte";
+	}
 	
 #if !BINON_CPP20
 	auto LittleEndian() noexcept -> bool {

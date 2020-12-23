@@ -11,6 +11,11 @@ namespace binon {
 	void CodeByte::write(TOStream& stream, bool requireIO) const {
 		WriteWord(mValue, stream, requireIO);
 	}
+	void CodeByte::printRepr(std::ostream& stream) const {
+		stream << "CodeByte{";
+		PrintByte(mValue);
+		stream << '}';
+	}
 	
 	auto BadCodeByte::WhatStr(CodeByte cb) -> std::string {
 		std::ostringstream stream;
