@@ -23,7 +23,7 @@ namespace binon {
 		return std::move(copy);
 	}
 	void PrintTListRepr(const TList& list, std::ostream& stream) {
-		stream << "TList{{";
+		stream << "TList{";
 		bool first = true;
 		for(auto&& pElem: list) {
 			if(first) {
@@ -32,9 +32,9 @@ namespace binon {
 			else {
 				stream << ", ";
 			}
-			pElem->printRepr(stream);
+			pElem->printPtrRepr(stream);
 		}
-		stream << "}}";
+		stream << '}';
 	}
 	
 	//---- ListObj -------------------------------------------------------------
@@ -74,11 +74,6 @@ namespace binon {
 			return std::make_shared<ListObj>(DeepCopyTList(mValue));
 		}
 		return std::make_shared<ListObj>(*this);
-	}
-	void ListObj::printRepr(std::ostream& stream) const {
-		stream << "ListObj{";
-		PrintTListRepr(mValue);
-		stream << '}';
 	}
 	
 	//---- SList ---------------------------------------------------------------
@@ -194,12 +189,12 @@ namespace binon {
 	auto SList::hasDefVal() const -> bool {
 		return mValue.mList.size() == 0;
 	}
-	void SList::printRepr(std::ostream& stream) const {
-		stream << "SList{SListVal{";
+	void SList::printArgsRepr(std::ostream& stream) const {
+		stream << "SListVal{";
 		mValue.mElemCode.printRepr(stream);
-		stream <, ", {";
+		stream << ", ";
 		PrintTListRepr(mValue.mList);
-		stream << "}}}";
+		stream << '}';
 	}
 
 }

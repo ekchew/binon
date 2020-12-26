@@ -23,7 +23,10 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hasDefVal() const -> bool final {return mValue.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		void printRepr(std::ostream& stream) const override;
+		auto clsName() const noexcept -> const char* override
+			{ return "DictObj"; }
+		void printArgsRepr(std::ostream& stream) const override
+			{ PrintTDictRepr(mValue); }
 	};
 	
 	struct SKDictVal {
@@ -44,7 +47,9 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hasDefVal() const -> bool final {return mValue.mDict.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		void printRepr(std::ostream& stream) const override;
+		auto clsName() const noexcept -> const char* override
+			{ return "SKDict"; }
+		void printArgsRepr(std::ostream& stream) const override;
 	};
 
 	struct SDictVal {
@@ -67,7 +72,9 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto hasDefVal() const -> bool final {return mValue.mDict.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		void printRepr(std::ostream& stream) const override;
+		auto clsName() const noexcept override -> const char* 
+			{ return "SDict"; }
+		void printArgsRepr(std::ostream& stream) const override;
 	};
 }
 

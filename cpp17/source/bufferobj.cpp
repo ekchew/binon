@@ -34,8 +34,8 @@ namespace binon {
 		};
 		return std::hash<TStringView>{}(sv);
 	}
-	void BufferObj::printRepr(std::ostream& stream) const {
-		stream << "BufferObj{{";
+	void BufferObj::printArgsRepr(std::ostream& stream) const {
+		stream << "vector{";
 		bool first = true;
 		for(auto byt: mValue) {
 			if(first) {
@@ -44,9 +44,9 @@ namespace binon {
 			else {
 				stream << ", ";
 			}
-			PrintByte(byt);
+			PrintByte(byt, stream);
 		}
-		stream << "}}";
+		stream << '}';
 	}
 
 }

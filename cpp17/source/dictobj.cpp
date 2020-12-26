@@ -12,7 +12,7 @@ namespace binon {
 		return std::move(copy);
 	}
 	void PrintTDictRepr(const TDict& list, std::ostream& stream) {
-		stream << "TDict{{";
+		stream << "TDict{";
 		bool first = true;
 		for(auto&& pair: list) {
 			if(first) {
@@ -22,12 +22,12 @@ namespace binon {
 				stream << ", ";
 			}
 			stream << '{';
-			pair.first->printRepr(stream);
+			pair.first->printPtrRepr(stream);
 			stream << ", ";
-			pair.second->printRepr(stream);
+			pair.second->printPtrRepr(stream);
 			stream << '}';
 		}
-		stream << "}}";
+		stream << '}';
 	}
 	
 	//---- DictObj -------------------------------------------------------------
@@ -61,11 +61,6 @@ namespace binon {
 			return std::make_shared<DictObj>(DeepCopyTDict(mValue));
 		}
 		return std::make_shared<DictObj>(*this);
-	}
-	void DictObj::printRepr(std::ostream& stream) const {
-		stream << "DictObj{";
-		PrintTDictRepr(mValue);
-		stream << '}';
 	}
 	
 	//---- SKDict --------------------------------------------------------------
@@ -103,13 +98,13 @@ namespace binon {
 			);
 		}
 		return std::make_shared<SKDict>(*this);
-	}	
-	void SKDict::printRepr(std::ostream& stream) const {
-		stream << "SKDict{SKDictVal{";
+	}
+	void SKDict::printArgsRepr(std::ostream& stream) const {
+		stream << "SKDictVal{";
 		mValue.mKeyCode.printRepr(stream);
-		stream <, ", {";
-		PrintTDictRepr(mValue.mDict);
-		stream << "}}}";
+		stream << ", ";
+		PrintTDictRepr(mValue.mDict, stream);
+		stream << '}';
 	}
 	
 	//---- SDict ---------------------------------------------------------------
@@ -148,14 +143,14 @@ namespace binon {
 			});
 		}
 		return std::make_shared<SDict>(*this);
-	}	
-	void SDict::printRepr(std::ostream& stream) const {
-		stream << "SDict{SKDictVal{";
+	}
+	void SDict::printArgsRepr(std::ostream& stream) const {
+		stream << "SDictVal{";
 		mValue.mKeyCode.printRepr(stream);
-		stream <, ", ";
+		stream << ", ";
 		mValue.mValCode.printRepr(stream);
-		stream <, ", {";
-		PrintTDictRepr(mValue.mDict);
-		stream << "}}}";
+		stream << ", ";
+		PrintTDictRepr(mValue.mDict, stream);
+		stream << '}';
 	}
 }

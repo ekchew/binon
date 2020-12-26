@@ -20,9 +20,11 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BoolObj>(mValue); }
-		auto hasDefVal() const -> bool final { return !mValue; }
-		void printRepr(std::ostream& stream) const override
-			{ stream << "BoolObj{" << std::boolalpha << mValue << '}'; }
+		auto hasDefVal() const -> bool final {return !mValue;}
+		auto clsName() const noexcept -> const char* override
+			{ return "BoolObj";}
+ 		void printArgsRepr(std::ostream& stream) const override
+			{ stream << std::boolalpha << mValue; }
 	};
 	
 	class TrueObj: public BinONObj, public Access_mValue<TrueObj,bool> {
@@ -40,8 +42,10 @@ namespace binon {
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<TrueObj>(); }
 		auto hasDefVal() const -> bool final { return false; }
+		auto clsName() const noexcept -> const char* override
+			{ return "TrueObj"; }
 		void printRepr(std::ostream& stream) const override
-			{ stream << "TrueObj(true)"; }
+			{ stream << "true"; }
 	};
 
 }

@@ -27,8 +27,10 @@ namespace binon {
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<IntObj>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue == 0; }
-		void printRepr(std::ostream& stream) const override
-			{ stream << "IntObj{" << mValue << '}'; }
+		auto clsName() const noexcept -> const char* override
+			{ return "IntObj"; }
+		void printArgsRepr(std::ostream& stream) const override
+			{ stream << mValue; }
 	};
 	
 	class UInt: public BinONObj, public Access_mValue<UInt,std::uint64_t> {
@@ -47,8 +49,10 @@ namespace binon {
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<UInt>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue == 0; }
-		void printRepr(std::ostream& stream) const override
-			{ stream << "UInt{" << mValue << '}'; }
+		auto clsName() const noexcept -> const char* override
+			{ return "UInt"; }
+		void printArgsRepr(std::ostream& stream) const override
+			{ stream << mValue; }
 	};
 
 }

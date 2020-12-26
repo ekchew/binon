@@ -35,7 +35,10 @@ namespace binon {
 		
 		auto hasDefVal() const -> bool final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		void printRepr(std::ostream& stream) const override;
+		auto clsName() const noexcept -> const char* override
+			{ return "ListObj"; }
+		void printArgsRepr(std::ostream& stream) const override
+			{ PrintTListRepr(mValue, stream); }
 	};
 	
 	struct SListVal {
@@ -67,7 +70,9 @@ namespace binon {
 			bool requireIO=true);
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto hasDefVal() const -> bool final;
-		void printRepr(std::ostream& stream) const override;
+		auto clsName() const noexcept -> const char* override
+			{ return "ListObj"; }
+		void printArgsRepr(std::ostream& stream) const override;
 	};
 
 }

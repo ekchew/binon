@@ -81,6 +81,20 @@ namespace binon {
 			encodeData(stream, kSkipRequireIO);
 		}
 	}
+	void BinONObj::printRepr(std::ostream& stream) const {
+		stream << clsName() << '{';
+		if(!hasDefVal()) {
+			printArgsRepr(stream);
+		}
+		stream << '}';
+	}
+	void BinONObj::printPtrRepr(std:ostream& stream) const {
+		stream << "make_shared<" << clsName() << ">(";
+		if(!hasDefVal()) {
+			printArgsRepr(stream);
+		}
+		stream << ')';
+	}
 	
 	auto operator==(const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool {
 		return pLHS->equals(*pRHS);

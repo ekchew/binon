@@ -24,8 +24,10 @@ namespace binon {
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<FloatObj>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue == 0; }
-		void printRepr(std::ostream& stream) const override
-			{ stream << "FloatObj{" << mValue << '}'; }
+		auto clsName() const noexcept -> const char* override
+			{ return "FloatObj"; }
+		void printArgsRepr(std::ostream& stream) const override
+			{ stream << mValue; }
 	};
 	
 	class Float32: public BinONObj, public Access_mValue<Float32,TFloat32> {
@@ -46,8 +48,10 @@ namespace binon {
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<Float32>(mValue); }
 		auto hasDefVal() const -> bool final { return mValue == 0; }
-		void printRepr(std::ostream& stream) const override
-			{ stream << "Float32{" << mValue << '}'; }
+		auto clsName() const noexcept -> const char* override
+			{ return "Float32"; }
+		void printArgsRepr(std::ostream& stream) const override
+			{ stream << mValue; }
 	};
 
 }
