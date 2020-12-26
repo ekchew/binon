@@ -10,6 +10,8 @@ namespace binon {
 		TValue mValue;
 		
 		BoolObj(TValue v=false) noexcept: mValue{v} {}
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue; }
 		auto typeCode() const noexcept -> CodeByte final {return kBoolObjCode;}
 		void encodeData(TOStream& stream, TValue requireIO=true) const final;
 		void decodeData(TIStream& stream, TValue requireIO=true) final;
@@ -20,7 +22,6 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BoolObj>(mValue); }
-		auto hasDefVal() const -> bool final {return !mValue;}
 		auto clsName() const noexcept -> const char* override
 			{ return "BoolObj";}
  		void printArgsRepr(std::ostream& stream) const override
@@ -34,6 +35,8 @@ namespace binon {
 		};
 		Value mValue;
 		
+		explicit operator bool() const noexcept -> bool override
+			{ return true; }
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kTrueObjCode; }
 		auto getHash() const -> std::size_t override {return hash();}
@@ -41,7 +44,6 @@ namespace binon {
 			{ return other.typeCode() == kTrueObjCode; }
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<TrueObj>(); }
-		auto hasDefVal() const -> bool final { return false; }
 		auto clsName() const noexcept -> const char* override
 			{ return "TrueObj"; }
 		void printRepr(std::ostream& stream) const override

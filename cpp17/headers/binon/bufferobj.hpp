@@ -18,6 +18,8 @@ namespace binon {
 		BufferObj(BufferObj&& v) noexcept: BufferObj{std::move(v.mValue)} {}
 		BufferObj() noexcept = default;
 		auto operator==(const BufferObj& rhs) const noexcept -> bool;
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kBufferObjCode; }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
@@ -30,7 +32,6 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BufferObj>(mValue); }
-		auto hasDefVal() const -> bool final { return mValue.size() == 0; }
 		auto clsName() const noexcept -> const char* override
 			{ return "BufferObj"; }
 		void printArgsRepr(std::ostream& stream) const override;

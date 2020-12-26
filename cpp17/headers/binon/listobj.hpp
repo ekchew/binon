@@ -21,6 +21,8 @@ namespace binon {
 		ListObj(ListObj&& v) noexcept = default;
 		ListObj(const ListObj& v) = default;
 		ListObj() noexcept = default;
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
@@ -33,7 +35,6 @@ namespace binon {
 		void decodeElems(TIStream& stream, TValue::size_type count,
 			bool requireIO=true);
 		
-		auto hasDefVal() const -> bool final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept -> const char* override
 			{ return "ListObj"; }
@@ -60,6 +61,8 @@ namespace binon {
 		SList(const SList& v) = default;
 		SList(SList&& v) noexcept = default;
 		SList() noexcept = default;
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue.mList.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final;
 		void assertElemTypes() const;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
@@ -69,7 +72,6 @@ namespace binon {
 		void decodeElems(TIStream& stream, TList::size_type count,
 			bool requireIO=true);
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto hasDefVal() const -> bool final;
 		auto clsName() const noexcept -> const char* override
 			{ return "ListObj"; }
 		void printArgsRepr(std::ostream& stream) const override;

@@ -18,10 +18,11 @@ namespace binon {
 		DictObj(const DictObj& obj) = default;
 		DictObj(DictObj&& obj) noexcept = default;
 		DictObj() noexcept = default;
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kDictObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto hasDefVal() const -> bool final {return mValue.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept -> const char* override
 			{ return "DictObj"; }
@@ -42,10 +43,11 @@ namespace binon {
 		SKDict(const SKDict& obj) = default;
 		SKDict(SKDict&& obj) noexcept = default;
 		SKDict() noexcept = default;
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue.mDict.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kSKDictCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto hasDefVal() const -> bool final {return mValue.mDict.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept -> const char* override
 			{ return "SKDict"; }
@@ -67,10 +69,11 @@ namespace binon {
 		SDict(const SDict& obj) = default;
 		SDict(SDict&& obj) noexcept = default;
 		SDict() noexcept = default;
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue.mDict.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kSDictCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto hasDefVal() const -> bool final {return mValue.mDict.size() == 0;}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept override -> const char* 
 			{ return "SDict"; }

@@ -19,6 +19,8 @@ namespace binon {
 		StrObj(const StrObj& v): StrObj{v.mValue} {}
 		StrObj(StrObj&& v) noexcept: StrObj{std::move(v.mValue)} {}
 		StrObj() noexcept = default;
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kStrObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
@@ -31,7 +33,6 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<StrObj>(mValue); }
-		auto hasDefVal() const -> bool final { return mValue.size() == 0; }
 		auto clsName() const noexcept -> const char* override
 			{ return "StrObj"; }
 		void printArgsRepr(std::ostream& stream) const override

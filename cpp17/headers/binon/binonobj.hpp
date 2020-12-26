@@ -34,8 +34,11 @@ namespace binon {
 	public:
 		static auto FromTypeCode(CodeByte cb) -> TSPBinONObj;
 		
-		//constexpr auto operator == (const BinONObj&) const { return true; }
-				
+		//	Returns false is object has the default value for its type or
+		//	true otherwise.
+		explicit virtual operator bool() const noexcept -> bool
+			{ return false; }
+		
 		virtual auto typeCode() const noexcept -> CodeByte = 0;
 		
 		//	These methods are needed to support BinON objects as dictionary
@@ -71,7 +74,6 @@ namespace binon {
 		virtual void encodeData(TOStream& stream, bool requireIO=true) const {}
 		virtual void decodeData(TIStream& stream, bool requireIO=true) {}
 		virtual auto makeCopy(bool deep=false) const -> TSPBinONObj = 0;
-		virtual auto hasDefVal() const -> bool = 0;
 		virtual auto clsName() const noexcept -> const char* = 0;
 		virtual void printRepr(std::ostream& stream) const;
 		virtual void printPtrRepr(std:ostream& stream) const;

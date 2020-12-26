@@ -64,7 +64,7 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto p = FromTypeCode(CodeByte::Read(stream, false));
-		if(!p->hasDefVal()) {
+		if(*p) {
 			p->decodeData(stream, kSkipRequireIO);
 		}
 		return p;
@@ -72,7 +72,7 @@ namespace binon {
 	void BinONObj::encode(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto cb = typeCode();
-		bool hasDefV = hasDefVal();
+		bool hasDefV = !*this;
 		if(hasDefV) {
 			Subtype{cb} = 0;
 		}
@@ -83,14 +83,14 @@ namespace binon {
 	}
 	void BinONObj::printRepr(std::ostream& stream) const {
 		stream << clsName() << '{';
-		if(!hasDefVal()) {
+		if(*this) {
 			printArgsRepr(stream);
 		}
 		stream << '}';
 	}
 	void BinONObj::printPtrRepr(std:ostream& stream) const {
 		stream << "make_shared<" << clsName() << ">(";
-		if(!hasDefVal()) {
+		if(*this) {
 			printArgsRepr(stream);
 		}
 		stream << ')';

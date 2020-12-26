@@ -11,6 +11,8 @@ namespace binon {
 		TValue mValue;
 		
 		FloatObj(TValue v=0.0) noexcept: mValue{v} {}
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kFloatObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final
 			{ WriteWord(mValue, stream, requireIO); }
@@ -23,7 +25,6 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<FloatObj>(mValue); }
-		auto hasDefVal() const -> bool final { return mValue == 0; }
 		auto clsName() const noexcept -> const char* override
 			{ return "FloatObj"; }
 		void printArgsRepr(std::ostream& stream) const override
@@ -35,6 +36,8 @@ namespace binon {
 		TValue mValue;
 		
 		Float32(TValue v=0.0f) noexcept: mValue{v} {}
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kFloat32Code;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final
 			{ WriteWord(mValue, stream, requireIO); }
@@ -47,7 +50,6 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<Float32>(mValue); }
-		auto hasDefVal() const -> bool final { return mValue == 0; }
 		auto clsName() const noexcept -> const char* override
 			{ return "Float32"; }
 		void printArgsRepr(std::ostream& stream) const override

@@ -66,9 +66,6 @@ namespace binon {
 			pObj = Decode(stream, kSkipRequireIO);
 		}
 	}
-	auto ListObj::hasDefVal() const -> bool {
-		return mValue.size() == 0;
-	}
 	auto ListObj::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {
 			return std::make_shared<ListObj>(DeepCopyTList(mValue));
@@ -130,7 +127,7 @@ namespace binon {
 			for(i = 0; i < n; ++i) {
 				auto&& pObj = mValue.mList[i];
 				byt <<= 1;
-				if(!pObj->hasDefVal()) {
+				if(*pObj) {
 					byt |= 0x01_byte;
 				}
 				if((i & 0x7) == 0x7) {
@@ -185,9 +182,6 @@ namespace binon {
 				TValue{mValue.mElemCode, DeepCopyTList(mValue.mList)});
 		}
 		return std::make_shared<SList>(*this);
-	}
-	auto SList::hasDefVal() const -> bool {
-		return mValue.mList.size() == 0;
 	}
 	void SList::printArgsRepr(std::ostream& stream) const {
 		stream << "SListVal{";

@@ -16,6 +16,8 @@ namespace binon {
 		TValue mValue;
 		
 		IntObj(TValue v=0) noexcept: mValue{v} {}
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kIntObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
@@ -26,7 +28,6 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<IntObj>(mValue); }
-		auto hasDefVal() const -> bool final { return mValue == 0; }
 		auto clsName() const noexcept -> const char* override
 			{ return "IntObj"; }
 		void printArgsRepr(std::ostream& stream) const override
@@ -38,6 +39,8 @@ namespace binon {
 		TValue mValue;
 		
 		UInt(TValue v=0) noexcept: mValue{v} {}
+		explicit operator bool() const noexcept -> bool override
+			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
@@ -48,7 +51,6 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<UInt>(mValue); }
-		auto hasDefVal() const -> bool final { return mValue == 0; }
 		auto clsName() const noexcept -> const char* override
 			{ return "UInt"; }
 		void printArgsRepr(std::ostream& stream) const override
