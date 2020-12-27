@@ -7,9 +7,11 @@
 #include "binon/listobj.hpp"
 #include "binon/dictobj.hpp"
 
+#include <sstream>
+
 namespace binon {
 	
-	auto BinONObj::FromTypeCode(CodeByte cb) -> TSPBinONObj {
+	auto BinONObj::FromCodeByte(CodeByte cb) -> TSPBinONObj {
 		TSPBinONObj p;
 		switch(cb.typeCode().toInt<int>()) {
 		case kNullObjCode.toInt<int>():
@@ -63,8 +65,9 @@ namespace binon {
 		-> TSPBinONObj
 	{
 		RequireIO rio{stream, requireIO};
-		auto p = FromTypeCode(CodeByte::Read(stream, false));
-		if(*p) {
+		auto cb = CodeByte::Read(stream, kSkipRequiredIO);
+		auto p = FromCodeByte(cb;
+		if(Subtype(cb) != Subtype::kDefault) {
 			p->decodeData(stream, kSkipRequireIO);
 		}
 		return p;
@@ -79,6 +82,21 @@ namespace binon {
 		cb.write(stream, kSkipRequireIO);
 		if(!hasDefV) {
 			encodeData(stream, kSkipRequireIO);
+		}
+	}
+	void BinONObj::decode(TIStream& streaam, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		auto cb = CodeByte::Read(stream, kSkipRequireedIO);
+		if(cb.typeCode() != typeCode()) {
+			std::ostringstream oss;
+			oss << "expected ";
+			typeCode().printRepr(oss);
+			oss << " but read ";
+			cb.printRepr(oss);
+			throw TypeErr{oss.str()};
+		}
+		if(Subtype(cb) != Subtype::kDefault) {
+			decodeData(stream, kSkipRequiredIO);
 		}
 	}
 	void BinONObj::printRepr(std::ostream& stream) const {

@@ -32,7 +32,7 @@ namespace binon {
 	
 	class BinONObj {
 	public:
-		static auto FromTypeCode(CodeByte cb) -> TSPBinONObj;
+		static auto FromCodeByte(CodeByte cb) -> TSPBinONObj;
 		
 		//	Returns false is object has the default value for its type or
 		//	true otherwise.
@@ -72,6 +72,7 @@ namespace binon {
 		
 		virtual void encode(TOStream& stream, bool requireIO=true) const;
 		virtual void encodeData(TOStream& stream, bool requireIO=true) const {}
+		virtual void decode(TIStream& stream, bool requireIO=true);
 		virtual void decodeData(TIStream& stream, bool requireIO=true) {}
 		virtual auto makeCopy(bool deep=false) const -> TSPBinONObj = 0;
 		virtual auto clsName() const noexcept -> const char* = 0;
