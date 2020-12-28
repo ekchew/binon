@@ -26,6 +26,12 @@ namespace binon {
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
+		template<typename Obj, typename... Args>
+			auto emplaceBack(Args&&... args) -> TSPBinONObj& {
+				mValue.push_back(
+					std::make_shared<Obj>(std::forward<Args>(args)...));
+				return mValue.back();
+			}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		
@@ -68,6 +74,12 @@ namespace binon {
 		explicit operator bool() const noexcept override
 			{ return mValue.mList.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final;
+		template<typename Obj, typename... Args>
+			auto emplaceBack(Args&&... args) -> TSPBinONObj& {
+				mValue.mList.push_back(
+					std::make_shared<Obj>(std::forward<Args>(args)...));
+				return mValue.mList.back();
+			}
 		void assertElemTypes() const;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
