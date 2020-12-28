@@ -77,8 +77,8 @@ namespace binon {
 		virtual auto makeCopy(bool deep=false) const -> TSPBinONObj = 0;
 		virtual auto clsName() const noexcept -> const char* = 0;
 		virtual void printRepr(std::ostream& stream) const;
-		virtual void printPtrRepr(std:ostream& stream) const;
-		virtual void printArgsRepr(std::stream& stream) const {};
+		virtual void printPtrRepr(std::ostream& stream) const;
+		virtual void printArgsRepr(std::ostream& stream) const {};
 		virtual ~BinONObj() {}
 	};
 	
