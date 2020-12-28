@@ -36,7 +36,7 @@ namespace binon {
 		
 		//	Returns false is object has the default value for its type or
 		//	true otherwise.
-		explicit virtual operator bool() const noexcept -> bool
+		explicit virtual operator bool() const noexcept
 			{ return false; }
 		
 		virtual auto typeCode() const noexcept -> CodeByte = 0;

@@ -11,7 +11,7 @@ namespace binon {
 		TValue mValue;
 		
 		FloatObj(TValue v=0.0) noexcept: mValue{v} {}
-		explicit operator bool() const noexcept -> bool override
+		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kFloatObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final
@@ -36,7 +36,7 @@ namespace binon {
 		TValue mValue;
 		
 		Float32(TValue v=0.0f) noexcept: mValue{v} {}
-		explicit operator bool() const noexcept -> bool override
+		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kFloat32Code;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final

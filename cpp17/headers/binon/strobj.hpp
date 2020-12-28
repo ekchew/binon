@@ -19,7 +19,7 @@ namespace binon {
 		StrObj(const StrObj& v): StrObj{v.mValue} {}
 		StrObj(StrObj&& v) noexcept: StrObj{std::move(v.mValue)} {}
 		StrObj() noexcept = default;
-		explicit operator bool() const noexcept -> bool override
+		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kStrObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;

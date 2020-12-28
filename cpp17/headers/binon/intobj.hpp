@@ -16,7 +16,7 @@ namespace binon {
 		TValue mValue;
 		
 		IntObj(TValue v=0) noexcept: mValue{v} {}
-		explicit operator bool() const noexcept -> bool override
+		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kIntObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
@@ -39,7 +39,7 @@ namespace binon {
 		TValue mValue;
 		
 		UInt(TValue v=0) noexcept: mValue{v} {}
-		explicit operator bool() const noexcept -> bool override
+		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;

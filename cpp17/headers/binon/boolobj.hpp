@@ -10,7 +10,7 @@ namespace binon {
 		TValue mValue;
 		
 		BoolObj(TValue v=false) noexcept: mValue{v} {}
-		explicit operator bool() const noexcept -> bool override
+		explicit operator bool() const noexcept override
 			{ return mValue; }
 		auto typeCode() const noexcept -> CodeByte final {return kBoolObjCode;}
 		void encodeData(TOStream& stream, TValue requireIO=true) const final;
