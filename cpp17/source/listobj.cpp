@@ -152,7 +152,7 @@ namespace binon {
 		//	Read element code.
 		RequireIO rio{stream, requireIO};
 		mValue.mElemCode = CodeByte::Read(stream, kSkipRequireIO);
-		auto pBaseObj = FromTypeCode(mValue.mElemCode);
+		auto pBaseObj = FromCodeByte(mValue.mElemCode);
 		
 		//	Read data of all elements consecutively.
 		mValue.mList.resize(count);
@@ -187,7 +187,7 @@ namespace binon {
 		stream << "SListVal{";
 		mValue.mElemCode.printRepr(stream);
 		stream << ", ";
-		PrintTListRepr(mValue.mList);
+		PrintTListRepr(mValue.mList, stream);
 		stream << '}';
 	}
 

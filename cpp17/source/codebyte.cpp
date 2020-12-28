@@ -13,7 +13,7 @@ namespace binon {
 	}
 	void CodeByte::printRepr(std::ostream& stream) const {
 		stream << "CodeByte{";
-		PrintByte(mValue);
+		PrintByte(mValue, stream);
 		stream << '}';
 	}
 	

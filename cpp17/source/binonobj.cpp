@@ -65,8 +65,8 @@ namespace binon {
 		-> TSPBinONObj
 	{
 		RequireIO rio{stream, requireIO};
-		auto cb = CodeByte::Read(stream, kSkipRequiredIO);
-		auto p = FromCodeByte(cb;
+		auto cb = CodeByte::Read(stream, kSkipRequireIO);
+		auto p = FromCodeByte(cb);
 		if(Subtype(cb) != Subtype::kDefault) {
 			p->decodeData(stream, kSkipRequireIO);
 		}
@@ -84,9 +84,9 @@ namespace binon {
 			encodeData(stream, kSkipRequireIO);
 		}
 	}
-	void BinONObj::decode(TIStream& streaam, bool requireIO) {
+	void BinONObj::decode(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
-		auto cb = CodeByte::Read(stream, kSkipRequireedIO);
+		auto cb = CodeByte::Read(stream, kSkipRequireIO);
 		if(cb.typeCode() != typeCode()) {
 			std::ostringstream oss;
 			oss << "expected ";
@@ -96,7 +96,7 @@ namespace binon {
 			throw TypeErr{oss.str()};
 		}
 		if(Subtype(cb) != Subtype::kDefault) {
-			decodeData(stream, kSkipRequiredIO);
+			decodeData(stream, kSkipRequireIO);
 		}
 	}
 	void BinONObj::printRepr(std::ostream& stream) const {
@@ -106,7 +106,7 @@ namespace binon {
 		}
 		stream << '}';
 	}
-	void BinONObj::printPtrRepr(std:ostream& stream) const {
+	void BinONObj::printPtrRepr(std::ostream& stream) const {
 		stream << "make_shared<" << clsName() << ">(";
 		if(*this) {
 			printArgsRepr(stream);

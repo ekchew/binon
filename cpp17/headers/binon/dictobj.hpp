@@ -27,7 +27,7 @@ namespace binon {
 		auto clsName() const noexcept -> const char* override
 			{ return "DictObj"; }
 		void printArgsRepr(std::ostream& stream) const override
-			{ PrintTDictRepr(mValue); }
+			{ PrintTDictRepr(mValue, stream); }
 	};
 	
 	struct SKDictVal {
@@ -75,7 +75,7 @@ namespace binon {
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto clsName() const noexcept override -> const char* 
+		auto clsName() const noexcept -> const char* override 
 			{ return "SDict"; }
 		void printArgsRepr(std::ostream& stream) const override;
 	};
