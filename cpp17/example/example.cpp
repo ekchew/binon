@@ -8,7 +8,7 @@ auto main() -> int {
 		using std::cout;
 		
 		binon::IntObj value{42};
-		cout << "value before encoding: " << value << '\n';
+		cout << "before encoding: " << value << '\n';
 		
 		std::ostringstream oss;
 		value.encode(oss);
@@ -28,7 +28,7 @@ auto main() -> int {
 		
 		std::istringstream iss{oss.str()};
 		value = binon::BinONObj::DecodeType<decltype(value)>(iss);
-		cout << "value after decoding: " << value << '\n';
+		cout << "after decoding: " << value << '\n';
 	}
 	catch(std::exception& err) {
 		std::cerr << "ERROR: " << err.what() << '\n';
