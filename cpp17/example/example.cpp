@@ -7,7 +7,7 @@ auto main() -> int {
 	try {
 		using std::cout;
 		
-		binon::IntObj value{42};
+		binon::StrObj value{"Hello, world!"};
 		cout << "before encoding: " << value << '\n';
 		
 		std::ostringstream oss;

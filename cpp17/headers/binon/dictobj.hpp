@@ -18,6 +18,8 @@ namespace binon {
 		DictObj(const DictObj& obj) = default;
 		DictObj(DictObj&& obj) noexcept = default;
 		DictObj() noexcept = default;
+		auto operator = (const DictObj&) -> DictObj& = default;
+		auto operator = (DictObj&&) noexcept -> DictObj& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kDictObjCode;}
@@ -43,6 +45,8 @@ namespace binon {
 		SKDict(const SKDict& obj) = default;
 		SKDict(SKDict&& obj) noexcept = default;
 		SKDict() noexcept = default;
+		auto operator = (const SKDict&) -> SKDict& = default;
+		auto operator = (SKDict&&) noexcept -> SKDict& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mDict.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kSKDictCode;}
@@ -69,6 +73,8 @@ namespace binon {
 		SDict(const SDict& obj) = default;
 		SDict(SDict&& obj) noexcept = default;
 		SDict() noexcept = default;
+		auto operator = (const SDict&) -> SDict& = default;
+		auto operator = (SDict&&) noexcept -> SDict& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mDict.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kSDictCode;}
