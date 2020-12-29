@@ -17,6 +17,8 @@ namespace binon {
 		BufferObj(const BufferObj& v): BufferObj{v.mValue} {}
 		BufferObj(BufferObj&& v) noexcept: BufferObj{std::move(v.mValue)} {}
 		BufferObj() noexcept = default;
+		auto operator = (const BufferObj&) -> BufferObj& = default;
+		auto operator = (BufferObj&&) noexcept -> BufferObj& = default;
 		auto operator==(const BufferObj& rhs) const noexcept -> bool;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }

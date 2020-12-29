@@ -35,7 +35,7 @@ namespace binon {
 		};
 		Value mValue;
 		
-		explicit operator bool() const noexcept -> bool override
+		explicit operator bool() const noexcept override
 			{ return true; }
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kTrueObjCode; }

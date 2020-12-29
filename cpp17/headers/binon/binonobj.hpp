@@ -82,7 +82,11 @@ namespace binon {
 		virtual ~BinONObj() {}
 	};
 	
-	auto operator==(const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool;
+	auto operator == (const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool;
+	auto operator << (std::ostream& stream, const BinONObj& obj)
+		-> std::ostream&;
+	auto operator << (std::ostream& stream, const TSPBinONObj& pObj)
+		-> std::ostream&;
 }
 
 namespace std {

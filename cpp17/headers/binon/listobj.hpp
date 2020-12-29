@@ -21,9 +21,17 @@ namespace binon {
 		ListObj(ListObj&& v) noexcept = default;
 		ListObj(const ListObj& v) = default;
 		ListObj() noexcept = default;
+		auto operator = (const ListObj&) -> ListObj& = default;
+		auto operator = (ListObj&&) noexcept -> ListObj& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
+		template<typename Obj, typename... Args>
+			auto emplaceBack(Args&&... args) -> TSPBinONObj& {
+				mValue.push_back(
+					std::make_shared<Obj>(std::forward<Args>(args)...));
+				return mValue.back();
+			}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		
@@ -61,9 +69,17 @@ namespace binon {
 		SList(const SList& v) = default;
 		SList(SList&& v) noexcept = default;
 		SList() noexcept = default;
+		auto operator = (const SList&) -> SList& = default;
+		auto operator = (SList&&) noexcept -> SList& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mList.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final;
+		template<typename Obj, typename... Args>
+			auto emplaceBack(Args&&... args) -> TSPBinONObj& {
+				mValue.mList.push_back(
+					std::make_shared<Obj>(std::forward<Args>(args)...));
+				return mValue.mList.back();
+			}
 		void assertElemTypes() const;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;

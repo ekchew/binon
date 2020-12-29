@@ -18,6 +18,8 @@ namespace binon {
 		DictObj(const DictObj& obj) = default;
 		DictObj(DictObj&& obj) noexcept = default;
 		DictObj() noexcept = default;
+		auto operator = (const DictObj&) -> DictObj& = default;
+		auto operator = (DictObj&&) noexcept -> DictObj& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kDictObjCode;}
@@ -27,7 +29,7 @@ namespace binon {
 		auto clsName() const noexcept -> const char* override
 			{ return "DictObj"; }
 		void printArgsRepr(std::ostream& stream) const override
-			{ PrintTDictRepr(mValue); }
+			{ PrintTDictRepr(mValue, stream); }
 	};
 	
 	struct SKDictVal {
@@ -43,6 +45,8 @@ namespace binon {
 		SKDict(const SKDict& obj) = default;
 		SKDict(SKDict&& obj) noexcept = default;
 		SKDict() noexcept = default;
+		auto operator = (const SKDict&) -> SKDict& = default;
+		auto operator = (SKDict&&) noexcept -> SKDict& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mDict.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kSKDictCode;}
@@ -69,13 +73,15 @@ namespace binon {
 		SDict(const SDict& obj) = default;
 		SDict(SDict&& obj) noexcept = default;
 		SDict() noexcept = default;
+		auto operator = (const SDict&) -> SDict& = default;
+		auto operator = (SDict&&) noexcept -> SDict& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mDict.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kSDictCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto clsName() const noexcept override -> const char* 
+		auto clsName() const noexcept -> const char* override 
 			{ return "SDict"; }
 		void printArgsRepr(std::ostream& stream) const override;
 	};

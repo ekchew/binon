@@ -19,6 +19,8 @@ namespace binon {
 		StrObj(const StrObj& v): StrObj{v.mValue} {}
 		StrObj(StrObj&& v) noexcept: StrObj{std::move(v.mValue)} {}
 		StrObj() noexcept = default;
+		auto operator = (const StrObj&) -> StrObj& = default;
+		auto operator = (StrObj&&) noexcept -> StrObj& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kStrObjCode;}
