@@ -4,6 +4,9 @@
 //	Some CRTP (Curiously Recurring Template Pattern) utility classes inherited
 //	by BinON object classes to reduce boilerplate code.
 
+#include "codebyte.hpp"
+#include "hashutil.hpp"
+
 #include <functional>
 #include <string_view>
 
@@ -32,8 +35,11 @@ namespace binon {
 	public:
 		constexpr auto& operator = (const Subcls& obj) noexcept
 			{ return subcls().mValue = obj.mValue, subcls(); }
-		constexpr auto hash() const noexcept -> std::size_t
-			{ return std::hash<Value>{}(subcls().mValue); }
+		constexpr auto hash() const noexcept -> std::size_t {
+				return Hash(
+					std::hash<CodeByte>{}(subcls().typeCode()),
+					std::hash<Value>{}(subcls().mValue));
+			}
 	
 	protected:
 		using Read_mValue<Subcls,Value>::subcls;

@@ -135,4 +135,13 @@ namespace binon {
 	};
 }
 
+namespace std {
+	template<> struct hash<binon::CodeByte> {
+		inline auto operator () (const binon::CodeByte& v) const noexcept
+			-> std::size_t {
+				return std::hash<std::uint8_t>{}(v.toInt<std::uint8_t>());
+			}
+	};
+}
+
 #endif
