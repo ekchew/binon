@@ -13,16 +13,11 @@ namespace binon {
 		public AccessContainer_mValue<ListObj,TList>
 	{
 	public:
-		
 		TValue mValue;
 		
 		ListObj(const TValue& v): mValue{v} {}
 		ListObj(TValue&& v) noexcept: mValue{std::move(v)} {}
-		ListObj(ListObj&& v) noexcept = default;
-		ListObj(const ListObj& v) = default;
 		ListObj() noexcept = default;
-		auto operator = (const ListObj&) -> ListObj& = default;
-		auto operator = (ListObj&&) noexcept -> ListObj& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
@@ -66,11 +61,7 @@ namespace binon {
 		SList(CodeByte elemCode) noexcept: mValue{elemCode} {}
 		SList(const TValue& v): mValue{v} {}
 		SList(TValue&& v) noexcept: mValue{std::move(v)} {}
-		SList(const SList& v) = default;
-		SList(SList&& v) noexcept = default;
 		SList() noexcept = default;
-		auto operator = (const SList&) -> SList& = default;
-		auto operator = (SList&&) noexcept -> SList& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mList.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final;
