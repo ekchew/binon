@@ -10,7 +10,18 @@
 #include <sstream>
 
 namespace binon {
-	
+
+	auto BinONObj::Decode(TIStream& stream, bool requireIO)
+		-> TSPBinONObj
+	{
+		RequireIO rio{stream, requireIO};
+		auto cb = CodeByte::Read(stream, kSkipRequireIO);
+		auto p = FromCodeByte(cb);
+		if(Subtype(cb) != Subtype::kDefault) {
+			p->decodeData(stream, kSkipRequireIO);
+		}
+		return p;
+	}
 	auto BinONObj::FromCodeByte(CodeByte cb) -> TSPBinONObj {
 		TSPBinONObj p;
 		switch(cb.typeCode().toInt<int>()) {
@@ -61,17 +72,6 @@ namespace binon {
 		}
 		return p;
 	}
-	auto BinONObj::Decode(TIStream& stream, bool requireIO)
-		-> TSPBinONObj
-	{
-		RequireIO rio{stream, requireIO};
-		auto cb = CodeByte::Read(stream, kSkipRequireIO);
-		auto p = FromCodeByte(cb);
-		if(Subtype(cb) != Subtype::kDefault) {
-			p->decodeData(stream, kSkipRequireIO);
-		}
-		return p;
-	}
 	void BinONObj::encode(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto cb = typeCode();
@@ -113,7 +113,7 @@ namespace binon {
 		}
 		stream << ')';
 	}
-	
+
 	auto operator == (const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool
 	{
 		return pLHS->equals(*pRHS);

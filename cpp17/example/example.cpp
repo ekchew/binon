@@ -5,14 +5,15 @@
 
 auto main() -> int {
 	try {
-		using std::cout;
-		
-		binon::SDict value{binon::kStrObjCode, binon::kUIntCode};
-		value.value<binon::UInt>(binon::StrObj{"foo"}) = 0;
-		value.value<binon::UInt>(binon::StrObj{"bar"}) = 1;
-		value.value<binon::UInt>(binon::StrObj{"baz"}) = 2;
+		using namespace binon;
+		using namespace std;
+
+		binon::SDict value{kStrObjCode, kUIntCode};
+		value.value<StrObj,UInt>("foo") = 0;
+		value.value<StrObj,UInt>("bar") = 1;
+		value.value<StrObj,UInt>("baz") = 2;
 		cout << "before encoding: " << value << '\n';
-		
+
 		std::ostringstream oss;
 		value.encode(oss);
 		cout << "encoded value in hex:";
@@ -28,7 +29,7 @@ auto main() -> int {
 			++i;
 		}
 		cout << '\n';
-		
+
 		std::istringstream iss{oss.str()};
 		value.decode(iss);
 		cout << "after decoding: " << value << '\n';

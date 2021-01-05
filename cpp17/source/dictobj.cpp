@@ -31,21 +31,21 @@ namespace binon {
 		}
 		stream << '}';
 	}
-	
+
 	//---- DictBase ------------------------------------------------------------
-	
+
 	auto DictBase::hasKey(const TSPBinONObj& pKey) const -> bool {
 		auto& dct = dict();
 		return dct.find(pKey) != dct.end();
 	}
 	auto DictBase::hasValue(const TSPBinONObj& pKey) const -> bool {
 		auto& dct = dict();
-		auto it = dct.find(pKey);
-		return it != dct.end() && it->second;
+		auto iter = dct.find(pKey);
+		return iter != dct.end() && iter->second;
 	}
-	
+
 	//---- DictObj -------------------------------------------------------------
-	
+
 	void DictObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto n = mValue.size();
@@ -77,9 +77,9 @@ namespace binon {
 		}
 		return std::make_shared<DictObj>(*this);
 	}
-	
+
 	//---- SKDict --------------------------------------------------------------
-	
+
 	void SKDict::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto n = mValue.mDict.size();
@@ -122,9 +122,9 @@ namespace binon {
 		PrintTDictRepr(mValue.mDict, stream);
 		stream << '}';
 	}
-	
+
 	//---- SDict ---------------------------------------------------------------
-	
+
 	void SDict::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto n = mValue.mDict.size();
