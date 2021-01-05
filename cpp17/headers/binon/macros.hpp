@@ -6,7 +6,7 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 //	By default, BINON_DEBUG is set true if a DEBUG macro is defined or
 //	false otherwise.
 #ifndef BINON_DEBUG
-	#ifdef DEBUG
+	#if defined(DEBUG) && DEBUG
 		#define BINON_DEBUG true
 	#else
 		#define BINON_DEBUG false
