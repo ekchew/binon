@@ -3,13 +3,30 @@
 #include <iostream>
 #include <sstream>
 
+static void DumpBinON(const std::string& s) {
+	using std::cout;
+	cout << "encoded value in hex:";
+	std::size_t i = 0;
+	for(auto c: s) {
+		if((i & 0xf) == 0x0) {
+			cout << "\n\t";
+		}
+		else if((i & 0x3) == 0x0) {
+			cout << ' ';
+		}
+		cout << binon::AsHex(binon::ToByte(c));
+		++i;
+	}
+	cout << '\n';
+}
+
 auto main() -> int {
 	try {
 		using namespace binon;
 		using namespace binon::types;
 		using namespace std;
 
-		binon::SDict value{kStrObjCode, kUIntCode};
+		SDict value{kStrObjCode, kUIntCode};
 		value.value<StrObj,UInt>("foo") = 0;
 		value.value<StrObj,UInt>("bar") = 1;
 		value.value<StrObj,UInt>("baz") = 2;
@@ -17,19 +34,8 @@ auto main() -> int {
 
 		std::ostringstream oss;
 		value.encode(oss);
-		cout << "encoded value in hex:";
-		std::size_t i = 0;
-		for(auto c: oss.str()) {
-			if((i & 0xf) == 0x0) {
-				cout << "\n\t";
-			}
-			else if((i & 0x3) == 0x0) {
-				cout << ' ';
-			}
-			cout << binon::AsHex(binon::ToByte(c));
-			++i;
-		}
-		cout << '\n';
+
+		DumpBinON(oss.str());
 
 		std::istringstream iss{oss.str()};
 		value.decode(iss);
