@@ -7,7 +7,10 @@ auto main() -> int {
 	try {
 		using std::cout;
 		
-		binon::StrObj value{"Hello, world!"};
+		binon::SDict value{binon::kStrObjCode, binon::kUIntCode};
+		value.value<binon::UInt>(binon::StrObj{"foo"}) = 0;
+		value.value<binon::UInt>(binon::StrObj{"bar"}) = 1;
+		value.value<binon::UInt>(binon::StrObj{"baz"}) = 2;
 		cout << "before encoding: " << value << '\n';
 		
 		std::ostringstream oss;
@@ -27,10 +30,10 @@ auto main() -> int {
 		cout << '\n';
 		
 		std::istringstream iss{oss.str()};
-		value = binon::BinONObj::DecodeType<decltype(value)>(iss);
+		value.decode(iss);
 		cout << "after decoding: " << value << '\n';
 	}
-	catch(std::exception& err) {
+	catch(const std::exception& err) {
 		std::cerr << "ERROR: " << err.what() << '\n';
 		return 1;
 	}
