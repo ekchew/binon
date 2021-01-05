@@ -1,7 +1,7 @@
 CXX := c++
 #CXX := clang++
 #CXX := xcrun g++-10
-DBG_FLAGS := -g
+DBG_FLAGS := -g -D DEBUG
 REL_FLAGS := -O2
 CMN_FLAGS := -std=c++17
 #CMN_FLAGS := -std=c++20
@@ -11,7 +11,7 @@ CPP17_DIR := ${BINON_DIR}/cpp17
 HEADERS_DIR := ${CPP17_DIR}/headers
 
 BASE_FLAGS := -c -I${HEADERS_DIR} ${CMN_FLAGS}
-LD_FLAGS := -L/usr/local/lib -ltbb
+LD_FLAGS := -L/usr/local/lib #-ltbb
 
 all: debug release
 
@@ -45,9 +45,12 @@ OBJ := ${DEST_DIR}/obj/
 OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
 
+example.cpp: ${HEADERS_DIR}/binon/binon.hpp
+	touch example.cpp
+
 ${DEST_DIR}/bin/example: ${OBJS}
 	${CXX} ${OBJS} ${CPP17_DIR}/${DEST_DIR}/lib/libbinon.a \
 		${LD_FLAGS} ${LD_TGT_FLAGS} -o ${DEST_DIR}/bin/example
 
-${OBJ}example.o: example.cpp makefile ${HEADERS_DIR}/binon/binon.hpp
+${OBJ}example.o: example.cpp makefile
 	${CXX} ${FLAGS} example.cpp -o ${OBJ}example.o

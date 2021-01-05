@@ -5,14 +5,11 @@
 
 namespace binon {
 
-	class IntRangeError: public std::range_error {
-	public:
+	struct IntRangeError: std::range_error {
 		IntRangeError();
 	};
 
-	class IntObj: public BinONObj, public Access_mValue<IntObj,std::int64_t>
-	{
-	public:
+	struct IntObj: BinONObj, Access_mValue<IntObj,std::int64_t> {
 		TValue mValue;
 
 		IntObj(TValue v=0) noexcept: mValue{v} {}
@@ -34,8 +31,7 @@ namespace binon {
 			{ stream << mValue; }
 	};
 
-	class UIntObj: public BinONObj, public Access_mValue<UIntObj,std::uint64_t> {
-	public:
+	struct UIntObj: BinONObj, Access_mValue<UIntObj,std::uint64_t> {
 		TValue mValue;
 
 		UIntObj(TValue v=0) noexcept: mValue{v} {}

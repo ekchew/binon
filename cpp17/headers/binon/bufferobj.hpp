@@ -5,13 +5,9 @@
 
 namespace binon {
 
-	class BufferObj:
-		public BinONObj,
-		public AccessContainer_mValue<BufferObj,TBuffer>
-	{
-	public:
+	struct BufferObj: BinONObj, AccessContainer_mValue<BufferObj,TBuffer> {
 		TValue mValue;
-		
+
 		BufferObj(const TValue& v): mValue{v} {}
 		BufferObj(TValue&& v) noexcept: mValue{std::move(v)} {}
 		BufferObj() noexcept = default;

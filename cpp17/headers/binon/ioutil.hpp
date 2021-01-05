@@ -23,27 +23,26 @@ namespace binon {
 		sizeof(TStreamByte) == 1,
 		"BinON streams must use a 1-byte (binary) character type"
 	);
-	
+
 	//	RequireIO is a simple class which sets a stream's exception flags in
 	//	its constructor and restores them back to what they were in its
 	//	destructor. This means any I/O errors should throw std::failure.
-	class RequireIO {
-	public:
-		
+	struct RequireIO {
+
 		//	The second "enable" argument defaults to true. If you make it
 		//	false, RequireIO will effectively do nothing. This can be useful
 		//	when you write a function that takes a requireIO argument. You can
 		//	go through the motions of constructing a RequireIO object without
 		//	necessarily setting the exception bits.
 		RequireIO(TIOS& stream, bool enable=true);
-		
+
 		~RequireIO();
-	
+
 	private:
 		TIOS* mPStream;
 		TIOS::iostate mEx0;
 	};
-	
+
 	//	Named constant to set second arg of RequireIO constructor false.
 	constexpr bool kSkipRequireIO = false;
 

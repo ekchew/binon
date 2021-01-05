@@ -23,28 +23,33 @@ namespace binon {
 	using TList = TVector<TSPBinONObj>;
 	using TDict = std::unordered_map<TSPBinONObj, TSPBinONObj>;
 
-	class NullDeref: public std::out_of_range {
-	public:
+	struct NullDeref: std::out_of_range {
 		using std::out_of_range::out_of_range;
 	};
-	class TypeErr: public std::logic_error {
-	public:
+	struct TypeErr: std::logic_error {
 		using std::logic_error::logic_error;
 	};
 
 	constexpr bool kDeepCopy = true;
 
-	class BinONObj {
-	public:
+	struct BinONObj {
 
 		//	Cast() dynamically casts a shared pointer to a BinONObj to one of
-		//	its subclasses. This operation must succeed. If the pointer is null,
-		//	Cast() will throw NullDeref. If it has been allocated but is of a
-		//	different subclass from the one you specify, it will throw TypeErr.
-		template<typename Subcls>
-			auto Cast(TSPBinONObj& p) -> std::shared_ptr<Subcls>;
-		template<typename Subcls>
-			auto Cast(const TSPBinONObj& p) -> const std::shared_ptr<Subcls>;
+		//	its subclasses.
+		//
+		//	If the Assert template argument is true, this operation must
+		//	succeed. If the pointer is null, Cast() will throw NullDeref.
+		//	If it has been allocated but is of a different subclass from the
+		//	one you specify, it will throw TypeErr. If assertCast if false,
+		//	Cast() will simply perform a static cast with no error-checking.
+		//	By default, Assert is true only in debug builds.
+		//
+		template<typename Subcls, bool Assert=BINON_DEBUG>
+			auto Cast(TSPBinONObj& p)
+				-> std::shared_ptr<Subcls>;
+		template<typename Subcls, bool Assert=BINON_DEBUG>
+			auto Cast(const TSPBinONObj& p)
+				-> const std::shared_ptr<Subcls>;
 
 		static auto Decode(TIStream& stream, bool requireIO=true)
 			-> TSPBinONObj;
@@ -84,20 +89,31 @@ namespace binon {
 
 	//---- Template Implementation ---------------------------------------------
 
-	template<typename Subcls>
-	auto BinONObj::Cast(TSPBinONObj& p) -> std::shared_ptr<Subcls> {
-		if(!p) {
-			throw NullDeref{"BinONObj shared pointer unallocated"};
+	template<typename Subcls, bool Assert>
+	auto BinONObj::Cast(TSPBinONObj& p)
+		-> std::shared_ptr<Subcls>
+	{
+		std::shared_ptr<Subcls> pSubcls;
+		if constexpr(Assert) {
+			if(!p) {
+				throw NullDeref{"BinONObj shared pointer unallocated"};
+			}
+			pSubcls = std::dynamic_pointer_cast<Subcls>(p);
+			if(!pSubcls) {
+				throw TypeErr{
+					"BinONObj shared pointer will not cast to subclass"};
+			}
 		}
-		auto pSubcls = std::dynamic_pointer_cast<Subcls>(p);
-		if(!pSubcls) {
-			throw TypeErr{"BinONObj shared pointer will not cast to subclass"};
+		else {
+			pSubcls = std::static_pointer_cast<Subcls>(p);
 		}
 		return pSubcls;
 	}
-	template<typename Subcls>
-	auto BinONObj::Cast(const TSPBinONObj& p) -> const std::shared_ptr<Subcls> {
-		return Cast<Subcls>(const_cast<TSPBinONObj&>(p));
+	template<typename Subcls, bool Assert>
+	auto BinONObj::Cast(const TSPBinONObj& p)
+		-> const std::shared_ptr<Subcls>
+	{
+		return Cast<Subcls,Assert>(const_cast<TSPBinONObj&>(p));
 	}
 }
 

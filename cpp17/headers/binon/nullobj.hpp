@@ -4,9 +4,8 @@
 #include "binonobj.hpp"
 
 namespace binon {
-	
-	class NullObj: public BinONObj {
-	public:
+
+	struct NullObj: BinONObj {
 		auto typeCode() const noexcept -> CodeByte final {return kNullObjCode;}
 		auto getHash() const -> std::size_t override {return 0;}
 		auto equals(const BinONObj& other) const -> bool override

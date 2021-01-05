@@ -7,13 +7,9 @@
 
 namespace binon {
 
-	class StrObj:
-		public BinONObj,
-		public AccessContainer_mValue<StrObj,TString>
-	{
-	public:
+	struct StrObj: BinONObj, AccessContainer_mValue<StrObj,TString> {
 		TValue mValue;
-		
+
 		StrObj(const TValue& v): mValue{v} {}
 		StrObj(TValue&& v) noexcept: mValue{std::move(v)} {}
 		StrObj() noexcept = default;

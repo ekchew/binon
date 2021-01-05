@@ -1,5 +1,5 @@
 CXX ?= c++
-DBG_FLAGS ?= -g
+DBG_FLAGS ?= -g -D DEBUG
 REL_FLAGS ?= -O2
 CMN_FLAGS ?= -std=c++17
 
@@ -40,8 +40,8 @@ OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
 
 ${DEST_DIR}/lib/libbinon.a: ${OBJS} ${HDR}binon.hpp
-	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 	touch ${HDR}binon.hpp
+	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
 DEP0 := ${HDR}macros.hpp makefile
 DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${DEP0}

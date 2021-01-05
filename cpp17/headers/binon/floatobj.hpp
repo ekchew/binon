@@ -5,10 +5,7 @@
 
 namespace binon {
 
-	class FloatObj:
-		public BinONObj, public Access_mValue<FloatObj,types::TFloat64>
-	{
-	public:
+	struct FloatObj: BinONObj, Access_mValue<FloatObj,types::TFloat64> {
 		TValue mValue;
 
 		FloatObj(TValue v=0.0) noexcept: mValue{v} {}
@@ -32,9 +29,7 @@ namespace binon {
 			{ stream << mValue; }
 	};
 
-	class Float32Obj:
-		public BinONObj, public Access_mValue<Float32Obj,types::TFloat32> {
-	public:
+	struct Float32Obj: BinONObj, Access_mValue<Float32Obj,types::TFloat32> {
 		TValue mValue;
 
 		Float32Obj(TValue v=0.0f) noexcept: mValue{v} {}
