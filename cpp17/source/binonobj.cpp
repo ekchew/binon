@@ -38,13 +38,13 @@ namespace binon {
 			p = std::make_shared<IntObj>();
 			break;
 		case kUIntCode.toInt<int>():
-			p = std::make_shared<UInt>();
+			p = std::make_shared<UIntObj>();
 			break;
 		case kFloatObjCode.toInt<int>():
 			p = std::make_shared<FloatObj>();
 			break;
 		case kFloat32Code.toInt<int>():
-			p = std::make_shared<Float32>();
+			p = std::make_shared<Float32Obj>();
 			break;
 		case kBufferObjCode.toInt<int>():
 			p = std::make_shared<BufferObj>();

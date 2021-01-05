@@ -10,7 +10,7 @@ namespace binon {
 	}
 	void BufferObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
-		UInt size{mValue.size()};
+		UIntObj size{mValue.size()};
 		size.encodeData(stream, kSkipRequireIO);
 		stream.write(
 			reinterpret_cast<const TStreamByte*>(mValue.data()),
@@ -19,7 +19,7 @@ namespace binon {
 	}
 	void BufferObj::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
-		UInt len;
+		UIntObj len;
 		len.decodeData(stream, kSkipRequireIO);
 		mValue.resize(len);
 		stream.read(

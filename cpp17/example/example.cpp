@@ -6,6 +6,7 @@
 auto main() -> int {
 	try {
 		using namespace binon;
+		using namespace binon::types;
 		using namespace std;
 
 		binon::SDict value{kStrObjCode, kUIntCode};

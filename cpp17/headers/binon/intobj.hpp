@@ -4,17 +4,17 @@
 #include "binonobj.hpp"
 
 namespace binon {
-	
+
 	class IntRangeError: public std::range_error {
 	public:
 		IntRangeError();
 	};
-	
+
 	class IntObj: public BinONObj, public Access_mValue<IntObj,std::int64_t>
 	{
 	public:
 		TValue mValue;
-		
+
 		IntObj(TValue v=0) noexcept: mValue{v} {}
 		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
@@ -33,12 +33,12 @@ namespace binon {
 		void printArgsRepr(std::ostream& stream) const override
 			{ stream << mValue; }
 	};
-	
-	class UInt: public BinONObj, public Access_mValue<UInt,std::uint64_t> {
+
+	class UIntObj: public BinONObj, public Access_mValue<UIntObj,std::uint64_t> {
 	public:
 		TValue mValue;
-		
-		UInt(TValue v=0) noexcept: mValue{v} {}
+
+		UIntObj(TValue v=0) noexcept: mValue{v} {}
 		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kUIntCode;}
@@ -47,16 +47,19 @@ namespace binon {
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kUIntCode &&
-					*this == static_cast<const UInt&>(other);
+					*this == static_cast<const UIntObj&>(other);
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return std::make_shared<UInt>(mValue); }
+			{ return std::make_shared<UIntObj>(mValue); }
 		auto clsName() const noexcept -> const char* override
-			{ return "UInt"; }
+			{ return "UIntObj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ stream << mValue; }
 	};
 
+	namespace types {
+		using UInt = UIntObj;
+	}
 }
 
 namespace std {
@@ -64,8 +67,8 @@ namespace std {
 		constexpr auto operator () (const binon::IntObj& obj) const noexcept
 			-> std::size_t { return obj.hash(); }
 	};
-	template<> struct hash<binon::UInt> {
-		 constexpr auto operator () (const binon::UInt& obj) const noexcept
+	template<> struct hash<binon::UIntObj> {
+		 constexpr auto operator () (const binon::UIntObj& obj) const noexcept
 			-> std::size_t { return obj.hash(); }
 	};
 }

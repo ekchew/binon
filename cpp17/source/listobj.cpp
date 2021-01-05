@@ -7,12 +7,14 @@
 	#include <execution>
 	#define BINON_PAR_UNSEQ std::execution::par_unseq,
 #else
-	#pragma message "C++17 execution policies unavailable"
+	#if BINON_EXEC_POLICIES
+		#pragma message "C++17 execution policies unavailable"
+	#endif
 	#define BINON_PAR_UNSEQ
 #endif
 
 namespace binon {
-	
+
 	auto DeepCopyTList(const TList& list) -> TList {
 		TList copy(list.size());
 		std::transform(BINON_PAR_UNSEQ
@@ -36,18 +38,18 @@ namespace binon {
 		}
 		stream << '}';
 	}
-	
+
 	//---- ListObj -------------------------------------------------------------
-	
+
 	void ListObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
-		UInt count{mValue.size()};
+		UIntObj count{mValue.size()};
 		count.encodeData(stream, kSkipRequireIO);
 		encodeElems(stream, kSkipRequireIO);
 	}
 	void ListObj::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
-		UInt count;
+		UIntObj count;
 		count.decodeData(stream, kSkipRequireIO);
 		decodeElems(stream, count, kSkipRequireIO);
 	}
@@ -72,9 +74,9 @@ namespace binon {
 		}
 		return std::make_shared<ListObj>(*this);
 	}
-	
+
 	//---- SList ---------------------------------------------------------------
-	
+
 	auto SList::typeCode() const noexcept -> CodeByte {
 		return kSListCode;
 	}
@@ -95,13 +97,13 @@ namespace binon {
 	void SList::encodeData(TOStream& stream, bool requireIO) const {
 		BINON_IF_DEBUG(assertElemTypes();)
 		RequireIO rio{stream, requireIO};
-		UInt count{mValue.mList.size()};
+		UIntObj count{mValue.mList.size()};
 		count.encodeData(stream, kSkipRequireIO);
 		encodeElems(stream, kSkipRequireIO, kSkipAssertTypes);
 	}
 	void SList::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
-		UInt count;
+		UIntObj count;
 		count.decodeData(stream, kSkipRequireIO);
 		mValue.mList.resize(count);
 		decodeElems(stream, count, kSkipRequireIO);
@@ -112,14 +114,14 @@ namespace binon {
 		if(assertTypes) {
 			assertElemTypes();
 		}
-		
+
 		//	Write element code.
 		RequireIO rio{stream, requireIO};
 		mValue.mElemCode.write(stream, kSkipRequireIO);
-		
+
 		//	Write data of all elements consecutively.
 		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
-			
+
 			//	Special case for booleans which get packed 8 to a byte.
 			std::byte byt = 0x00_byte;
 			auto n = mValue.mList.size();
@@ -153,11 +155,11 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		mValue.mElemCode = CodeByte::Read(stream, kSkipRequireIO);
 		auto pBaseObj = FromCodeByte(mValue.mElemCode);
-		
+
 		//	Read data of all elements consecutively.
 		mValue.mList.resize(count);
 		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
-			
+
 			//	Special case for booleans packed 8 to a byte.
 			std::byte byt = 0x00_byte;
 			for(decltype(count) i = 0; i < count; ++i) {
