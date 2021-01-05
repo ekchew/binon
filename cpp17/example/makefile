@@ -1,4 +1,5 @@
 CXX := c++
+#CXX := clang++
 #CXX := xcrun g++-10
 DBG_FLAGS := -g
 REL_FLAGS := -O2
