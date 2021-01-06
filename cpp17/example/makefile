@@ -45,12 +45,9 @@ OBJ := ${DEST_DIR}/obj/
 OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
 
-example.cpp: ${HEADERS_DIR}/binon/binon.hpp
-	touch example.cpp
-
 ${DEST_DIR}/bin/example: ${OBJS}
 	${CXX} ${OBJS} ${CPP17_DIR}/${DEST_DIR}/lib/libbinon.a \
 		${LD_FLAGS} ${LD_TGT_FLAGS} -o ${DEST_DIR}/bin/example
 
-${OBJ}example.o: example.cpp makefile
+${OBJ}example.o: example.cpp makefile ${HEADERS_DIR}/binon/binon.hpp
 	${CXX} ${FLAGS} example.cpp -o ${OBJ}example.o

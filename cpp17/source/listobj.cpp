@@ -132,12 +132,12 @@ namespace binon {
 				if(*pObj) {
 					byt |= 0x01_byte;
 				}
-				if((i & 0x7) == 0x7) {
+				if((i & 0x7u) == 0x7u) {
 					WriteWord(byt, stream, kSkipRequireIO);
 					byt = 0x00_byte;
 				}
 			}
-			if(i & 0x7) {
+			if(i & 0x7u) {
 				byt <<= 8 - i;
 				WriteWord(byt, stream, kSkipRequireIO);
 			}
@@ -163,7 +163,7 @@ namespace binon {
 			//	Special case for booleans packed 8 to a byte.
 			std::byte byt = 0x00_byte;
 			for(decltype(count) i = 0; i < count; ++i) {
-				if((i & 0x7) == 0) {
+				if((i & 0x7u) == 0x0u) {
 					byt = ReadWord<decltype(byt)>(stream, kSkipRequireIO);
 				}
 				mValue.mList[i] = std::make_shared<BoolObj>(

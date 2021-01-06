@@ -52,7 +52,6 @@ namespace binon {
 
 	private:
 		std::byte mValue;
-
 	};
 
 	namespace details {

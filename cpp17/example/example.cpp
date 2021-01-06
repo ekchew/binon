@@ -26,20 +26,20 @@ auto main() -> int {
 		using namespace binon::types;
 		using namespace std;
 
-		SDict value{kStrObjCode, kUIntCode};
-		value.value<StrObj,UInt>("foo") = 0;
-		value.value<StrObj,UInt>("bar") = 1;
-		value.value<StrObj,UInt>("baz") = 2;
-		cout << "before encoding: " << value << '\n';
+		SDict sd{kStrObjCode, kUIntCode};
+		sd.value<StrObj,UInt>("foo") = 0;
+		sd.value<StrObj,UInt>("bar") = 1;
+		sd.value<StrObj,UInt>("baz") = 2;
+		cout << "before encoding: " << sd << '\n';
 
 		std::ostringstream oss;
-		value.encode(oss);
+		sd.encode(oss);
 
 		DumpBinON(oss.str());
 
 		std::istringstream iss{oss.str()};
-		value.decode(iss);
-		cout << "after decoding: " << value << '\n';
+		sd.decode(iss);
+		cout << "after decoding: " << sd << '\n';
 	}
 	catch(const std::exception& err) {
 		std::cerr << "ERROR: " << err.what() << '\n';
