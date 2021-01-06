@@ -103,7 +103,7 @@ namespace binon {
 			bool requireIO=true);
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept -> const char* override
-			{ return "SListT<TYPE>"; }
+			{ return "SListT<SEQUENCE>"; }
 		void printArgsRepr(std::ostream& stream) const override;
 	};
 
