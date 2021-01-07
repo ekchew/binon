@@ -93,7 +93,7 @@ namespace binon {
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "DictObj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ PrintTDictRepr(mValue, stream); }
@@ -119,7 +119,7 @@ namespace binon {
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "SKDict"; }
 		void printArgsRepr(std::ostream& stream) const override;
 	};
@@ -148,7 +148,7 @@ namespace binon {
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "SDict"; }
 		void printArgsRepr(std::ostream& stream) const override;
 	};

@@ -23,7 +23,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<FloatObj>(mValue); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "FloatObj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ stream << mValue; }
@@ -47,7 +47,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<Float32Obj>(mValue); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "Float32Obj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ stream << mValue; }

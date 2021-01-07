@@ -74,7 +74,7 @@ namespace binon {
 		virtual void decode(TIStream& stream, bool requireIO=true);
 		virtual void decodeData(TIStream& stream, bool requireIO=true) {}
 		virtual auto makeCopy(bool deep=false) const -> TSPBinONObj = 0;
-		virtual auto clsName() const noexcept -> const char* = 0;
+		virtual auto clsName() const noexcept -> std::string = 0;
 		virtual void printRepr(std::ostream& stream) const;
 		virtual void printPtrRepr(std::ostream& stream) const;
 		virtual void printArgsRepr(std::ostream& stream) const {};

@@ -21,10 +21,10 @@ static void DumpBinON(const std::string& s) {
 }
 
 auto main() -> int {
+	using namespace binon;
+	using namespace binon::types;
+	using namespace std;
 	try {
-		using namespace binon;
-		using namespace binon::types;
-		using namespace std;
 
 		SDict sd{kStrObjCode, kUIntCode};
 		sd.value<StrObj,UInt>("foo") = 0;
@@ -32,17 +32,31 @@ auto main() -> int {
 		sd.value<StrObj,UInt>("baz") = 2;
 		cout << "before encoding: " << sd << '\n';
 
-		std::ostringstream oss;
+		ostringstream oss;
 		sd.encode(oss);
+		auto s{move(oss).str()};
 
-		DumpBinON(oss.str());
+		DumpBinON(s);
 
-		std::istringstream iss{oss.str()};
+		istringstream iss{move(s)};
 		sd.decode(iss);
 		cout << "after decoding: " << sd << '\n';
+		
+		SListT<IntObj> slt{0, 1, 2};
+		cout << "before encoding: " << slt << '\n';
+
+		oss = ostringstream{};
+		slt.encode(oss);
+		s = move(oss).str();
+
+		DumpBinON(s);
+
+		iss = istringstream{move(s)};
+		slt.decode(iss);
+		cout << "after decoding: " << slt << '\n';
 	}
-	catch(const std::exception& err) {
-		std::cerr << "ERROR: " << err.what() << '\n';
+	catch(const exception& err) {
+		cerr << "ERROR: " << err.what() << '\n';
 		return 1;
 	}
 	return 0;

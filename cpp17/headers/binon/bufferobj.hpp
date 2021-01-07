@@ -26,7 +26,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BufferObj>(mValue); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "BufferObj"; }
 		void printArgsRepr(std::ostream& stream) const override;
 	};

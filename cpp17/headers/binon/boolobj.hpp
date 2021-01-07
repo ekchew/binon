@@ -21,7 +21,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BoolObj>(mValue); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "BoolObj";}
  		void printArgsRepr(std::ostream& stream) const override
 			{ stream << std::boolalpha << mValue; }
@@ -42,7 +42,7 @@ namespace binon {
 			{ return other.typeCode() == kTrueObjCode; }
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<TrueObj>(); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "TrueObj"; }
 		void printRepr(std::ostream& stream) const override
 			{ stream << "true"; }

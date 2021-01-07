@@ -93,7 +93,7 @@ namespace binon {
 			typeCode().printRepr(oss);
 			oss << " but read ";
 			cb.printRepr(oss);
-			throw TypeErr{oss.str()};
+			throw TypeErr{std::move(oss).str()};
 		}
 		if(Subtype(cb) != Subtype::kDefault) {
 			decodeData(stream, kSkipRequireIO);
@@ -101,9 +101,7 @@ namespace binon {
 	}
 	void BinONObj::printRepr(std::ostream& stream) const {
 		stream << clsName() << '{';
-		if(*this) {
-			printArgsRepr(stream);
-		}
+		printArgsRepr(stream);
 		stream << '}';
 	}
 	void BinONObj::printPtrRepr(std::ostream& stream) const {

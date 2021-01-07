@@ -12,7 +12,7 @@ namespace binon {
 			{ return other.typeCode() == kNullObjCode; }
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<NullObj>(); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "NullObj"; }
 	};
 
