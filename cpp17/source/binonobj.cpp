@@ -10,7 +10,18 @@
 #include <sstream>
 
 namespace binon {
-	
+
+	auto BinONObj::Decode(TIStream& stream, bool requireIO)
+		-> TSPBinONObj
+	{
+		RequireIO rio{stream, requireIO};
+		auto cb = CodeByte::Read(stream, kSkipRequireIO);
+		auto p = FromCodeByte(cb);
+		if(Subtype(cb) != Subtype::kDefault) {
+			p->decodeData(stream, kSkipRequireIO);
+		}
+		return p;
+	}
 	auto BinONObj::FromCodeByte(CodeByte cb) -> TSPBinONObj {
 		TSPBinONObj p;
 		switch(cb.typeCode().toInt<int>()) {
@@ -27,13 +38,13 @@ namespace binon {
 			p = std::make_shared<IntObj>();
 			break;
 		case kUIntCode.toInt<int>():
-			p = std::make_shared<UInt>();
+			p = std::make_shared<UIntObj>();
 			break;
 		case kFloatObjCode.toInt<int>():
 			p = std::make_shared<FloatObj>();
 			break;
 		case kFloat32Code.toInt<int>():
-			p = std::make_shared<Float32>();
+			p = std::make_shared<Float32Obj>();
 			break;
 		case kBufferObjCode.toInt<int>():
 			p = std::make_shared<BufferObj>();
@@ -61,17 +72,6 @@ namespace binon {
 		}
 		return p;
 	}
-	auto BinONObj::Decode(TIStream& stream, bool requireIO)
-		-> TSPBinONObj
-	{
-		RequireIO rio{stream, requireIO};
-		auto cb = CodeByte::Read(stream, kSkipRequireIO);
-		auto p = FromCodeByte(cb);
-		if(Subtype(cb) != Subtype::kDefault) {
-			p->decodeData(stream, kSkipRequireIO);
-		}
-		return p;
-	}
 	void BinONObj::encode(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto cb = typeCode();
@@ -93,7 +93,7 @@ namespace binon {
 			typeCode().printRepr(oss);
 			oss << " but read ";
 			cb.printRepr(oss);
-			throw TypeErr{oss.str()};
+			throw TypeErr{std::move(oss).str()};
 		}
 		if(Subtype(cb) != Subtype::kDefault) {
 			decodeData(stream, kSkipRequireIO);
@@ -101,9 +101,7 @@ namespace binon {
 	}
 	void BinONObj::printRepr(std::ostream& stream) const {
 		stream << clsName() << '{';
-		if(*this) {
-			printArgsRepr(stream);
-		}
+		printArgsRepr(stream);
 		stream << '}';
 	}
 	void BinONObj::printPtrRepr(std::ostream& stream) const {
@@ -113,7 +111,7 @@ namespace binon {
 		}
 		stream << ')';
 	}
-	
+
 	auto operator == (const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool
 	{
 		return pLHS->equals(*pRHS);

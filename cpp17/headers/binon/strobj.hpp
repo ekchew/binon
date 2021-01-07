@@ -7,20 +7,12 @@
 
 namespace binon {
 
-	class StrObj:
-		public BinONObj,
-		public AccessContainer_mValue<StrObj,TString>
-	{
-	public:
+	struct StrObj: BinONObj, AccessContainer_mValue<StrObj,TString> {
 		TValue mValue;
-		
+
 		StrObj(const TValue& v): mValue{v} {}
 		StrObj(TValue&& v) noexcept: mValue{std::move(v)} {}
-		StrObj(const StrObj& v): StrObj{v.mValue} {}
-		StrObj(StrObj&& v) noexcept: StrObj{std::move(v.mValue)} {}
 		StrObj() noexcept = default;
-		auto operator = (const StrObj&) -> StrObj& = default;
-		auto operator = (StrObj&&) noexcept -> StrObj& = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kStrObjCode;}
@@ -35,7 +27,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<StrObj>(mValue); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "StrObj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ stream << '"' << mValue << '"'; }

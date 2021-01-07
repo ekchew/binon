@@ -21,7 +21,7 @@ namespace binon {
 		std::ostringstream stream;
 		auto hexArr = AsHex(static_cast<std::byte>(cb));
 		stream << "invalid BinON code byte: 0x" << hexArr.data();
-		return stream.str();
+		return std::move(stream).str();
 	}
 
 }

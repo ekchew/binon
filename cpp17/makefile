@@ -1,5 +1,5 @@
 CXX ?= c++
-DBG_FLAGS ?= -g
+DBG_FLAGS ?= -g -D DEBUG
 REL_FLAGS ?= -O2
 CMN_FLAGS ?= -std=c++17
 
@@ -40,6 +40,7 @@ OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
 
 ${DEST_DIR}/lib/libbinon.a: ${OBJS} ${HDR}binon.hpp
+	touch ${HDR}binon.hpp
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
 DEP0 := ${HDR}macros.hpp makefile
@@ -76,14 +77,13 @@ ${OBJ}byteutil.o: ${SRC}byteutil.cpp ${HDR}literals.hpp ${DEP1}
 	${CXX} ${FLAGS} ${SRC}byteutil.cpp -o ${OBJ}byteutil.o
 ${OBJ}codebyte.o: ${SRC}codebyte.cpp ${DEP2}
 	${CXX} ${FLAGS} ${SRC}codebyte.cpp -o ${OBJ}codebyte.o
-${OBJ}dictobj.o: ${SRC}dictobj.cpp ${HDR}dictobj.hpp ${HDR}listobj.hpp ${DEP3}
+${OBJ}dictobj.o: ${SRC}dictobj.cpp ${DEP4}
 	${CXX} ${FLAGS} ${SRC}dictobj.cpp -o ${OBJ}dictobj.o
 ${OBJ}intobj.o: ${SRC}intobj.cpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}intobj.cpp -o ${OBJ}intobj.o
 ${OBJ}ioutil.o: ${SRC}ioutil.cpp ${HDR}ioutil.hpp ${DEP0}
 	${CXX} ${FLAGS} ${SRC}ioutil.cpp -o ${OBJ}ioutil.o
-${OBJ}listobj.o: ${SRC}listobj.cpp ${HDR}listobj.hpp \
-	${HDR}boolobj.hpp ${HDR}intobj.hpp ${DEP3}
+${OBJ}listobj.o: ${SRC}listobj.cpp ${DEP4}
 	${CXX} ${FLAGS} ${SRC}listobj.cpp -o ${OBJ}listobj.o
 ${OBJ}strobj.o: ${SRC}strobj.cpp ${HDR}strobj.hpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}strobj.cpp -o ${OBJ}strobj.o

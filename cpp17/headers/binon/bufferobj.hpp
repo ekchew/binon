@@ -5,20 +5,12 @@
 
 namespace binon {
 
-	class BufferObj:
-		public BinONObj,
-		public AccessContainer_mValue<BufferObj,TBuffer>
-	{
-	public:
+	struct BufferObj: BinONObj, AccessContainer_mValue<BufferObj,TBuffer> {
 		TValue mValue;
-		
+
 		BufferObj(const TValue& v): mValue{v} {}
 		BufferObj(TValue&& v) noexcept: mValue{std::move(v)} {}
-		BufferObj(const BufferObj& v): BufferObj{v.mValue} {}
-		BufferObj(BufferObj&& v) noexcept: BufferObj{std::move(v.mValue)} {}
 		BufferObj() noexcept = default;
-		auto operator = (const BufferObj&) -> BufferObj& = default;
-		auto operator = (BufferObj&&) noexcept -> BufferObj& = default;
 		auto operator==(const BufferObj& rhs) const noexcept -> bool;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
@@ -34,7 +26,7 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BufferObj>(mValue); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "BufferObj"; }
 		void printArgsRepr(std::ostream& stream) const override;
 	};

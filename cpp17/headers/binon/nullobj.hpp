@@ -4,16 +4,15 @@
 #include "binonobj.hpp"
 
 namespace binon {
-	
-	class NullObj: public BinONObj {
-	public:
+
+	struct NullObj: BinONObj {
 		auto typeCode() const noexcept -> CodeByte final {return kNullObjCode;}
 		auto getHash() const -> std::size_t override {return 0;}
 		auto equals(const BinONObj& other) const -> bool override
 			{ return other.typeCode() == kNullObjCode; }
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<NullObj>(); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "NullObj"; }
 	};
 

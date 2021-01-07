@@ -15,19 +15,19 @@
 
 namespace binon {
 	static_assert(CHAR_BIT == 8, "binon requires 8-bit bytes");
-	
+
 	////////////////////////////////////////////////////////////////////////////
 	//
 	//	std::byte Helper Functions
 	//
 	////////////////////////////////////////////////////////////////////////////
-	
+
 	//	You can easily convert a std::byte to an integer by calling
 	//	std::to_integer<int>() on it, but there does not seem to be a
 	//	corresponding to_byte(), so binon::ToByte() fills that void.
 	template<typename I> constexpr auto ToByte(I i)
 		{ return std::byte{static_cast<unsigned char>(i)}; }
-		
+
 	//	AsHexC() converts a std::byte into a 0-padded hexadecimal C string. The
 	//	captilize option would return "AB" instead of "ab". The C string is
 	//	returned wrapped inside a std::array rather than a std::string to
@@ -35,41 +35,41 @@ namespace binon {
 	//	get at the string.
 	auto AsHexC(std::byte value, bool capitalize=false) noexcept
 		-> std::array<char,3>;
-	
+
 	//	AsHex() is the same as AsHexC() but returns a std::string instead of
 	//	the lower-level char array.
 	auto AsHex(std::byte value, bool capitalize=false) -> std::string;
-	
+
 	//	Prints a byte in the literal form "0xa5_byte".
 	void PrintByte(std::byte value, std::ostream& stream);
-	
+
 	////////////////////////////////////////////////////////////////////////////
 	//
 	//	Byte Order Functions
 	//
 	////////////////////////////////////////////////////////////////////////////
-	
+
 	//	Returns true if compile target uses a little-endian byte order or
 	//	false if it is big-endian instead.
 #if BINON_CPP20
 	constexpr auto LittleEndian() noexcept -> bool {
 		return std::endian::native == std::endian::little;
 	}
-#else	
+#else
 	auto LittleEndian() noexcept -> bool;
 #endif
-	
+
 	//	The WriteWord functions write a scalar value to either a byte buffer
 	//	or an output byte stream, making byte order corrections along the way
 	//	to conform to BinON's big-endian format. Its counterpart, ReadWord(),
 	//	returns the value you previously serialized with WriteWord().
-	//	
+	//
 	//	You are strongly advised to use data types that rigorously defined in
 	//	terms of word size when you call these functions. For integers, you
 	//	should use std::int32_t and the like (from <cstdint>). For
 	//	floating-point values, you should use either TFloat32 or TFloat64 (from
 	//	"binon/floattypes.hpp").
-	
+
 	//	These lower level functions work with a byte buffer you must provide.
 	//	It must have a capacity of at least sizeof(Word) bytes, and ReadWord()
 	//	expects the buffer to contain your value in big-endian format.
@@ -105,7 +105,7 @@ namespace binon {
 			}
 			return word;
 		}
-	
+
 	//	These higher level versions of the ReadWord/WriteWord functions take
 	//	I/O streams instead of buffers. The extra "requireIO" argument tells
 	//	the functions to set the exception bits so that the I/O will throw a

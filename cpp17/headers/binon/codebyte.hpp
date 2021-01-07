@@ -10,15 +10,14 @@
 #include <ostream>
 
 namespace binon {
-	
-	class CodeByte
+
+	struct CodeByte
 		//	Wraps a std::byte containing a BinON code byte value.
 	{
-	public:
 		template<typename I> static constexpr auto FromInt(I i) noexcept
 			{ return CodeByte(ToByte(i)); }
 		static auto Read(TIStream& stream, bool requireIO=true) -> CodeByte;
-		
+
 		constexpr CodeByte(std::byte value=0x00_byte) noexcept:
 			mValue{value} {}
 		constexpr operator std::byte() const noexcept {return mValue;}
@@ -35,7 +34,7 @@ namespace binon {
 			//	is identical to a regular CodeByte except it does not allow
 			//	the default subtype of 0. typeCode() will raise this to the
 			//	base subtype of 1.
-			//	
+			//
 			//	Suppose you have just decoded a FloatObj with code byte 0x30.
 			//	If you want to check that you are dealing with a FloatObj, you
 			//	an go myObj.typeCode() == kFloatObjCode. kFloatObjCode is
@@ -50,37 +49,35 @@ namespace binon {
 			}
 		void write(TOStream& stream, bool requireIO=true) const;
 		void printRepr(std::ostream& stream) const;
-	
+
 	private:
 		std::byte mValue;
-		
 	};
-	
+
 	namespace details {
-	
+
 		//	A CRTP (curiously recurring template pattern) parent class for the
 		//	BaseType and Subtype classes that follow.
-		template<typename Subcls> class CodeBaseField {
-		public:
-			constexpr CodeBaseField(CodeByte& codeByte) noexcept: 
+		template<typename Subcls> struct CodeBaseField {
+			constexpr CodeBaseField(CodeByte& codeByte) noexcept:
 				mCodeByte{codeByte} {}
-			
+
 			//	CRTP lets you add extra operators like this without a lot of
 			//	duplication. May add more as the need arises?
 			constexpr auto& operator += (unsigned int i) noexcept
 				{ auto& sc = subcls(); return sc = sc + i, sc; }
 			constexpr auto& operator -= (unsigned int i) noexcept
 				{ auto& sc = subcls(); return sc = sc - i, sc; }
-		
+
 		protected:
 			CodeByte& mCodeByte;
-			
+
 			constexpr auto& subcls() noexcept
 				{ return *static_cast<Subcls*>(this); }
 		};
-	
+
 	}
-	
+
 	//	BaseType and Subtype are CodeByte accessor classes that let you work
 	//	directly with the two fields of a code byte as unsigned int values.
 	class BaseType: public details::CodeBaseField<BaseType> {
@@ -93,12 +90,12 @@ namespace binon {
 	};
 	class Subtype: public details::CodeBaseField<Subtype> {
 	public:
-		
+
 		//	Constants defining default and base subtypes.
 		static constexpr unsigned int
 			kDefault{0},
 			kBase{1};
-		
+
 		using details::CodeBaseField<Subtype>::CodeBaseField;
 		constexpr operator unsigned int() const noexcept
 			{ return mCodeByte.toInt<unsigned int>() & 0x0fu; }
@@ -108,7 +105,7 @@ namespace binon {
 					ToByte(value) & 0x0F_byte, *this;
 			}
 	};
-	
+
 	//	Type codes for every BinONObj type.
 	constexpr CodeByte
 		kNullObjCode{0x01_byte},
@@ -129,9 +126,18 @@ namespace binon {
 	class BadCodeByte: public std::range_error {
 	public:
 		BadCodeByte(CodeByte cb): std::range_error{WhatStr(cb)} {}
-	
+
 	private:
 		static auto WhatStr(CodeByte cb) -> std::string;
+	};
+}
+
+namespace std {
+	template<> struct hash<binon::CodeByte> {
+		inline auto operator () (const binon::CodeByte& v) const noexcept
+			-> std::size_t {
+				return std::hash<std::uint8_t>{}(v.toInt<std::uint8_t>());
+			}
 	};
 }
 

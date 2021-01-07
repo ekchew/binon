@@ -22,25 +22,45 @@ namespace binon {
 	using TSPBinONObj = std::shared_ptr<BinONObj>;
 	using TList = TVector<TSPBinONObj>;
 	using TDict = std::unordered_map<TSPBinONObj, TSPBinONObj>;
-	
-	class TypeErr: public std::logic_error {
-	public:
+
+	struct NullDeref: std::out_of_range {
+		using std::out_of_range::out_of_range;
+	};
+	struct TypeErr: std::logic_error {
 		using std::logic_error::logic_error;
 	};
-	
+
 	constexpr bool kDeepCopy = true;
-	
-	class BinONObj {
-	public:
+
+	struct BinONObj {
+
+		//	Cast() dynamically casts a shared pointer to a BinONObj to one of
+		//	its subclasses.
+		//
+		//	If the Assert template argument is true, this operation must
+		//	succeed. If the pointer is null, Cast() will throw NullDeref.
+		//	If it has been allocated but is of a different subclass from the
+		//	one you specify, it will throw TypeErr. If assertCast if false,
+		//	Cast() will simply perform a static cast with no error-checking.
+		//	By default, Assert is true only in debug builds.
+		//
+		template<typename Subcls, bool Assert=BINON_DEBUG>
+			auto Cast(TSPBinONObj& p)
+				-> std::shared_ptr<Subcls>;
+		template<typename Subcls, bool Assert=BINON_DEBUG>
+			auto Cast(const TSPBinONObj& p)
+				-> const std::shared_ptr<Subcls>;
+
+		static auto Decode(TIStream& stream, bool requireIO=true)
+			-> TSPBinONObj;
 		static auto FromCodeByte(CodeByte cb) -> TSPBinONObj;
-		
+
 		//	Returns false is object has the default value for its type or
 		//	true otherwise.
-		explicit virtual operator bool() const noexcept
-			{ return false; }
-		
+		explicit virtual operator bool() const noexcept { return false; }
+
 		virtual auto typeCode() const noexcept -> CodeByte = 0;
-		
+
 		//	These methods are needed to support BinON objects as dictionary
 		//	keys. They are supported by all types except list and dictionary
 		//	variants.
@@ -48,45 +68,53 @@ namespace binon {
 			{ return TypeErr{"data type cannot be hashed"}, 0; }
 		virtual auto equals(const BinONObj& other) const -> bool
 			{ return TypeErr{"data type cannot be compared"}, false; }
-		
-		static auto Decode(TIStream& stream, bool requireIO=true)
-			-> TSPBinONObj;
-		
-		//	While the lower level Decode() returns a unique pointer to a
-		//	BinONObj, DecodeType() assumes you know which BinONObj subtype to
-		//	expect already and returns the IntObj or whatever it is by value.
-		//	(It will throw a TypeErr if you guess wrong.)
-		template<typename Subtype>
-			static auto DecodeType(TIStream& stream, bool requireIO=true)
-				-> Subtype
-			{
-				auto pBaseObj = Decode(stream, requireIO);
-				auto pSubobj = dynamic_cast<Subtype*>(pBaseObj.get());
-				if(!pSubobj) {
-					throw TypeErr{
-						"could not decode BinON object as requested type"
-					};
-				}
-				return std::move(*pSubobj);
-			}
-		
+
 		virtual void encode(TOStream& stream, bool requireIO=true) const;
 		virtual void encodeData(TOStream& stream, bool requireIO=true) const {}
 		virtual void decode(TIStream& stream, bool requireIO=true);
 		virtual void decodeData(TIStream& stream, bool requireIO=true) {}
 		virtual auto makeCopy(bool deep=false) const -> TSPBinONObj = 0;
-		virtual auto clsName() const noexcept -> const char* = 0;
+		virtual auto clsName() const noexcept -> std::string = 0;
 		virtual void printRepr(std::ostream& stream) const;
 		virtual void printPtrRepr(std::ostream& stream) const;
 		virtual void printArgsRepr(std::ostream& stream) const {};
 		virtual ~BinONObj() {}
 	};
-	
+
 	auto operator == (const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool;
 	auto operator << (std::ostream& stream, const BinONObj& obj)
 		-> std::ostream&;
 	auto operator << (std::ostream& stream, const TSPBinONObj& pObj)
 		-> std::ostream&;
+
+	//---- Template Implementation ---------------------------------------------
+
+	template<typename Subcls, bool Assert>
+	auto BinONObj::Cast(TSPBinONObj& p)
+		-> std::shared_ptr<Subcls>
+	{
+		std::shared_ptr<Subcls> pSubcls;
+		if constexpr(Assert) {
+			if(!p) {
+				throw NullDeref{"BinONObj shared pointer unallocated"};
+			}
+			pSubcls = std::dynamic_pointer_cast<Subcls>(p);
+			if(!pSubcls) {
+				throw TypeErr{
+					"BinONObj shared pointer will not cast to subclass"};
+			}
+		}
+		else {
+			pSubcls = std::static_pointer_cast<Subcls>(p);
+		}
+		return pSubcls;
+	}
+	template<typename Subcls, bool Assert>
+	auto BinONObj::Cast(const TSPBinONObj& p)
+		-> const std::shared_ptr<Subcls>
+	{
+		return Cast<Subcls,Assert>(const_cast<TSPBinONObj&>(p));
+	}
 }
 
 namespace std {

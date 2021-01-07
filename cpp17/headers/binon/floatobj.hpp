@@ -5,11 +5,9 @@
 
 namespace binon {
 
-	class FloatObj: public BinONObj, public Access_mValue<FloatObj,TFloat64>
-	{
-	public:
+	struct FloatObj: BinONObj, Access_mValue<FloatObj,types::TFloat64> {
 		TValue mValue;
-		
+
 		FloatObj(TValue v=0.0) noexcept: mValue{v} {}
 		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
@@ -25,17 +23,16 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<FloatObj>(mValue); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "FloatObj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ stream << mValue; }
 	};
-	
-	class Float32: public BinONObj, public Access_mValue<Float32,TFloat32> {
-	public:
+
+	struct Float32Obj: BinONObj, Access_mValue<Float32Obj,types::TFloat32> {
 		TValue mValue;
-		
-		Float32(TValue v=0.0f) noexcept: mValue{v} {}
+
+		Float32Obj(TValue v=0.0f) noexcept: mValue{v} {}
 		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kFloat32Code;}
@@ -46,16 +43,19 @@ namespace binon {
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kFloat32Code &&
-					*this == static_cast<const Float32&>(other);
+					*this == static_cast<const Float32Obj&>(other);
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
-			{ return std::make_shared<Float32>(mValue); }
-		auto clsName() const noexcept -> const char* override
-			{ return "Float32"; }
+			{ return std::make_shared<Float32Obj>(mValue); }
+		auto clsName() const noexcept -> std::string override
+			{ return "Float32Obj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ stream << mValue; }
 	};
 
+	namespace types {
+		using Float32 = Float32Obj;
+	}
 }
 
 namespace std {
@@ -63,8 +63,8 @@ namespace std {
 		constexpr auto operator () (const binon::FloatObj& obj) const noexcept
 			-> std::size_t { return obj.hash(); }
 	};
-	template<> struct hash<binon::Float32> {
-		constexpr auto operator () (const binon::Float32& obj) const noexcept
+	template<> struct hash<binon::Float32Obj> {
+		constexpr auto operator () (const binon::Float32Obj& obj) const noexcept
 			-> std::size_t { return obj.hash(); }
 	};
 }

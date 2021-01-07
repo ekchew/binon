@@ -4,8 +4,9 @@
 //	This header includes all the others.
 //
 //	It's useful to have the makefile which builds the binon library touch this
-//	file whenever any of the other headers change. That way, makefiles for
-//	other project using the library need only list binon.hpp as a dependency.
+//	file whenever any of the other headers change or the library is rebuilt.
+//	That way, makefiles for other project using the library need only list
+//	binon.hpp as a dependency.
 
 #include "binonobj.hpp"
 #include "boolobj.hpp"

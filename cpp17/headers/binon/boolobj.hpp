@@ -4,11 +4,10 @@
 #include "binonobj.hpp"
 
 namespace binon {
-	
-	class BoolObj: public BinONObj, public Access_mValue<BoolObj,bool> {
-	public:
+
+	struct BoolObj: BinONObj, Access_mValue<BoolObj,bool> {
 		TValue mValue;
-		
+
 		BoolObj(TValue v=false) noexcept: mValue{v} {}
 		explicit operator bool() const noexcept override
 			{ return mValue; }
@@ -22,19 +21,18 @@ namespace binon {
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BoolObj>(mValue); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "BoolObj";}
  		void printArgsRepr(std::ostream& stream) const override
 			{ stream << std::boolalpha << mValue; }
 	};
-	
-	class TrueObj: public BinONObj, public Access_mValue<TrueObj,bool> {
-	public:
+
+	struct TrueObj: BinONObj, Access_mValue<TrueObj,bool> {
 		struct Value {
 			constexpr operator TValue() const noexcept {return true;}
 		};
 		Value mValue;
-		
+
 		explicit operator bool() const noexcept override
 			{ return true; }
 		auto typeCode() const noexcept -> CodeByte final
@@ -44,7 +42,7 @@ namespace binon {
 			{ return other.typeCode() == kTrueObjCode; }
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<TrueObj>(); }
-		auto clsName() const noexcept -> const char* override
+		auto clsName() const noexcept -> std::string override
 			{ return "TrueObj"; }
 		void printRepr(std::ostream& stream) const override
 			{ stream << "true"; }

@@ -84,7 +84,7 @@ namespace binon {
 		}
 	}
 	
-	void UInt::encodeData(TOStream& stream, bool requireIO) const {
+	void UIntObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		if(mValue < 0x80) {
 			WriteWord(ToByte(mValue), stream, kSkipRequireIO);
@@ -112,7 +112,7 @@ namespace binon {
 			WriteWord(mValue, stream, kSkipRequireIO);
 		}
 	}
-	void UInt::decodeData(TIStream& stream, bool requireIO) {
+	void UIntObj::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
 		auto byte0 = ReadWord<std::byte>(stream, kSkipRequireIO);
 		if((byte0 & 0x80_byte) == 0x00_byte) {
