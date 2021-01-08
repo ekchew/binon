@@ -84,6 +84,35 @@ namespace binon {
 		void printArgsRepr(std::ostream& stream) const override;
 	};
 
+	//	This class template helps map simple data types to their BinON wrapper
+	//	class counterparts. For example, TypeInfo<bool>::Wrapper (or
+	//	TWrapper<bool> for short) would be BoolObj. The class also provides a
+	//	TypeName() method which, in this case, would return the std::string
+	//	"bool". It is used internally by SListT and the like (see below).
+	//
+	//	As it stands, TypeInfo makes the following mappings of basic types:
+	//
+	//		Type Arg    Wrapper   Type Name
+	//		________    _______    _________
+	//
+	//		bool        BoolObj    "bool"
+	//		int8_t      IntObj     "int8_t"
+	//		int16_t     IntObj     "int16_t"
+	//		int32_t     IntObj     "int32_t"
+	//		int64_t     IntObj     "int64_t"
+	//		uint8_t     UIntObj    "uint8_t"
+	//		uint16_t    UIntObj    "uint16_t"
+	//		uint32_t    UIntObj    "uint32_t"
+	//		uint64_t    UIntObj    "uint64_t"
+	//		TFloat32    Float32Obj "TFloat32"
+	//		TFloat64    FloatObj   "TFloat64"
+	//		TBuffer     BufferObj  "TBuffer"
+	//		std::string StrObj     "string"
+	//
+	//	Also, if you feed it a type is already a wrapper class, you will simply
+	//	get the wrapper. In other words, TypeInfo<<BoolObj>::Wrapper is BoolObj
+	//	and TypeInfo<BoolObj>::Name() is "BoolObj".
+	//
 	template<typename T, typename Enable=void>
 	struct TypeInfo {
 		static_assert(true, "BinON could not determine object type");
