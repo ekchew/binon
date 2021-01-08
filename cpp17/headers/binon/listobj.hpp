@@ -122,23 +122,56 @@ namespace binon {
 		//		static auto TypeName() -> std::string;
 	};
 	template<typename T> using TWrapper = typename TypeInfo<T>::Wrapper;
+	
+	//	kIsWrapper<BoolObj> evaluates to true to indicate that you are already
+	//	looking at a wrapper class while kIsWrapper<bool> evaluates false.
 	template<typename T> inline constexpr
 		bool kIsWrapper = std::is_base_of_v<BinONObj, T>;
 	
-	template<typename T, typename Seq=std::vector<T>>
+	//	This template form of SList is generally easier to use and more
+	//	efficient. If you call BinONObj::Decode(), however, it will return a
+	//	plain SList since Decode() cannot infer template arguments at runtime.
+	//	(Note that you can SList can be cast to an SListT provided you choose an
+	//	appropriate element data type.)
+	//
+	//	The template accepts two arguments. The first is the list element data
+	//	type. This can be a BinON wrapper class like IntObj or a simple
+	//	built-in type like int. (See TypeInfo above for a run-down of which
+	//	types you can use.)
+	//
+	//	The second template argument is what container type to use. It defaults
+	//	to std::vector<T>, where T is the element data type, but could be some
+	//	other container like a std::deque or a std::list. It needs a size()
+	//	method and to be clearable, resizeable, and iterable (though not
+	//	necessarily random-access).
+	//
+	//	For example, you could initialize a list of integers with:
+	//
+	//		SListT<int> intList = {1,2,3};
+	//
+	//	By comparison, you would have to do something like this with an SList:
+	//
+	//		SList intList{kIntObjCode};
+	//		intList.emplaceBack(1);
+	//		intList.emplaceBack(2);
+	//		intList.emplaceBack(3);
+	//
+	template<typename T, typename Ctnr=std::vector<T>>
 	struct SListT: BinONObj {
 		using TElem = T;
 		using TWrap = TWrapper<T>;
-		Seq mSeq;
+		using TCtnr = Ctnr;
+		Ctnr mCtnr;
 
-		SListT(std::initializer_list<TElem> lst): mSeq{lst} {}
-		SListT(const Seq& seq): mSeq(seq) {}
-		SListT(Seq&& seq) noexcept: mSeq(std::move(seq)) {}
+		SListT(std::initializer_list<TElem> lst): mCtnr{lst} {}
+		SListT(const SList& sList);
+		SListT(const Ctnr& ctnr): mCtnr(ctnr) {}
+		SListT(Ctnr&& ctnr) noexcept: mCtnr(std::move(ctnr)) {}
 		SListT() noexcept = default;
-		operator Seq&() noexcept { return mSeq; }
-		operator const Seq&() const noexcept { return mSeq; }
+		operator Ctnr&() noexcept { return mCtnr; }
+		operator const Ctnr&() const noexcept { return mCtnr; }
 		explicit operator bool() const noexcept override
-			{ return mSeq.size() != 0; }
+			{ return mCtnr.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
@@ -221,8 +254,15 @@ namespace binon {
 	};
 
 	//	SListT
-	template<typename T, typename Seq>
-	auto SListT<T,Seq>::typeCode() const noexcept -> CodeByte {
+	template<typename T, typename Ctnr>
+	auto SListT<T,Ctnr>::SListT(const SList& sList) {
+		for(auto&& p: sList) {
+			auto pElem = BinONObj::Cast<TWrap>(p);
+			mCtnr.push_back(static_cast<T>(pElem->mValue));
+		}
+	}
+	template<typename T, typename Ctnr>
+	auto SListT<T,Ctnr>::typeCode() const noexcept -> CodeByte {
 		if constexpr(kIsWrapper<T>) {
 			return T{}.typeCode();
 		}
@@ -230,29 +270,29 @@ namespace binon {
 			return TWrap{}.typeCode();
 		}
 	}
-	template<typename T, typename Seq>
-	void SListT<T,Seq>::encodeData(TOStream& stream, bool requireIO) const {
+	template<typename T, typename Ctnr>
+	void SListT<T,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
-		UIntObj count{mSeq.size()};
+		UIntObj count{mCtnr.size()};
 		count.encodeData(stream, kSkipRequireIO);
 		encodeElems(stream, kSkipRequireIO);
 	}
-	template<typename T, typename Seq>
-	void SListT<T,Seq>::decodeData(TIStream& stream, bool requireIO) {
+	template<typename T, typename Ctnr>
+	void SListT<T,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
 		UIntObj count;
 		count.decodeData(stream, kSkipRequireIO);
 		decodeElems(stream, count, kSkipRequireIO);
 	}
-	template<typename T, typename Seq>
-	void SListT<T,Seq>::encodeElems(TOStream& stream, bool requireIO) const {
+	template<typename T, typename Ctnr>
+	void SListT<T,Ctnr>::encodeElems(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto code = typeCode();
 		code.write(stream, kSkipRequireIO);
 		if constexpr(std::is_same_v<T, bool>) {
 			std::byte byt = 0x00_byte;
 			std::size_t i = 0;
-			for(auto elem: mSeq) {
+			for(auto elem: mCtnr) {
 				byt <<= 1;
 				if(elem) {
 					byt |= 0x01_byte;
@@ -268,7 +308,7 @@ namespace binon {
 			}
 		}
 		else {
-			for(auto&& elem: mSeq) {
+			for(auto&& elem: mCtnr) {
 				if constexpr(kIsWrapper<T>) {
 					elem.encodeData(stream, kSkipRequireIO);
 				}
@@ -278,8 +318,8 @@ namespace binon {
 			}
 		}
 	}
-	template<typename T, typename Seq>
-	void SListT<T,Seq>::decodeElems(
+	template<typename T, typename Ctnr>
+	void SListT<T,Ctnr>::decodeElems(
 		TIStream& stream, TList::size_type count, bool requireIO)
 	{
 		//	Read element code.
@@ -293,7 +333,7 @@ namespace binon {
 		}
 
 		//	Read data of all elements consecutively.
-		mSeq.clear();
+		mCtnr.clear();
 		if constexpr(std::is_same_v<T, bool>) {
 
 			//	Special case for booleans packed 8 to a byte.
@@ -302,7 +342,7 @@ namespace binon {
 				if((i & 0x7u) == 0x0u) {
 					byt = ReadWord<decltype(byt)>(stream, kSkipRequireIO);
 				}
-				mSeq.push_back((byt & 0x80_byte) != 0x00_byte);
+				mCtnr.push_back((byt & 0x80_byte) != 0x00_byte);
 				byt <<= 1;
 			}
 		}
@@ -311,32 +351,32 @@ namespace binon {
 				if constexpr(kIsWrapper<T>) {
 					T obj;
 					obj.decodeData(stream, kSkipRequireIO);
-					mSeq.push_back(obj);
+					mCtnr.push_back(obj);
 				}
 				else {
 					TWrap obj;
 					obj.decodeData(stream, kSkipRequireIO);
-					mSeq.push_back(static_cast<T>(obj.mValue));
+					mCtnr.push_back(static_cast<T>(obj.mValue));
 				}
 			}
 		}
 	}
-	template<typename T, typename Seq>
-	auto SListT<T,Seq>::makeCopy(bool deep) const -> TSPBinONObj {
-		return std::make_shared<SListT<T,Seq>>(*this);
+	template<typename T, typename Ctnr>
+	auto SListT<T,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
+		return std::make_shared<SListT<T,Ctnr>>(*this);
 	}
-	template<typename T, typename Seq>
-	auto SListT<T,Seq>::clsName() const noexcept -> std::string {
-		constexpr bool kSeqIsVector = std::is_same_v<Seq, std::vector<T>>;
+	template<typename T, typename Ctnr>
+	auto SListT<T,Ctnr>::clsName() const noexcept -> std::string {
+		constexpr bool kCtnrIsVector = std::is_same_v<Ctnr, std::vector<T>>;
 		std::ostringstream oss;
-		oss << "SListT<" << (kSeqIsVector ? "vector" : "SEQUENCE")
+		oss << "SListT<" << (kCtnrIsVector ? "vector" : "SEQUENCE")
 			<< '<' << TypeInfo<T>::TypeName() << ">>";
 		return std::move(oss).str();
 	}
-	template<typename T, typename Seq>
-	void SListT<T,Seq>::printArgsRepr(std::ostream& stream) const {
+	template<typename T, typename Ctnr>
+	void SListT<T,Ctnr>::printArgsRepr(std::ostream& stream) const {
 		bool first = true;
-		for(auto&& elem: mSeq) {
+		for(auto&& elem: mCtnr) {
 			if(first) {
 				first = false;
 			}

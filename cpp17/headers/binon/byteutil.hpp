@@ -8,7 +8,9 @@
 #include <climits>
 #include <cstddef>
 #include <cstring>
+#include <optional>
 #include <string>
+#include <utility>
 #if BINON_CPP20
 	#include <bit>
 #endif
@@ -16,11 +18,11 @@
 namespace binon {
 	static_assert(CHAR_BIT == 8, "binon requires 8-bit bytes");
 
-	////////////////////////////////////////////////////////////////////////////
+	//-------------------------------------------------------------------------
 	//
 	//	std::byte Helper Functions
 	//
-	////////////////////////////////////////////////////////////////////////////
+	//-------------------------------------------------------------------------
 
 	//	You can easily convert a std::byte to an integer by calling
 	//	std::to_integer<int>() on it, but there does not seem to be a
@@ -43,11 +45,11 @@ namespace binon {
 	//	Prints a byte in the literal form "0xa5_byte".
 	void PrintByte(std::byte value, std::ostream& stream);
 
-	////////////////////////////////////////////////////////////////////////////
+	//-------------------------------------------------------------------------
 	//
 	//	Byte Order Functions
 	//
-	////////////////////////////////////////////////////////////////////////////
+	//-------------------------------------------------------------------------
 
 	//	Returns true if compile target uses a little-endian byte order or
 	//	false if it is big-endian instead.
@@ -144,6 +146,132 @@ namespace binon {
 				word = ReadWord<Word>(buffer.data());
 			}
 			return word;
+		}
+	
+	//-------------------------------------------------------------------------
+	//
+	//	Bool-Packing Functions
+	//
+	//-------------------------------------------------------------------------
+	
+	///	PackBools function template
+	//
+	//	This function packs 8 bools to a byte. Its return value is a lambda
+	//	function which, in turn, returns the byte data one byte at a time.
+	//
+	//	The bools are packed starting from the most-significant bit in each
+	//	byte. If you are not packing a multiple of 8 bools, the least-
+	//	significant bits of the final byte will be left cleared.
+	//
+	//	Template Args:
+	//		typename BoolGen: inferred from function args
+	//		typename... Args: inferred from function args
+	//
+	//	Args:
+	//		boolGen (function): function that returns each boolean value
+	//			This function should take the form:
+	//
+	//				bool boolGen(std::size_t i, Args... args)
+	//
+	//			Here, i is the index of a particular bool and args are any
+	//			extra arguments you want to supply to your function.
+	//
+	//			Note that PackBools guarantees sequential access. That means
+	//			your generator will get called boolCnt times with indices in
+	//			order from 0 to boolCnt - 1. The guarantee implies that you
+	//			can use a sequential iterator to generate your bools (likely
+	//			ignoring i in that case). You need not support random access.
+	//
+	//			While the return value is typically a bool, it can technically
+	//			be anything that evaluates as a boolean in a conditional
+	//			expression.
+	//		boolCnt (std::size_t): number of bools to pack
+	//		args... (any types): extra args for your boolGen function
+	//
+	//	Returns:
+	//		function:
+	//			This function takes the form:
+	//
+	//				std::optional<std::byte> function()
+	//
+	//			After (boolCnt + 7) / 8 calls to this function, it will stop
+	//			supplying the optional byte value.
+	///
+	template<typename BoolGen, typename... Args>
+		auto PackBools(BoolGen boolGen, std::size_t boolCnt, Args&&... args) {
+			decltype(boolCnt) i = 0u;
+			return [boolGen, boolCnt, i]() mutable {
+				std::optional<std::byte> optByte;
+				if(i < boolCnt) {
+					auto byt = 0x00_byte;
+					decltype(boolCnt) iPlus8 = i + 8u;
+					decltype(boolCnt) n = std::min(boolCnt, iPlus8);
+					for(; i < n; ++i) {
+						byt <<= 1;
+						byt |= boolGen(i, std::forward<Args>(args...))
+							? 0x01_byte : 0x00_byte;
+					}
+					if(iPlus8 > boolCnt) {
+						byt <<= iPlus8 - boolCnt;
+					}
+					optByte = std::make_optional(byt);
+				}
+				return optByte;
+			};
+		}
+	
+	///	UnpackBools function template
+	//
+	//	This function unpacks bool values previously packed into bytes by the
+	//	PackBools function.
+	//
+	//	Template Args:
+	//		typename ByteGen: inferred from function args
+	//		typename... Args: inferred from function args
+	//
+	//	Args:
+	//		byteGen (function): function that returns each byte value
+	//			This function should take the form:
+	//
+	//				std::byte byteGen(std::size_t i, Args... args)
+	//
+	//			Here, i is the index of a particular byte and args are any
+	//			extra arguments you want to supply to your function.
+	//
+	//			As with PackBools, UnpackBools has a sequential access
+	//			guarantee, though in this case it counts through the range
+	//			[0, (boolCnt + 7) / 8 - 1] since we are counting bytes rather
+	//			than bits.
+	//		boolCnt: number of bools to unpack
+	//		args... (any types): extra args for your byteGen function
+	//
+	//	Returns:
+	//		function:
+	//			This function takes the form:
+	//
+	//				std::optional<bool> function()
+	//
+	//			After boolCnt calls to this function, it will stop supplying
+	//			the optional bool value.
+	///
+	template<typename ByteGen, typename... Args>
+		auto UnpackBools(ByteGen byteGen, std::size_t boolCnt, Args&&... args)
+		{
+			auto byt = 0x00_byte;
+			decltype(boolCnt) i = 0u;
+			return [byteGen, boolCnt, byt, i]() mutable {
+				std::optional<bool> optBool;
+				if(i < boolCnt) {
+					if((i & 0x7) == 0x0) {
+						byt = byteGen(i >> 3, std::forward<Args>(args)...);
+					}
+					optBool = std::make_optional(
+						(byt) & 0x80_byte) != 0x00_byte);
+					byt <<= 1;
+					++i;
+				}
+				return optBool;
+			};
 		}
 }
 
