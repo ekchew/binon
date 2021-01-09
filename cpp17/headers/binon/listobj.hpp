@@ -1,7 +1,6 @@
 #ifndef BINON_LISTOBJ_HPP
 #define BINON_LISTOBJ_HPP
 
-#include "binonobj.hpp"
 #include "boolobj.hpp"
 #include "bufferobj.hpp"
 #include "floatobj.hpp"

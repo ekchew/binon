@@ -157,37 +157,72 @@ namespace binon {
 
 	///	PackBools function template
 	//
-	//	This function packs 8 bools to a byte. Its return value is a lambda
-	//	function which, in turn, returns the byte data one byte at a time.
+	//	PackBools can be used to pack any number of boolean values into a
+	//	sequence of bytes, with up to 8 bools packed into each byte.
 	//
-	//	The bools are packed starting from the most-significant bit in each
-	//	byte. If you are not packing a multiple of 8 bools, the least-
-	//	significant bits of the final byte will be left cleared.
+	//	You provide PackBools with a callback function that returns a single
+	//	bool every time it gets called. PackBools then returns a callback
+	//	function of its own. This function returns a single byte each time
+	//	you call it until the source bools are exhausted.
+	//
+	//	For example, say you have a std::vector<bool> called myBools and a
+	//	std::vector<std::byte> called myBytes.
+	//
+	//		auto byteGen = PackBools(
+	//			[&myBools](std::size_t i) { return myBools[i]; },
+	//			myBools.size()
+	//			);
+	//		myBytes.clear();
+	//		for (auto optByte = byteGen(); optByte; optByte = byteGen()) {
+	//			myBytes.push_back(*optByte);
+	//		}
+	//
+	//	These i values are guaranteed to be sequential. That means should see
+	//	i=0 the first time it's called, i=1 the second time, and so on until
+	//	the final call with i=myBools.size()-1. That means you could go with
+	//	a sequential iterator instead:
+	//
+	//		auto iter = myBools.begin();
+	//		auto byteGen = PackBools(
+	//			[&iter](std::size_t) { return *iter++; },
+	//			myBools.size());
+	//		// the rest is the same...
+	//
+	//	This form in which we ignore i would be better suited to packing a
+	//	std::list<bool>, though it would work for a vector also.
+	//
+	//	Packed Data Format:
+	//		Boolean values are packed 8 to a byte in order starting from the
+	//		most-signficant bit down to the least. If there are fewer than 8
+	//		values remaining to pack, the unused least-significant bits are
+	//		left cleared by convention.
+	//
+	//		In other words, the format is big-endian at the bit level.
 	//
 	//	Template Args:
-	//		typename BoolGen: inferred from function args
-	//		typename... Args: inferred from function args
+	//		typename BoolGen: inferred from function boolGen arg
 	//
 	//	Args:
-	//		boolGen (function): function that returns each boolean value
+	//		boolGen (function): callback that returns each boolean value
 	//			This function should take the form:
 	//
-	//				bool boolGen(std::size_t i, Args... args)
+	//				bool boolGen(std::size_t i)
 	//
 	//			Here, i is the index of a particular bool and args are any
 	//			extra arguments you want to supply to your function.
 	//
 	//			Note that PackBools guarantees sequential access. That means
 	//			your generator will get called boolCnt times with indices in
-	//			order from 0 to boolCnt - 1. The guarantee implies that you
-	//			can use a sequential iterator to generate your bools (likely
-	//			ignoring i in that case). You need not support random access.
+	//			order from 0 to boolCnt-1. The guarantee implies that you can
+	//			use a sequential iterator to generate your bools (likely
+	//			ignoring i in that case). In other words, your container need
+	//			not support random access (though it does require its size be
+	//			known right from the start).
 	//
-	//			While the return value is typically a bool, it can technically
-	//			be anything that evaluates as a boolean in a conditional
-	//			expression.
+	//			(While the return type is typically bool, it can technically be
+	//			anything that can evaluate as a boolean in a conditional
+	//			expression.)
 	//		boolCnt (std::size_t): number of bools to pack
-	//		args... (any types): extra args for your boolGen function
 	//
 	//	Returns:
 	//		function:
@@ -198,10 +233,10 @@ namespace binon {
 	//			After (boolCnt + 7) / 8 calls to this function, it will stop
 	//			supplying the optional byte value.
 	///
-	template<typename BoolGen, typename... Args>
-		auto PackBools(BoolGen boolGen, std::size_t boolCnt, Args&&... args) {
+	template<typename BoolGen>
+		auto PackBools(BoolGen boolGen, std::size_t boolCnt) {
 			decltype(boolCnt) i = 0u;
-			return [boolGen, boolCnt, &args..., i]() mutable {
+			return [boolGen, boolCnt, i]() mutable {
 				std::optional<std::byte> optByte;
 				if(i < boolCnt) {
 					auto byt = 0x00_byte;
@@ -209,7 +244,7 @@ namespace binon {
 					decltype(boolCnt) n = std::min(boolCnt, iPlus8);
 					for(; i < n; ++i) {
 						byt <<= 1;
-						byt |= boolGen(i, std::forward<Args>(args)...)
+						byt |= boolGen(i)
 							? 0x01_byte : 0x00_byte;
 					}
 					if(iPlus8 > boolCnt) {
@@ -223,18 +258,30 @@ namespace binon {
 
 	///	UnpackBools function template
 	//
-	//	This function unpacks bool values previously packed into bytes by the
-	//	PackBools function.
+	//	UnpackBools can be used to unpack the boolean values packed into bytes
+	//	using PackBools earlier. In this case, your callback returns bytes and
+	//	UnpackBools' callback returns bools.
+	//
+	//	Going back to the first example under PackBools, you could unpack your
+	//	byte-packed bools with:
+	//
+	//		auto boolGen = UnpackBools(
+	//			[&myBytes](std::size_t i) { return myBytes[i]; },
+	//			myBools.size()
+	//			);
+	//		myBools.clear();
+	//		for (auto optBool = boolGen(); optBool; optBool = boolGen()) {
+	//			myBools.push_back(*optBool);
+	//		}
 	//
 	//	Template Args:
-	//		typename ByteGen: inferred from function args
-	//		typename... Args: inferred from function args
+	//		typename ByteGen: inferred from byteGen function arg
 	//
 	//	Args:
-	//		byteGen (function): function that returns each byte value
+	//		byteGen (function): callback that returns each byte value
 	//			This function should take the form:
 	//
-	//				std::byte byteGen(std::size_t i, Args... args)
+	//				std::byte byteGen(std::size_t i)
 	//
 	//			Here, i is the index of a particular byte and args are any
 	//			extra arguments you want to supply to your function.
@@ -244,7 +291,6 @@ namespace binon {
 	//			[0, (boolCnt + 7) / 8 - 1] since we are counting bytes rather
 	//			than bits.
 	//		boolCnt: number of bools to unpack
-	//		args... (any types): extra args for your byteGen function
 	//
 	//	Returns:
 	//		function:
@@ -255,16 +301,16 @@ namespace binon {
 	//			After boolCnt calls to this function, it will stop supplying
 	//			the optional bool value.
 	///
-	template<typename ByteGen, typename... Args>
-		auto UnpackBools(ByteGen byteGen, std::size_t boolCnt, Args&&... args)
+	template<typename ByteGen>
+		auto UnpackBools(ByteGen byteGen, std::size_t boolCnt)
 		{
 			auto byt = 0x00_byte;
 			decltype(boolCnt) i = 0u;
-			return [byteGen, boolCnt, &args..., byt, i]() mutable {
+			return [byteGen, boolCnt, byt, i]() mutable {
 				std::optional<bool> optBool;
 				if(i < boolCnt) {
 					if((i & 0x7) == 0x0) {
-						byt = byteGen(i >> 3, std::forward<Args>(args)...);
+						byt = byteGen(i >> 3);
 					}
 					optBool = std::make_optional(
 						(byt & 0x80_byte) != 0x00_byte);
