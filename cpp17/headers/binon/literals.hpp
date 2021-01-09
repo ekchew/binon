@@ -1,7 +1,6 @@
 #ifndef BINON_LITERALS_HPP
 #define BINON_LITERALS_HPP
 
-#include "byteutil.hpp"
 #include "floattypes.hpp"
 
 #include <stdexcept>
@@ -31,7 +30,7 @@ namespace binon {
 					i <= std::numeric_limits<std::uint8_t>::max(),
 					"_byte literal out of range"
 				);
-				return ToByte(i);
+				return std::byte{static_cast<unsigned char>(i)};
 			}
 
 		//	_f32 and _f64 give you TFloat32 and TFloat64 literals,

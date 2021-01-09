@@ -41,8 +41,8 @@ auto main() -> int {
 		istringstream iss{move(s)};
 		sd.decode(iss);
 		cout << "after decoding: " << sd << '\n';
-		
-		SListT<IntObj> slt{0, 1, 2};
+
+		SListT<bool> slt{true, false, true};
 		cout << "before encoding: " << slt << '\n';
 
 		oss = ostringstream{};

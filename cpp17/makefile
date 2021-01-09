@@ -44,8 +44,8 @@ ${DEST_DIR}/lib/libbinon.a: ${OBJS} ${HDR}binon.hpp
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
 DEP0 := ${HDR}macros.hpp makefile
-DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${DEP0}
-DEP2 := ${HDR}codebyte.hpp ${HDR}literals.hpp ${DEP1}
+DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${HDR}literals.hpp ${DEP0}
+DEP2 := ${HDR}codebyte.hpp ${DEP1}
 DEP3 := \
 	${HDR}binonobj.hpp \
 	${HDR}crtp.hpp \

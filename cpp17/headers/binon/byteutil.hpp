@@ -2,6 +2,7 @@
 #define BINON_BYTEUTIL_HPP
 
 #include "ioutil.hpp"
+#include "literals.hpp"
 
 #include <algorithm>
 #include <array>
@@ -147,13 +148,13 @@ namespace binon {
 			}
 			return word;
 		}
-	
+
 	//-------------------------------------------------------------------------
 	//
 	//	Bool-Packing Functions
 	//
 	//-------------------------------------------------------------------------
-	
+
 	///	PackBools function template
 	//
 	//	This function packs 8 bools to a byte. Its return value is a lambda
@@ -200,7 +201,7 @@ namespace binon {
 	template<typename BoolGen, typename... Args>
 		auto PackBools(BoolGen boolGen, std::size_t boolCnt, Args&&... args) {
 			decltype(boolCnt) i = 0u;
-			return [boolGen, boolCnt, i]() mutable {
+			return [boolGen, boolCnt, &args..., i]() mutable {
 				std::optional<std::byte> optByte;
 				if(i < boolCnt) {
 					auto byt = 0x00_byte;
@@ -208,7 +209,7 @@ namespace binon {
 					decltype(boolCnt) n = std::min(boolCnt, iPlus8);
 					for(; i < n; ++i) {
 						byt <<= 1;
-						byt |= boolGen(i, std::forward<Args>(args...))
+						byt |= boolGen(i, std::forward<Args>(args)...)
 							? 0x01_byte : 0x00_byte;
 					}
 					if(iPlus8 > boolCnt) {
@@ -219,7 +220,7 @@ namespace binon {
 				return optByte;
 			};
 		}
-	
+
 	///	UnpackBools function template
 	//
 	//	This function unpacks bool values previously packed into bytes by the
@@ -259,14 +260,14 @@ namespace binon {
 		{
 			auto byt = 0x00_byte;
 			decltype(boolCnt) i = 0u;
-			return [byteGen, boolCnt, byt, i]() mutable {
+			return [byteGen, boolCnt, &args..., byt, i]() mutable {
 				std::optional<bool> optBool;
 				if(i < boolCnt) {
 					if((i & 0x7) == 0x0) {
 						byt = byteGen(i >> 3, std::forward<Args>(args)...);
 					}
 					optBool = std::make_optional(
-						(byt) & 0x80_byte) != 0x00_byte);
+						(byt & 0x80_byte) != 0x00_byte);
 					byt <<= 1;
 					++i;
 				}

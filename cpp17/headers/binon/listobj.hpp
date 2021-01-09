@@ -116,18 +116,18 @@ namespace binon {
 	template<typename T, typename Enable=void>
 	struct TypeInfo {
 		static_assert(true, "BinON could not determine object type");
-		
+
 		//	Specializations provide:
 		//		using Wrapper = ...;
 		//		static auto TypeName() -> std::string;
 	};
 	template<typename T> using TWrapper = typename TypeInfo<T>::Wrapper;
-	
+
 	//	kIsWrapper<BoolObj> evaluates to true to indicate that you are already
 	//	looking at a wrapper class while kIsWrapper<bool> evaluates false.
 	template<typename T> inline constexpr
 		bool kIsWrapper = std::is_base_of_v<BinONObj, T>;
-	
+
 	//	This template form of SList is generally easier to use and more
 	//	efficient. If you call BinONObj::Decode(), however, it will return a
 	//	plain SList since Decode() cannot infer template arguments at runtime.
@@ -255,8 +255,8 @@ namespace binon {
 
 	//	SListT
 	template<typename T, typename Ctnr>
-	auto SListT<T,Ctnr>::SListT(const SList& sList) {
-		for(auto&& p: sList) {
+	SListT<T,Ctnr>::SListT(const SList& sList) {
+		for(auto&& p: sList.mValue.mList) {
 			auto pElem = BinONObj::Cast<TWrap>(p);
 			mCtnr.push_back(static_cast<T>(pElem->mValue));
 		}
@@ -383,12 +383,12 @@ namespace binon {
 			else {
 				stream << ", ";
 			}
-			
+
 			if constexpr(kIsWrapper<T>) {
 				elem.printRepr(stream);
 			}
 			else {
-				
+
 				//	First generate a repr string for elem using the
 				//	appropriate BinON wrapper class. (Note that when we
 				//	extract the string out of the ostringstream, C++20 now
@@ -398,7 +398,7 @@ namespace binon {
 				std::ostringstream oss;
 				TWrap{elem}.printRepr(oss);
 				auto s{std::move(oss).str()};
-			
+
 				//	At this point, we have something like StrObj{"foo"} and we
 				//	want just the "foo" part, so what we print to the stream
 				//	should be a string view of everything within the curly
