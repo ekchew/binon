@@ -7,7 +7,7 @@
 #endif
 
 namespace binon {
-	
+
 	auto AsHexC(std::byte value, bool capitalize) noexcept -> std::array<char,3>
 	{
 		std::array<char,3> buffer;
@@ -18,10 +18,10 @@ namespace binon {
 	auto AsHex(std::byte value, bool capitalize) -> std::string {
 		return AsHexC(value, capitalize).data();
 	}
-	void PrintByte(std::byte value, std::ostream& stream) {
-		stream << "0x" << AsHexC(value).data() << "_byte";
+	void PrintByte(std::byte value, std::ostream& stream, bool capitalize) {
+		stream << "0x" << AsHexC(value, capitalize).data() << "_byte";
 	}
-	
+
 #if !BINON_CPP20
 	auto LittleEndian() noexcept -> bool {
 		static const bool kLittleEndian = []{
@@ -33,5 +33,18 @@ namespace binon {
 		return kLittleEndian;
 	}
 #endif
+
+	auto UnpackBools(std::size_t boolCnt,
+		TIStream& stream, bool requireIO)
+	{
+		return UnpackBools(
+			[&stream, rio=RequireIO{stream, requireIO}](std::size_t) {
+					TStreamByte sb;
+					stream.read(&sb, 1);
+					return ToByte(sb);
+				},
+			boolCnt
+			);
+	}
 
 }
