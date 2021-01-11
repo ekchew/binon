@@ -1,10 +1,10 @@
-CXX := c++
+#CXX := c++
 #CXX := clang++
-#CXX := xcrun g++-10
+CXX := xcrun g++-10
 DBG_FLAGS := -g -D DEBUG
 REL_FLAGS := -O2
-CMN_FLAGS := -std=c++17
-#CMN_FLAGS := -std=c++20
+#CMN_FLAGS := -std=c++17
+CMN_FLAGS := -std=c++20
 
 BINON_DIR := ../..
 CPP17_DIR := ${BINON_DIR}/cpp17
@@ -44,10 +44,11 @@ SRC_NAMES := example
 OBJ := ${DEST_DIR}/obj/
 OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
+LIBBINON := ${CPP17_DIR}/${DEST_DIR}/lib/libbinon.a
 
 ${DEST_DIR}/bin/example: ${OBJS}
-	${CXX} ${OBJS} ${CPP17_DIR}/${DEST_DIR}/lib/libbinon.a \
-		${LD_FLAGS} ${LD_TGT_FLAGS} -o ${DEST_DIR}/bin/example
+	${CXX} ${OBJS}  ${LIBBINON} ${LD_FLAGS} ${LD_TGT_FLAGS} \
+	-o ${DEST_DIR}/bin/example
 
-${OBJ}example.o: example.cpp makefile ${HEADERS_DIR}/binon/binon.hpp
+${OBJ}example.o: example.cpp makefile ${LIBBINON}
 	${CXX} ${FLAGS} example.cpp -o ${OBJ}example.o

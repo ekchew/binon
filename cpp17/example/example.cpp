@@ -25,7 +25,6 @@ auto main() -> int {
 	using namespace binon::types;
 	using namespace std;
 	try {
-
 		SDict sd{kStrObjCode, kUIntCode};
 		sd.value<StrObj,UInt>("foo") = 0;
 		sd.value<StrObj,UInt>("bar") = 1;
@@ -54,6 +53,15 @@ auto main() -> int {
 		iss = istringstream{move(s)};
 		slt.decode(iss);
 		cout << "after decoding: " << slt << '\n';
+		
+		Generator gen{
+			[i = 0]() mutable {
+				return ++i, MakeOpt(i <= 5, i);
+			}
+		};
+		for(auto i: gen) {
+			std::cout << i << '\n';
+		}
 	}
 	catch(const exception& err) {
 		cerr << "ERROR: " << err.what() << '\n';

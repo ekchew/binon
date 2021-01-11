@@ -39,12 +39,17 @@ OBJ := ${DEST_DIR}/obj/
 OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
 
-${DEST_DIR}/lib/libbinon.a: ${OBJS} ${HDR}binon.hpp
+${DEST_DIR}/lib/libbinon.a: ${OBJS}
 	touch ${HDR}binon.hpp
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
 DEP0 := ${HDR}macros.hpp makefile
-DEP1 := ${HDR}byteutil.hpp ${HDR}ioutil.hpp ${HDR}literals.hpp ${DEP0}
+DEP1 := \
+	${HDR}byteutil.hpp \
+	${HDR}generator.hpp \
+	${HDR}ioutil.hpp \
+	${HDR}literals.hpp \
+	${DEP0}
 DEP2 := ${HDR}codebyte.hpp ${DEP1}
 DEP3 := \
 	${HDR}binonobj.hpp \
@@ -62,9 +67,6 @@ DEP4 := \
 	${HDR}nullobj.hpp \
 	${HDR}strobj.hpp \
 	${DEP3}
-
-${HDR}binon.hpp: ${DEP4}
-	touch ${HDR}binon.hpp
 
 ${OBJ}binonobj.o: ${SRC}binonobj.cpp ${DEP4}
 	${CXX} ${FLAGS} ${SRC}binonobj.cpp -o ${OBJ}binonobj.o

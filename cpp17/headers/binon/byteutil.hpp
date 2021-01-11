@@ -1,6 +1,7 @@
 #ifndef BINON_BYTEUTIL_HPP
 #define BINON_BYTEUTIL_HPP
 
+#include "generator.hpp"
 #include "ioutil.hpp"
 #include "literals.hpp"
 
