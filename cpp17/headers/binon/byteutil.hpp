@@ -266,6 +266,57 @@ namespace binon {
 	//-------------------------------------------------------------------------
 
 	/**
+	PackBools function template
+	**/
+	template<typename BoolIt, typename EndIt>
+	auto PackedBoolsGen(BoolIt boolIt, const EndIt& endIt) {
+		return Generator {
+			[boolIt, &endIt]() mutable {
+				std::optional<std::byte> optByte;
+				if(boolIt != endIt) {
+					auto byteVal = *boolIt ? 1 : 0;
+					auto i = 1;
+					for(; i < 8 && ++boolIt != endIt; ++i) {
+						byteVal <<= 1;
+						byteVal |= *boolIt ? 1 : 0;
+					}
+					if(i < 8) {
+						byteVal <<= 8 - i;
+					}
+					optByte = std::make_optional(ToByte(byteVal));
+				}
+				return optByte;
+			}
+		};
+	}
+	/**
+	UnpackedBoolsGen function template
+	**/
+	template<typename ByteIt, typename EndIt>
+	auto UnpackedBoolsGen(ByteIt byteIt, const EndIt& endIt) {
+		return Generator {
+			[byteIt, &endIt, byt=0x00_byte, n=0]() mutable {
+				std::optional<bool> optBool;
+				do {
+					if(n == 0) {
+						if(byteIt == endIt) {
+							break;
+						}
+						byt = *byteIt++;
+						n = 8;
+					}
+					optBool = std::make_optional(
+						(byt & 0x80_byte) != 0x00_byte);
+					byt <<= 1;
+					--n;
+				}
+				while(false);
+				return optBool;
+			}
+		};
+	}
+	
+	/**
 	PackBools function template - base variant
 
 	PackBools can be used to pack any number of boolean values into a

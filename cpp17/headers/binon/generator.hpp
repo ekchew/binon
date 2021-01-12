@@ -169,6 +169,8 @@ namespace binon {
 				{ return mOptVal.has_value(); }
 			auto operator == (const IterBase& rhs) const noexcept
 				{ return this->mOptVal == rhs.mOptVal; }
+			auto operator != (const IterBase& rhs) const noexcept
+				{ return this->mOptVal != rhs.mOptVal; }
 			const auto& operator * () const { return this->value(); }
 			const auto* operator -> () const { return &this->value(); }
 			const auto& operator ++ () const
@@ -180,7 +182,7 @@ namespace binon {
 			mutable Generator* mPGen;
 			mutable TOptVal mOptVal;
 			
-			auto& value() const BINON_IF_RELEASE(noexcept) {
+			auto& value() const {
 				#if BINON_DEBUG
 					return mOptVal.value();
 				#else
