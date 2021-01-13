@@ -49,6 +49,7 @@ DEP1 := \
 	${HDR}generator.hpp \
 	${HDR}ioutil.hpp \
 	${HDR}literals.hpp \
+	${HDR}optutil.hpp \
 	${DEP0}
 DEP2 := ${HDR}codebyte.hpp ${DEP1}
 DEP3 := \

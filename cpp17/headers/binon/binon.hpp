@@ -18,6 +18,7 @@
 #include "literals.hpp"
 #include "macros.hpp"
 #include "nullobj.hpp"
+#include "optutil.hpp"
 #include "strobj.hpp"
 
 #endif
