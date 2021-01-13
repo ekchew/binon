@@ -61,47 +61,17 @@ auto main() -> int {
 		iss = istringstream{move(s)};
 		slt.decode(iss);
 		cout << "after decoding: " << slt << '\n';
-		
-		/*
+
 		std::vector<bool> bools = {
 			true, true, false, true, true, true, false, false,
 			true, true, true, false, true, true, true
 		};
-		std::size_t boolCount;
-		for(auto byt: PackedBoolsGen(bools.begin(), bools.end(), boolCount)) {
+		auto gen = PackedBoolsGen(bools.begin(), bools.end());
+		for(auto byt: gen) {
 			std::cout << AsHex(byt);
 		}
-		std::cout << "\nbool count: " << boolCount << '\n';
+		std::cout << "\nbool count: " << gen->mBoolCount << '\n';
 		Foo([](int i) {});
-		*/
-		/*
-		auto gen = MakeGenerator(
-			[i = 0]() mutable {
-				return ++i, MakeOpt(i <= 5, i);
-			}
-		);
-		for(auto i: gen) {
-			std::cout << i << '\n';
-		}
-		*/
-		/*
-		auto gen = MakeGenerator<int>(
-			[i = 0](int& j) mutable {
-				return ++i, MakeOpt(i <= 5, i + j);
-			}, 10
-		);
-		for(auto i: gen) {
-			std::cout << i << '\n';
-		}
-		*/
-		auto gen = MakeGenerator<int>(
-			[](int& i) {
-				return ++i, MakeOpt(i <= 5, i);
-			}, 0);
-		for(auto i: gen) {
-			std::cout << i << '\n';
-		}
-		std::cout << "final gen.mData: " << gen.mData << '\n';
 	}
 	catch(const exception& err) {
 		cerr << "ERROR: " << err.what() << '\n';
