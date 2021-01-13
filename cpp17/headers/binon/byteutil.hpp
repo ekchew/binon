@@ -266,29 +266,68 @@ namespace binon {
 	//-------------------------------------------------------------------------
 
 	/**
-	PackBools function template
+	PackedBoolsGen function template
+	
+	This function returns a generator that produced bytes from bools, with up to
+	8 bools packed into each byte.
+	
+	Template Args:
+		typename BoolIt: inferred from boolIt function arg
+		typename EndIt: inferred from endIt function arg
+	
+	Args:
+		boolIt (BoolIt): input iterator to bool values
+			This iterator will only be accessed sequentially until endIt is
+			reached. (Technically, PackedBoolsGen can work with any value type
+			that can evaluate as bool in a conditional expression.)
+		endIt (EndIt): suitable end iterator for boolIt
+		outBoolCount (std::size_t&, optional): number of bools read from boolIt
+			You can optionally provide a size_t variable and PackedBoolsGen
+			will update it with the number of bools that have been read so far.
+			So once your iteration loop has completed, you should be able to
+			check this variable for the total number of bools.
+	
+	Returns:
+		Generator of std::byte:
+			This is an iterable to a series of bytes generated from the input
+			bools. Each byte contains up to 8 bools packed into its bits. The
+			packing algorithm follows a big-endian bit order. In other words,
+			the first bool goes into the most-significant bit.
+			
+			If there are not enough bools to fill the final byte, the remaining
+			least-significant bits will be cleared.
 	**/
 	template<typename BoolIt, typename EndIt>
-	auto PackedBoolsGen(BoolIt boolIt, const EndIt& endIt) {
-		return Generator {
-			[boolIt, &endIt]() mutable {
-				std::optional<std::byte> optByte;
-				if(boolIt != endIt) {
-					auto byteVal = *boolIt ? 1 : 0;
-					auto i = 1;
-					for(; i < 8 && ++boolIt != endIt; ++i) {
-						byteVal <<= 1;
-						byteVal |= *boolIt ? 1 : 0;
+		auto PackedBoolsGen(
+			BoolIt boolIt, const EndIt& endIt, std::size_t& outBoolCount)
+		{
+			outBoolCount = 0;
+			return Generator{
+				[boolIt, &endIt, &outBoolCount]() mutable {
+					std::optional<std::byte> optByte;
+					if(boolIt != endIt) {
+						auto byteVal = *boolIt ? 1 : 0;
+						auto i = 1u;
+						for(; ++boolIt != endIt && i < 8u; ++i) {
+							byteVal <<= 1;
+							byteVal |= *boolIt ? 1 : 0;
+						}
+						if(i < 8u) {
+							byteVal <<= 8u - i;
+						}
+						outBoolCount += i;
+						optByte = std::make_optional(ToByte(byteVal));
 					}
-					if(i < 8) {
-						byteVal <<= 8 - i;
-					}
-					optByte = std::make_optional(ToByte(byteVal));
+					return optByte;
 				}
-				return optByte;
-			}
-		};
-	}
+			};
+		}
+	template<typename BoolIt, typename EndIt>
+		auto PackedBoolsGen(BoolIt boolIt, const EndIt& endIt) {
+			static std::size_t boolCount;
+			return PackedBoolsGen(boolIt, endIt, boolCount);
+		}
+	
 	/**
 	UnpackedBoolsGen function template
 	**/

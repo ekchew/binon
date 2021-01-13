@@ -20,7 +20,15 @@ static void DumpBinON(const std::string& s) {
 	cout << '\n';
 }
 
+template<typename T=int, typename Fn=void> struct Foo {
+	Fn fn;
+	Foo(Fn fn): fn{fn} {}
+	T call(T val) { return fn(val); }
+};
+Foo foo{[](int val) { return val; }};
+
 auto main() -> int {
+	std::cout << foo.call(42) << '\n';
 	using namespace binon;
 	using namespace binon::types;
 	using namespace std;
@@ -54,14 +62,46 @@ auto main() -> int {
 		slt.decode(iss);
 		cout << "after decoding: " << slt << '\n';
 		
-		Generator gen{
+		/*
+		std::vector<bool> bools = {
+			true, true, false, true, true, true, false, false,
+			true, true, true, false, true, true, true
+		};
+		std::size_t boolCount;
+		for(auto byt: PackedBoolsGen(bools.begin(), bools.end(), boolCount)) {
+			std::cout << AsHex(byt);
+		}
+		std::cout << "\nbool count: " << boolCount << '\n';
+		Foo([](int i) {});
+		*/
+		/*
+		auto gen = MakeGenerator(
 			[i = 0]() mutable {
 				return ++i, MakeOpt(i <= 5, i);
 			}
-		};
+		);
 		for(auto i: gen) {
 			std::cout << i << '\n';
 		}
+		*/
+		/*
+		auto gen = MakeGenerator<int>(
+			[i = 0](int& j) mutable {
+				return ++i, MakeOpt(i <= 5, i + j);
+			}, 10
+		);
+		for(auto i: gen) {
+			std::cout << i << '\n';
+		}
+		*/
+		auto gen = MakeGenerator<int>(
+			[](int& i) {
+				return ++i, MakeOpt(i <= 5, i);
+			}, 0);
+		for(auto i: gen) {
+			std::cout << i << '\n';
+		}
+		std::cout << "final gen.mData: " << gen.mData << '\n';
 	}
 	catch(const exception& err) {
 		cerr << "ERROR: " << err.what() << '\n';

@@ -14,7 +14,7 @@ namespace binon {
 			using std::out_of_range::out_of_range;
 		};
 
-		namespace details {
+		namespace literals_details {
 			constexpr void AssertRange(bool inRange, const char* errMsg) {
 					if(!inRange) {
 						throw BadLiteral{errMsg};
@@ -26,7 +26,7 @@ namespace binon {
 		//	byte literals. So with this user-defined literal, you can now write
 		//	0x42_byte instead of std::byte{0x42}.
 		constexpr auto operator ""_byte(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint8_t>::max(),
 					"_byte literal out of range"
 				);
@@ -38,7 +38,7 @@ namespace binon {
 		//	This means you cannot make an inf or nan float literal, nor say
 		//	a 1.0e50_f32 that's too big for a 32-bit float.
 		constexpr auto operator ""_f32(long double x) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					x >= std::numeric_limits<types::TFloat32>::lowest() &&
 					x <= std::numeric_limits<types::TFloat32>::max(),
 					"_f32 literal out of range"
@@ -46,7 +46,7 @@ namespace binon {
 				return static_cast<types::TFloat32>(x);
 			}
 		constexpr auto operator ""_f64(long double x) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					x >= std::numeric_limits<types::TFloat64>::lowest() &&
 					x <= std::numeric_limits<types::TFloat64>::max(),
 					"_f64 literal out of range"
@@ -59,56 +59,56 @@ namespace binon {
 		//	std::int32_t (_i32) and not those like std::int_fast32_t which
 		//	are of less interest to BinON.
 		constexpr auto operator ""_i8(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint8_t>::max(),
 					"_i8 literal out of range"
 				);
 				return static_cast<std::int8_t>(i);
 			}
 		constexpr auto operator ""_u8(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint8_t>::max(),
 					"_u8 literal out of range"
 					);
 				return static_cast<std::uint8_t>(i);
 			}
 		constexpr auto operator ""_i16(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint16_t>::max(),
 					"_i16 literal out of range"
 					);
 				return static_cast<std::int16_t>(i);
 			}
 		constexpr auto operator ""_u16(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint16_t>::max(),
 					"_u16 literal out of range"
 					);
 				return static_cast<std::uint16_t>(i);
 			}
 		constexpr auto operator ""_i32(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint32_t>::max(),
 					"_i32 literal out of range"
 					);
 				return static_cast<std::int32_t>(i);
 			}
 		constexpr auto operator ""_u32(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint32_t>::max(),
 					"_u32 literal out of range"
 					);
 				return static_cast<std::uint32_t>(i);
 			}
 		constexpr auto operator ""_i64(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint64_t>::max(),
 					"_i64 literal out of range"
 					);
 				return static_cast<std::int64_t>(i);
 			}
 		constexpr auto operator ""_u64(unsigned long long i) {
-				details::AssertRange(
+				literals_details::AssertRange(
 					i <= std::numeric_limits<std::uint64_t>::max(),
 					"_u64 literal out of range"
 					);

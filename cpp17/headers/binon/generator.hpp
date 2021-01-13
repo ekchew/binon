@@ -87,19 +87,32 @@ namespace binon {
 		}
 	
 	/**
+	NoData class
+	
+	This is nothing more than an empty struct with no data members (or any other
+	kind of members for that matter). It is used as the default value of the
+	Generator class template's Data template argument below, but may find
+	similar uses in other contexts.
+	**/
+	struct NoData {};
+	
+	/**
 	Generator class template
 	
 	Given a functor that returns a new value each time it is called until the
 	values are exhausted, Generator builds an iterator class around it so that
-	you can iterate over it in range-based for loops and such.
+	you can iterate over it in range-based for loops and such. Since the data
+	type of the functor itself is difficult to determine, you would typically
+	call MakeGenerator to instantiate this class.
 	
-	The functor should take no arguments but return a std::optional<T>, where T
-	is your value type. You typically implement it using a lambda function.
+	By default, the functor takes no arguments but return a std::optional<T>,
+	where T is your value type. You typically implement it using a lambda
+	function.
 	
-	Example: Print integers from 1 to 5
-		This example demonstrates how you can have a variable that changes every
-		time your lambda function gets called: in this case, the integer counter
-		i. The idea is to make it a mutable captured value.
+	Example 1: Print integers from 1 to 5
+		This example demonstrates one way that you can have a variable that
+		changes every time your lambda function gets called: in this case, the
+		integer counter i. The idea is to make it a mutable captured value.
 		
 		We capture i with an initial value of 0. Then we increment it before
 		returning what MakeOpt decides to do with it. If it hasn't exceeded 5
@@ -107,11 +120,10 @@ namespace binon {
 		if i is greater than 5, it returns an optional with no value.
 		
 		Source:
-			Generator gen{
+			auto gen = MakeGenerator(
 				[i = 0]() mutable {
 					return ++i, MakeOpt(i <= 5, i);
-				}
-			};
+				});
 			for(auto i: gen) {
 				std::cout << i << '\n';
 			}
@@ -123,8 +135,42 @@ namespace binon {
 			4
 			5
 	
+	Example 2: Same thing, but use Generator data to hold counter
+		Rather than using a mutable captured value in your lambda function to
+		store the counter, you can have the Generator store it for you in its
+		mData field.
+		
+		You can specify your data type in the first template arg of
+		MakeGenerator. It defaults to NoData (a struct with no members), but
+		here we will make it int instead.
+		
+		Making the data type something other than NoData means your nextFn will
+		receive a single argument: a reference to mData. You can also pass any
+		extra args to MakeGenerator (after your lambda function) to initialize
+		mData.
+		
+		Source:
+			auto gen = MakeGenerator<int>(
+				[](int& i) {
+					return ++i, MakeOpt(i <= 5, i);
+				}, 0);
+			for(auto i: gen) {
+				std::cout << i << '\n';
+			}
+			std::cout << "final gen.mData: " << gen.mData << '\n';
+		
+		Output:
+			1
+			2
+			3
+			4
+			5
+			final gen.mData: 6
+	
 	Template Args:
-		NextFn (functor): inferred from nextFn constructor arg
+		typename Data: type of mData member
+		typename NextFn: type of mNextFn
+		typename... DataArgs: args used to initialize mData member
 	
 	Type definitions:
 		value_type: type emitted by this generator
@@ -132,10 +178,16 @@ namespace binon {
 		const_iterator: input iterator of const value_type
 		
 		TNextFn: NextFn
+		TData: Data
 		TOptVal: std::optional<value_type>
 			This is the type returned by TNextFn.
 		IterBase: base class template for both iterator and const_iterator
-			It should never be instantiated directly.
+			IterBase implements the much of functionality of both iterator and
+			const_iterator.
+		iterator: iterator class that may be returned by begin() and end()
+		const_iterator: iterator class returned by cbegin and cend()
+			begin() and end() may also return const_iterator if the Generator
+			instance is constant.
 	
 	Data Members:
 		mNextFn (NextFn): functor returning next generator value
@@ -145,10 +197,30 @@ namespace binon {
 			
 			where T is the data type your generator emits.
 	**/
-	template<typename NextFn>
+	namespace details {
+		//	GenNextFn is a struct for handling differences between the data and
+		//	no data versions of Generator below.
+		template<typename Data, typename NextFn, typename Enable=void>
+		struct GenNextFn {
+			using TOptVal = std::invoke_result_t<NextFn,Data&>;
+			template<typename Gen>
+				static auto Call(Gen& gen) { return gen.mNextFn(gen.mData); }
+		};
+		template<typename Data, typename NextFn>
+		struct GenNextFn<Data, NextFn,
+			std::enable_if_t<std::is_same_v<Data,NoData>>
+			>
+		{
+			using TOptVal = std::invoke_result_t<NextFn>;
+			template<typename Gen>
+				static auto Call(Gen& gen) { return gen.mNextFn(); }
+		};
+	}
+	template<typename Data, typename NextFn, typename... DataArgs>
 	struct Generator {
+		using TOptVal = typename details::GenNextFn<Data,NextFn>::TOptVal;
 		using TNextFn = NextFn;
-		using TOptVal = std::invoke_result_t<NextFn>;
+		using TData = Data;
 		using value_type = typename TOptVal::value_type;
 		static_assert(
 			std::is_same_v<TOptVal, std::optional<value_type>>,
@@ -156,7 +228,8 @@ namespace binon {
 		
 		//	Base class of both iterator and const_iterator. Never instantiated
 		//	directly.
-		template<typename Subcls> struct IterBase {
+		template<typename ItCls>
+		struct IterBase {
 			using iterator_category = std::input_iterator_tag;
 			using value_type = Generator::value_type;
 			
@@ -174,9 +247,9 @@ namespace binon {
 			const auto& operator * () const { return this->value(); }
 			const auto* operator -> () const { return &this->value(); }
 			const auto& operator ++ () const
-				{ return callNextFn(), asSubcls(); }
+				{ return callNextFn(), asItCls(); }
 			const auto& operator ++ (int) const
-				{ Subcls copy{asSubcls}; return *++this, copy; }
+				{ ItCls copy{asItCls()}; return *++this, copy; }
 		
 		protected:
 			mutable Generator* mPGen;
@@ -189,11 +262,12 @@ namespace binon {
 					*this->mOptVal;
 				#endif
 				}
-			void callNextFn() const { mOptVal = mPGen->mNextFn(); }
+			void callNextFn() const
+				{ mOptVal = details::GenNextFn<Data,NextFn>::Call(*mPGen); }
 		
 		private:
-			const auto& asSubcls() const noexcept
-				{ return *static_cast<const Subcls*>(this); }
+			const auto& asItCls() const noexcept
+				{ return *static_cast<const ItCls*>(this); }
 		};
 		struct iterator: IterBase<iterator> {
 			using reference = value_type&;
@@ -202,7 +276,6 @@ namespace binon {
 			auto& operator * () { return this->value(); }
 			auto operator -> () { return &this->value(); }
 		};
-		
 		struct const_iterator: IterBase<const_iterator> {
 			using reference = const value_type&;
 			using pointer = const value_type*;
@@ -210,14 +283,10 @@ namespace binon {
 		};
 		
 		NextFn mNextFn;
+		Data mData;
 		
-		/**
-		Generator constructor - NextFn variant
-		
-		Args:
-			nextFn (NextFn): functor initializing mNextFn
-		**/
-		Generator(NextFn nextFn) noexcept: mNextFn{nextFn} {}
+		Generator(NextFn nextFn, DataArgs&&... dataArgs) noexcept:
+			mNextFn{nextFn}, mData{std::forward<DataArgs>(dataArgs)...} {}
 		
 		/**
 		begin, cbegin member functions
@@ -226,7 +295,7 @@ namespace binon {
 		initial value.
 		
 		Returns:
-			Generator::iterator or Generator::const_iterator
+			Generator::iterator (or Generator::const_iterator)
 		**/
 		auto begin() { return ++iterator{*this}; }
 		auto begin() const { return ++const_iterator{*this}; }
@@ -241,12 +310,17 @@ namespace binon {
 		comparison.
 		
 		Returns:
-			Generator::iterator or Generator::const_iterator
+			Generator::iterator (or Generator::const_iterator)
 		**/
 		auto end() noexcept { return iterator{*this}; }
 		auto end() const noexcept { return const_iterator{*this}; }
 		auto cend() const noexcept { return const_iterator{*this}; }
 	};
+	template<typename Data=NoData, typename NextFn, typename... DataArgs>
+		auto MakeGenerator(NextFn nextFn, DataArgs&&... dataArgs) {
+			return Generator<Data,NextFn,DataArgs...>{
+				nextFn, std::forward<DataArgs>(dataArgs)...};
+		}
 
 }
 
