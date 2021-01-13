@@ -20,15 +20,7 @@ static void DumpBinON(const std::string& s) {
 	cout << '\n';
 }
 
-template<typename T=int, typename Fn=void> struct Foo {
-	Fn fn;
-	Foo(Fn fn): fn{fn} {}
-	T call(T val) { return fn(val); }
-};
-Foo foo{[](int val) { return val; }};
-
 auto main() -> int {
-	std::cout << foo.call(42) << '\n';
 	using namespace binon;
 	using namespace binon::types;
 	using namespace std;
@@ -61,17 +53,6 @@ auto main() -> int {
 		iss = istringstream{move(s)};
 		slt.decode(iss);
 		cout << "after decoding: " << slt << '\n';
-
-		std::vector<bool> bools = {
-			true, true, false, true, true, true, false, false,
-			true, true, true, false, true, true, true
-		};
-		auto gen = PackedBoolsGen(bools.begin(), bools.end());
-		for(auto byt: gen) {
-			std::cout << AsHex(byt);
-		}
-		std::cout << "\nbool count: " << gen->mBoolCount << '\n';
-		Foo([](int i) {});
 	}
 	catch(const exception& err) {
 		cerr << "ERROR: " << err.what() << '\n';

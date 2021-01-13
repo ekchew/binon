@@ -268,19 +268,20 @@ namespace binon {
 	/**
 	PackedBoolsGenData struct template
 
-	This is the ancillary data type associated with Generator returned by the
-	PackedBoolsGen template function. It contains the boolean iterators used
-	internally, but of more interest is the mBoolCount field. If you read
-	myGen->mBoolCount after your iteration loop, it should indicate how many
+	This is the ancillary data type associated with the Generator returned by
+	the PackedBoolsGen template function. It contains the boolean iterators used
+	internally, but of more interest is the boolCount field. If you read
+	myGen->boolCount after your iteration loop, it should indicate how many
 	bools were packed into the bytes: a useful number to know later when you
 	call UnpackedBoolsGen.
 	**/
 	template<typename BoolIt, typename EndIt>
 	struct PackedBoolsGenData {
-		BoolIt mBoolIt;
-		EndIt mEndIt;
-		std::size_t mBoolCount;
+		BoolIt boolIt;
+		EndIt endIt;
+		std::size_t boolCount;
 	};
+	
 	/**
 	PackedBoolsGen function template
 
@@ -308,7 +309,7 @@ namespace binon {
 			If there are not enough bools to fill the final byte, the remaining
 			least-significant bits will be cleared.
 
-			Note that you can read myGen->mBoolCount to check how many bools
+			Note that you can read myGen->boolCount to check how many bools
 			were packed into the bytes.
 	**/
 	template<typename BoolIt, typename EndIt>
@@ -360,227 +361,6 @@ namespace binon {
 				return MakeOpt(gotBool, (byteVal & 0x80u) != 0x00u);
 			});
 	}
-
-	/**
-	PackBools function template - base variant
-
-	PackBools can be used to pack any number of boolean values into a
-	sequence of bytes, with up to 8 bools packed into each byte.
-
-	You provide PackBools with a callback function that returns a single
-	bool every time it gets called. PackBools then returns a callback
-	function of its own. This function returns a single byte each time
-	you call it until the source bools are exhausted.
-
-	For example, say you have a std::vector<bool> called myBools and a
-	std::vector<std::byte> called myBytes.
-
-		auto byteGen = PackBools(
-			[&myBools](std::size_t i) { return myBools[i]; },
-			myBools.size()
-			);
-		myBytes.clear();
-		for (auto optByte = byteGen(); optByte; optByte = byteGen()) {
-			myBytes.push_back(*optByte);
-		}
-
-	These i values are guaranteed to be sequential. That means should see
-	i=0 the first time it's called, i=1 the second time, and so on until
-	the final call with i=myBools.size()-1. That means you could go with
-	a sequential iterator instead:
-
-		auto iter = myBools.begin();
-		auto byteGen = PackBools(
-			[&iter](std::size_t) { return *iter++; },
-			myBools.size());
-		// the rest is the same...
-
-	This form in which we ignore i would be better suited to packing a
-	std::list<bool>, though it would work for a vector also.
-
-	Packed Data Format:
-		Boolean values are packed 8 to a byte in order starting from the
-		most-signficant bit down to the least. If there are fewer than 8
-		values remaining to pack, the unused least-significant bits are
-		left cleared by convention.
-
-		In other words, the format is big-endian at the bit level.
-
-	Template Args:
-		typename BoolGen: inferred from function boolGen arg
-
-	Args:
-		boolGen (function): callback that returns each boolean value
-			This function should take the form:
-
-				bool boolGen(std::size_t i)
-
-			Here, i is the index of a particular bool and args are any
-			extra arguments you want to supply to your function.
-
-			Note that PackBools guarantees sequential access. That means
-			your generator will get called boolCnt times with indices in
-			order from 0 to boolCnt-1. The guarantee implies that you can
-			use a sequential iterator to generate your bools (likely
-			ignoring i in that case). In other words, your container need
-			not support random access (though it does require its size be
-			known right from the start).
-
-			(While the return type is typically bool, it can technically be
-			anything that can evaluate as a boolean in a conditional
-			expression.)
-		boolCnt (std::size_t): number of bools to pack
-
-	Returns:
-		function:
-			This function takes the form:
-
-				std::optional<std::byte> function()
-
-			After (boolCnt + 7) / 8 calls to this function, it will stop
-			supplying the optional byte value.
-	**/
-	template<typename BoolGen>
-		auto PackBools(BoolGen boolGen, std::size_t boolCnt) {
-			decltype(boolCnt) i = 0u;
-			return [boolGen, boolCnt, i]() mutable {
-				std::optional<std::byte> optByte;
-				if(i < boolCnt) {
-					auto byt = 0x00_byte;
-					decltype(boolCnt) iPlus8 = i + 8u;
-					decltype(boolCnt) n = std::min(boolCnt, iPlus8);
-					for(; i < n; ++i) {
-						byt <<= 1;
-						byt |= boolGen(i)
-							? 0x01_byte : 0x00_byte;
-					}
-					if(iPlus8 > boolCnt) {
-						byt <<= iPlus8 - boolCnt;
-					}
-					optByte = std::make_optional(byt);
-				}
-				return optByte;
-			};
-		}
-	/**
-	PackBools function template - stream variant
-
-	This version of PackBools writes the generated bytes to a binary output
-	stream instead of simply returning them to you.
-
-	Template Args:
-		typename BoolGen: inferred from function BoolGen arg
-
-	Args:
-		boolGen (function): see previous PackBools base variant
-		boolCnt (std::size_t): see previous PackBools base variant
-		stream (TOStream): output binary stream for packed bytes
-		requireIO (bool, optional): temporarily sets stream exception flags
-			If anything goes wrong accessing stream, an exception will be thrown
-			if these flags are set. You can pass kSkipRequireIO (false), which
-			will leave the flags untouched. (They may already be set, however.)
-
-			Note that if requireIO is true, the flags will be restored back to
-			their original values before the function returns.
-
-	Returns:
-		std::size_t: the number of bytes written to the stream
-	**/
-	template<typename BoolGen>
-		auto PackBools(BoolGen boolGen, std::size_t boolCnt,
-			TOStream& stream, bool requireIO=true) -> std::size_t
-		{
-			RequireIO rio{stream, requireIO};
-			auto byteGen = PackBools(boolGen, boolCnt);
-			std::size_t byteCnt = 0;
-			auto optByte = byteGen();
-			for(; optByte; optByte = byteGen(), ++byteCnt) {
-				stream.write(reinterpret_cast<TStreamByte*>(&*optByte), 1);
-			}
-			return byteCnt;
-		}
-
-	/**
-	UnpackBools function template - base variant
-
-	UnpackBools can be used to unpack the boolean values packed into bytes
-	using PackBools earlier. In this case, your callback returns bytes and
-	UnpackBools' callback returns bools.
-
-	Going back to the first example under PackBools, you could unpack your
-	byte-packed bools with:
-
-		auto boolGen = UnpackBools(
-			[&myBytes](std::size_t i) { return myBytes[i]; },
-			myBools.size()
-			);
-		myBools.clear();
-		for (auto optBool = boolGen(); optBool; optBool = boolGen()) {
-			myBools.push_back(*optBool);
-		}
-
-	Template Args:
-		typename ByteGen: inferred from byteGen function arg
-
-	Args:
-		byteGen (function): callback that returns each byte value
-			This function should take the form:
-
-				std::byte byteGen(std::size_t i)
-
-			Here, i is the index of a particular byte and args are any
-			extra arguments you want to supply to your function.
-
-			As with PackBools, UnpackBools has a sequential access
-			guarantee, though in this case it counts through the range
-			[0, (boolCnt + 7) / 8 - 1] since we are counting bytes rather
-			than bits.
-		boolCnt: number of bools to unpack
-
-	Returns:
-		function:
-			This function takes the form:
-
-				std::optional<bool> function()
-
-			After boolCnt calls to this function, it will stop supplying
-			the optional bool value.
-	**/
-	template<typename ByteGen>
-		auto UnpackBools(ByteGen byteGen, std::size_t boolCnt)
-		{
-			auto byt = 0x00_byte;
-			decltype(boolCnt) i = 0u;
-			return [byteGen, boolCnt, byt, i]() mutable {
-				std::optional<bool> optBool;
-				if(i < boolCnt) {
-					if((i & 0x7) == 0x0) {
-						byt = byteGen(i >> 3);
-					}
-					optBool = std::make_optional(
-						(byt & 0x80_byte) != 0x00_byte);
-					byt <<= 1;
-					++i;
-				}
-				return optBool;
-			};
-		}
-	/**
-	UnpackBools function - stream variant
-
-	This variant of UnpackBools reads bytes from a binary input stream rather
-	than from a byte generator you supply.
-
-	Args:
-		boolCnt (std::size_t): see previous PackBools base variant
-		stream (TIStream): input binary stream source of packed bytes
-		requireIO (bool, optional): see PackBools stream variant
-
-	Returns:
-		function: see UnpackBools base variant
-	**/
-	auto UnpackBools(std::size_t boolCnt,
-		TIStream& stream, bool requireIO=true);
 }
 
 #endif

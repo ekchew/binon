@@ -33,18 +33,4 @@ namespace binon {
 		return kLittleEndian;
 	}
 #endif
-
-	auto UnpackBools(std::size_t boolCnt,
-		TIStream& stream, bool requireIO)
-	{
-		return UnpackBools(
-			[&stream, rio=RequireIO{stream, requireIO}](std::size_t) {
-					TStreamByte sb;
-					stream.read(&sb, 1);
-					return ToByte(sb);
-				},
-			boolCnt
-			);
-	}
-
 }
