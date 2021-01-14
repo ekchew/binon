@@ -288,21 +288,8 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		auto code = typeCode();
 		code.write(stream, kSkipRequireIO);
-		if constexpr(std::is_same_v<T, bool>) {
-			std::byte byt = 0x00_byte;
-			std::size_t i = 0;
-			for(auto elem: mCtnr) {
-				byt <<= 1;
-				if(elem) {
-					byt |= 0x01_byte;
-				}
-				if((++i & 0x7u) == 0x0u) {
-					WriteWord(byt, stream, kSkipRequireIO);
-					byt = 0x00_byte;
-				}
-			}
-			if(i & 0x7u) {
-				byt <<= 8 - i;
+		if constexpr(std::is_same_v<TWrap, BoolObj>) {
+			for(auto byt: PackedBoolsGen(mCtnr.begin(), mCtnr.end())) {
 				WriteWord(byt, stream, kSkipRequireIO);
 			}
 		}
@@ -333,16 +320,14 @@ namespace binon {
 
 		//	Read data of all elements consecutively.
 		mCtnr.clear();
-		if constexpr(std::is_same_v<T, bool>) {
-
-			//	Special case for booleans packed 8 to a byte.
-			std::byte byt = 0x00_byte;
-			for(decltype(count) i = 0; i < count; ++i) {
-				if((i & 0x7u) == 0x0u) {
-					byt = ReadWord<decltype(byt)>(stream, kSkipRequireIO);
-				}
-				mCtnr.push_back((byt & 0x80_byte) != 0x00_byte);
-				byt <<= 1;
+		if constexpr(std::is_same_v<TWrap, BoolObj>) {
+			auto byteGen = MakeGenerator(
+				[&stream] {
+					auto byt = ReadWord<std::byte>(stream, kSkipRequireIO);
+					return std::make_optional(byt);
+				});
+			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
+				mCtnr.push_back(b);
 			}
 		}
 		else {

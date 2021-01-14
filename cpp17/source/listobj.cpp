@@ -121,7 +121,7 @@ namespace binon {
 
 		//	Write data of all elements consecutively.
 		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
-
+			
 			//	Special case for booleans which get packed 8 to a byte.
 			std::byte byt = 0x00_byte;
 			auto n = mValue.mList.size();
