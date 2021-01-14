@@ -5,6 +5,7 @@
 #include "optutil.hpp"
 
 #include <cstddef>
+#include <functional>
 #include <iterator>
 
 namespace binon {
@@ -202,21 +203,21 @@ namespace binon {
 				#if BINON_DEBUG
 					return mOptVal.value();
 				#else
-					*this->mOptVal;
+					return *this->mOptVal;
 				#endif
 				}
 			auto&& value() && {
 				#if BINON_DEBUG
 					return std::move(mOptVal).value();
 				#else
-					*std::move(this->mOptVal);
+					return *std::move(this->mOptVal);
 				#endif
 				}
 			const auto& value() const& {
 				#if BINON_DEBUG
 					return mOptVal.value();
 				#else
-					*this->mOptVal;
+					return *this->mOptVal;
 				#endif
 				}
 			void callNextFn() const
@@ -331,6 +332,92 @@ namespace binon {
 				nextFn, std::forward<DataArgs>(dataArgs)...};
 		}
 
+	template<typename T, typename Data, typename Enable=void>
+	class GenBase {
+	protected:
+		std::function<std::optional<T>(Data&)> mNextFn;
+		Data mData;
+	
+	public:
+		template<typename... DataArgs>
+			GenBase(decltype(mNextFn) nextFn, DataArgs&&... args):
+				mNextFn{nextFn}, mData{std::forward<DataArgs>(args)...} {}
+		auto operator * () & noexcept -> Data& { return mData; }
+		auto operator * () const& noexcept -> const Data& { return mData; }
+		auto operator * () && noexcept -> Data&& { return std::move(mData); }
+		auto operator -> () noexcept -> Data* { return &mData; }
+		auto operator -> () const noexcept -> const Data* { return &mData; }
+		auto callNextFn() -> std::optional<T> { return mNextFn(mData); }
+	};
+	template<typename T, typename Data>
+	struct GenBase<
+		T, Data, std::enable_if_t<std::is_same_v<Data, void>>
+		>
+	{
+	protected:
+		std::function<std::optional<T>()> mNextFn;
+	
+	public:
+		GenBase(decltype(mNextFn) nextFn) noexcept: mNextFn{nextFn} {}
+		auto callNextFn() -> std::optional<T> { return mNextFn(); }
+	};
+	template<typename T, typename Data=void>
+	class Gen: GenBase<T,Data> {
+	protected:
+		using GenBase<T,Data>::mNextFn;
+	
+	public:
+		using TValue = T;
+		using TData = Data;
+		using TNextFn = decltype(mNextFn);
+		using value_type = TValue;
+		
+		struct iterator {
+			using iterator_category = std::input_iterator_tag;
+			using value_type = Gen::value_type;
+			using difference_type = std::ptrdiff_t;
+			using reference = value_type&;
+			using pointer = value_type*;
+			
+			explicit iterator(const Gen& gen) noexcept:
+				mPGen{const_cast<Gen*>(&gen)} {}
+			explicit operator bool() const noexcept
+				{ return mOptVal.has_value(); }
+			auto operator == (const iterator& rhs) const noexcept
+				{ return mOptVal == rhs.mOptVal; }
+			auto operator != (const iterator& rhs) const noexcept
+				{ return mOptVal != rhs.mOptVal; }
+			auto operator * () & -> value_type&
+				{ return BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
+			auto operator * () const& -> const value_type&
+				{ return BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
+			auto operator * () && -> value_type&& {
+					using std::move;
+					return BINON_IF_DBG_REL(
+						move(mOptVal).value(), *move(mOptVal));
+				}
+			auto operator -> () -> value_type*
+				{ return &BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
+			auto operator -> () const -> const value_type*
+				{ return &BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
+			auto operator ++ () -> iterator&
+				{ return mOptVal = mPGen->callNextFn(), *this; }
+			auto operator ++ () const -> const iterator&
+				{ return mOptVal = mPGen->callNextFn(), *this; }
+			auto operator ++ (int) const -> iterator {
+					iterator copy{*this};
+					return ++*this, copy;
+				}
+		
+		private:
+			Gen* mPGen;
+			mutable std::optional<value_type> mOptVal;
+		};
+		
+		using GenBase<T,Data>::GenBase;
+		auto begin() const -> iterator { return ++iterator{*this}; }
+		auto end() const -> iterator { return iterator{*this}; }
+	};
 }
 
 #endif

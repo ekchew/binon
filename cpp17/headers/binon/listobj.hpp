@@ -171,7 +171,8 @@ namespace binon {
 		operator const Ctnr&() const noexcept { return mCtnr; }
 		explicit operator bool() const noexcept override
 			{ return mCtnr.size() != 0; }
-		auto typeCode() const noexcept -> CodeByte final;
+		auto typeCode() const noexcept -> CodeByte final
+			{ return kSListCode; }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		void encodeElems(TOStream& stream, bool requireIO=true) const;
@@ -261,15 +262,6 @@ namespace binon {
 		}
 	}
 	template<typename T, typename Ctnr>
-	auto SListT<T,Ctnr>::typeCode() const noexcept -> CodeByte {
-		if constexpr(kIsWrapper<T>) {
-			return T{}.typeCode();
-		}
-		else {
-			return TWrap{}.typeCode();
-		}
-	}
-	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		UIntObj count{mCtnr.size()};
@@ -286,10 +278,11 @@ namespace binon {
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::encodeElems(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
-		auto code = typeCode();
+		auto code = TWrap{}.typeCode();
 		code.write(stream, kSkipRequireIO);
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
 			for(auto byt: PackedBoolsGen(mCtnr.begin(), mCtnr.end())) {
+				
 				WriteWord(byt, stream, kSkipRequireIO);
 			}
 		}
@@ -311,7 +304,7 @@ namespace binon {
 		//	Read element code.
 		RequireIO rio{stream, requireIO};
 		auto code = CodeByte::Read(stream, kSkipRequireIO);
-		if(code.typeCode() != typeCode()) {
+		if(code.typeCode() != TWrap{}.typeCode()) {
 			std::ostringstream oss;
 			oss << "expected BinON type code 0x" << AsHex(typeCode())
 				<< " but read 0x" << AsHex(code.typeCode());
@@ -321,11 +314,13 @@ namespace binon {
 		//	Read data of all elements consecutively.
 		mCtnr.clear();
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			auto byteCnt = (count + 7u) >> 3;
-			std::vector<std::byte> vect(byteCnt);
-			stream.read(reinterpret_cast<TStreamByte*>(vect.data()), byteCnt);
-			auto boolGen = UnpackedBoolsGen(vect.begin(), count);
-			for(auto b: boolGen) {
+			auto byteGen = Gen<std::byte>{
+				[&stream] {
+					return std::make_optional(
+						ReadWord<std::byte>(stream, kSkipRequireIO));
+				}};
+			int n = 0;
+			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
 				mCtnr.push_back(b);
 			}
 		}

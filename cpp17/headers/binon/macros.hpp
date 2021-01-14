@@ -15,9 +15,11 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 #if BINON_DEBUG
 	#define BINON_IF_DEBUG(code) code
 	#define BINON_IF_RELEASE(code)
+	#define BINON_IF_DBG_REL(dbg,rel) dbg
 #else
 	#define BINON_IF_DEBUG(code)
 	#define BINON_IF_RELEASE(code) code
+	#define BINON_IF_DBG_REL(dbg,rel) rel
 #endif
 
 //	If, for some reason, you want BinON to use a custom allocator for all
