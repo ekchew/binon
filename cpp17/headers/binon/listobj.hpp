@@ -321,12 +321,11 @@ namespace binon {
 		//	Read data of all elements consecutively.
 		mCtnr.clear();
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			auto byteGen = MakeGenerator(
-				[&stream] {
-					auto byt = ReadWord<std::byte>(stream, kSkipRequireIO);
-					return std::make_optional(byt);
-				});
-			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
+			auto byteCnt = (count + 7u) >> 3;
+			std::vector<std::byte> vect(byteCnt);
+			stream.read(reinterpret_cast<TStreamByte*>(vect.data()), byteCnt);
+			auto boolGen = UnpackedBoolsGen(vect.begin(), count);
+			for(auto b: boolGen) {
 				mCtnr.push_back(b);
 			}
 		}
