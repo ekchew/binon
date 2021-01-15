@@ -11,43 +11,108 @@
 namespace binon {
 
 	/**
-	Empty struct
-
-	This is a blank struct with no members of any kind. The MakeGenerator
-	template function defaults to this type for the its Data template argument,
-	and Generator template classes handle the Empty type in a special way.
+	GeneratorBase class template
+	
+	This parent class of Generator has a specialization for dealing with the
+	Data type void. See the Generator class and MakeGenerator function template
+	docs for more info.
 	**/
-	struct Empty {};
+	template<typename T, typename Data, typename Functor>
+	struct GeneratorBase {
+		static_assert(
+			std::is_same_v<
+				std::invoke_result_t<Functor, Data&>, std::optional<T>
+				>,
+			"Generator functor must take the form: std::optional<T> fn(Data&)"
+			);
+		
+		/**
+		constructor
+		
+		GeneratorBase's constructor is exposed by Generator.
+		
+		Template Args:
+			typename... DataArgs: inferred from dataArgs constructor arg
+		
+		Args:
+			functor (Functor): your functor
+			dataArgs... (DataArgs...): args to initialize a Data instance
+				Clearly, these only make sense if your Data type is not void.
+		**/
+		template<typename... DataArgs>
+			GeneratorBase(Functor functor, DataArgs&&... dataArgs):
+				mFunctor{functor}, mData{std::forward<DataArgs>(dataArgs)...} {}
+		
+		/**
+		operator overloads: *
+		
+		This operator gives you access to the internal Data instance (the same
+		one that is passed to your functor by reference). It is only defined
+		when your Data type is something other than void.
+		
+		There are 2 overloads: one gives you an L-value reference and the other
+		an R-value reference. You can go *std::move(gen) to get the latter. (You
+		probably wouldn't want to do so before you're done iterating though.)
+		**/
+		auto operator * () & noexcept -> Data& { return mData; }
+		auto operator * () && noexcept -> Data&& { return std::move(mData); }
+		
+		/**
+		operator overload: ->
+		
+		If your Data type is a class/struct, you can access members with ->. It
+		is only defined when your Data type is something other than void.
+		**/
+		auto operator -> () noexcept -> Data* { return &mData; }
 
+	protected:
+		Functor mFunctor;
+		Data mData;
+		
+		auto callFunctor() -> std::optional<T> { return mFunctor(mData); }
+	};
+	template<typename T, typename Functor>
+	struct GeneratorBase<T, void, Functor> {
+		static_assert(
+			std::is_same_v<
+				std::invoke_result_t<Functor>, std::optional<T>
+				>,
+			"Generator functor must take the form: std::optional<T> fn()"
+			);
+		
+		GeneratorBase(Functor functor) noexcept: mFunctor{functor} {}
+	
+	protected:
+		Functor mFunctor;
+		
+		auto callFunctor() -> std::optional<T> { return mFunctor(); }
+	};
+	
 	/**
 	Generator class template
 	
-	A Generator is an input iterable class built around a functor your supply.
-	You instantiate one by calling the MakeGenerator template function.
+	A Generator is an iterable class built around a functor you supply that
+	returns a series of values over multiple calls. In its simplest form, the
+	functor would look like this:
 	
-	The functor's job is to keep supplying the Generator's iterator with its
-	next value until all of the values are exhausted. It is often called the
-	"nextFn" for this reason.
+		std::optional<T> myFunctor();
 	
-	It can take one of two forms:
+	It would return values wrapped in std::optional until it runs out. At that
+	point, it would return std::nullopt instead (or a default-constructed
+	std::optional<T>{} if you prefer).
 	
-		std::optional<T> nextFn();
-		std::optional<T> nextFn(Data& data);
+	The above form applies when the Data template argument is set to void (as it
+	is by default when you call the MakeGenerator helper function). If you set
+	the Data type to something other than void, Generator will store an internal
+	instance of that type and pass it to your functor by reference.
 	
-	Here, T is the value type you want the iterator to produce. You return the
-	values wrapped in std::optional until you run out, at which point you can
-	return std::nullopt instead to signal the iteration loop to exit.
+		std::optional<T> myFunctor(Data& data); // for non-void Data type
 	
-	The first form in which nextFn takes no arguments is the default. You get
-	the second form by supplying a custom data type in MakeGenerator's first
-	template argument. The reference will be to the Generator's mData member,
-	and you can do whatever you want with it.
-
 	Example 1: Print integers from 1 to 5
-		Functors are typically implemented using lambda functions. This example
-		demonstrates one way that you can have a variable that changes every
-		time your lambda gets called: in this case, an integer counter called
-		"i". The idea is to make the counter a mutable captured value.
+		Functors are typically implemented as lambda functions. This example
+		demonstrates one way that you could have a variable that changes every
+		time your lambda gets called: in this case, the integer counter i. We
+		capture i in mutable form into the lambda.
 
 		Source:
 			auto gen = binon::MakeGenerator(
@@ -66,9 +131,14 @@ namespace binon {
 			5
 
 	Example 2: Same thing, but use Generator data to hold counter
-		This time, we tell MakeGenerator to store an int (first template arg) we
-		initialize to 0 (second function arg). Then an int& is supplied to the
+		This time, we tell MakeGenerator to store an int (1st template arg) we
+		initialize to 0 (2nd function arg). Then an int& is supplied to the
 		functor and we can increment it as in the first example.
+	
+		At the end, you can see that it is also possible to access your Data
+		value externally by dereferencing your generator as though it were a
+		pointer. (If your Data type were a struct{int i;}, you could also access
+		the i data member with gen->i.)
 
 		Source:
 			auto gen = binon::MakeGenerator<int>(
@@ -78,10 +148,6 @@ namespace binon {
 			for(auto i: gen) {
 				std::cout << i << '\n';
 			}
-
-			//	"*gen" is equivalent to "gen.mData". (If your data type were a
-			//	class/struct, you could also use the "->" operator to access its
-			//	individual members.)
 			std::cout << "final i: " << *gen << '\n';
 
 		Output:
@@ -91,333 +157,126 @@ namespace binon {
 			4
 			5
 			final i: 6
-
-	Template Args:
-		typename Data: type of mData member
-		typename NextFn: type of mNextFn
-		typename... DataArgs: args used to initialize mData member
-
-	Type definitions:
-		value_type: type emitted by this generator
-		iterator: input iterator of value_type
-		const_iterator: input iterator of const value_type
-
-		TNextFn: NextFn
-		TData: Data
-		TOptVal: std::optional<value_type>
-			This is the type returned by TNextFn.
-		IterBase: parent class template of both iterator and const_iterator
-			Implements the shared functionality of the subclasses (which is
-			actually most of the functionality).
-		iterator:
-			Returned by begin() and end() if the Generator instance is variable.
-			
-			Dereferencing the iterator may throw an exception in debug mode if
-			no value is available. (See std::optional::value() for the nature of
-			the exception.) In release mode, this check is suppressed.
-
-			Though iterator, unlike const_iterator, allows you to modify the
-			derefenced value, there may not be much point in doing so since it
-			is a temporary value returned by mNextFn that will get overwritten
-			the next time it is called (via the ++ operator). iterator's *
-			operator does, however, support move semantics.
-			
-			You could, for example, write:
-				
-				std::string s = *std::move(myStringIter);
-			
-			to move a string out of its temporary home.
-		const_iterator:
-			Returned by begin() and end() if the Generator instance is constant,
-			and also by cbegin() and cend() regardless. See the second paragraph
-			under iterator regarding exceptions. It also applies to
-			const_iterator.
-	Data Members:
-		mNextFn (NextFn): functor returning next generator value
-			This functor should take the form:
-
-				std::optional<T> nextFn(); // if Data is Empty
-				std::optional<T> nextFn(Data& data); // if Data is anything else
-
-			where T is the data type your generator emits.
-	**/
-	namespace details {
-		//	GenNextFn is a struct for handling differences between the data and
-		//	no data versions of Generator below.
-		template<typename Data, typename NextFn, typename Enable=void>
-		struct GenNextFn {
-			using TOptVal = std::invoke_result_t<NextFn,Data&>;
-			template<typename Gen>
-				static auto Call(Gen& gen) { return gen.mNextFn(gen.mData); }
-		};
-		template<typename Data, typename NextFn>
-		struct GenNextFn<Data, NextFn,
-			std::enable_if_t<std::is_same_v<Data,Empty>>
-			>
-		{
-			using TOptVal = std::invoke_result_t<NextFn>;
-			template<typename Gen>
-				static auto Call(Gen& gen) { return gen.mNextFn(); }
-		};
-	}
-	template<typename Data, typename NextFn>
-	struct Generator {
-		using TOptVal = typename details::GenNextFn<Data,NextFn>::TOptVal;
-		using TNextFn = NextFn;
-		using TData = Data;
-		using value_type = typename TOptVal::value_type;
-		static_assert(
-			std::is_same_v<TOptVal, std::optional<value_type>>,
-			"binon::Generator NextFn must return a std::optional");
-
-		//	Base class of both iterator and const_iterator. Never instantiated
-		//	directly.
-		template<typename ItCls>
-		struct IterBase {
-			using iterator_category = std::input_iterator_tag;
-			using value_type = Generator::value_type;
-
-			//	This is irrelvant to generators but may be needed to satisfy
-			//	some iterator requirement?
-			using difference_type = std::ptrdiff_t;
-
-			explicit IterBase(Generator& gen) noexcept: mPGen{&gen} {}
-			explicit operator bool() const noexcept
-				{ return mOptVal.has_value(); }
-			auto operator == (const IterBase& rhs) const noexcept
-				{ return this->mOptVal == rhs.mOptVal; }
-			auto operator != (const IterBase& rhs) const noexcept
-				{ return this->mOptVal != rhs.mOptVal; }
-			const auto& operator * () const& { return this->value(); }
-			const auto* operator -> () const { return &this->value(); }
-			const auto& operator ++ () const
-				{ return callNextFn(), asItCls(); }
-			const auto& operator ++ (int) const
-				{ ItCls copy{asItCls()}; return *++this, copy; }
-
-		protected:
-			mutable Generator* mPGen;
-			mutable TOptVal mOptVal;
-
-			auto& value() & {
-				#if BINON_DEBUG
-					return mOptVal.value();
-				#else
-					return *this->mOptVal;
-				#endif
-				}
-			auto&& value() && {
-				#if BINON_DEBUG
-					return std::move(mOptVal).value();
-				#else
-					return *std::move(this->mOptVal);
-				#endif
-				}
-			const auto& value() const& {
-				#if BINON_DEBUG
-					return mOptVal.value();
-				#else
-					return *this->mOptVal;
-				#endif
-				}
-			void callNextFn() const
-				{ mOptVal = details::GenNextFn<Data,NextFn>::Call(*mPGen); }
-
-		private:
-			const auto& asItCls() const noexcept
-				{ return *static_cast<const ItCls*>(this); }
-		};
-		struct iterator: IterBase<iterator> {
-			using reference = value_type&;
-			using pointer = value_type*;
-			using IterBase<iterator>::IterBase;
-			using IterBase<iterator>::operator *;
-			using IterBase<iterator>::operator ->;
-			auto& operator * () & { return this->value(); }
-			auto&& operator * () && { return std::move(*this).value(); }
-			auto* operator -> () { return &this->value(); }
-		};
-		struct const_iterator: IterBase<const_iterator> {
-			using reference = const value_type&;
-			using pointer = const value_type*;
-			using IterBase<const_iterator>::IterBase;
-		};
-
-		NextFn mNextFn;
-		Data mData;
-
-		template<typename... DataArgs>
-			Generator(NextFn nextFn, DataArgs&&... dataArgs) noexcept:
-				mNextFn{nextFn}, mData{std::forward<DataArgs>(dataArgs)...} {}
-
-		/**
-		operator * and -> overloads
-
-		Dereferencing a Generator gives you access to its mData member.
-		
-		Note that * supports move semantics. For example, if your data type were
-		a std::string, you could write:
-			
-			std::string s = *std::move(gen);
-		
-		to move the string out of gen.mData. (You would probably not want to do
-		so until you are done iterating.)
-		**/
-		auto& operator * () & noexcept { return mData; }
-		auto&& operator * () && noexcept { return std::move(mData); }
-		const auto& operator * () const& noexcept { return mData; }
-		auto operator -> () noexcept { return &mData; }
-		const auto operator -> () const noexcept { return &mData; }
-
-		/**
-		begin, cbegin member functions
-
-		mNextFn is called once by a newly instantiated iterator to load an
-		initial value.
-
-		Returns:
-			Generator::iterator (or Generator::const_iterator)
-		**/
-		auto begin() { return ++iterator{*this}; }
-		auto begin() const { return ++const_iterator{*this}; }
-		auto cbegin() const { return ++const_iterator{*this}; }
-
-		/**
-		end, cend member functions
-
-		The default iterator with no value assigned to its internal
-		std::optional<value_type>. Once mNextFn exhausts all of its values,
-		it should return a blank optional that should match the cend value on
-		comparison.
-
-		Returns:
-			Generator::iterator (or Generator::const_iterator)
-		**/
-		auto end() noexcept { return iterator{*this}; }
-		auto end() const noexcept { return const_iterator{*this}; }
-		auto cend() const noexcept { return const_iterator{*this}; }
-	};
-	
-	/**
-	MakeGenerator function template
-	
-	Since it would be difficult to figure out the data type of your functor,
-	it's easiest to call this helper function to instantiate a Generator.
 	
 	Template Args:
-		typename Data (default-constructible, optional):
-			This is the only template argument you may want to supply manually.
-			You can set it to a data type of your choosing to give your functor
-			a reference to an instance of type Data that persists between calls.
-			The default binon::Empty struct disables this feature (i.e. your
-			functor will receive no args).
-		NextFn (functor): inferred from nextFn function arg
-		DataArgs... (any types): inferred from nextFn dataArgs args
-	
-	Args:
-		nextFn (NextFn): a functor that returns a std::optional
-			See Generator class notes regarding how to write one.
-		dataArgs... (DataArgs&&...):
-			If you supplied a custom data type for the Data template argument,
-			you can add any suitable arguments here to initialize an instance
-			of Data. (This instance will be stored in the mData member of the
-			returned Generator and passed to your nextFn by reference.)
-	
-	Returns:
-		Generator<Data,NextFn,DataArgs...>
+		typename T: value type emitted by Generator
+		typename Data: type of data passed to your functor by reference
+		typename Functor: a functor you supply to generate values.
 	**/
-	template<typename Data=Empty, typename NextFn, typename... DataArgs>
-		auto MakeGenerator(NextFn nextFn, DataArgs&&... dataArgs) {
-			return Generator<Data,NextFn>{
-				nextFn, std::forward<DataArgs>(dataArgs)...};
-		}
-
-	template<typename T, typename Data, typename Enable=void>
-	class GenBase {
-	protected:
-		std::function<std::optional<T>(Data&)> mNextFn;
-		Data mData;
-	
-	public:
-		template<typename... DataArgs>
-			GenBase(decltype(mNextFn) nextFn, DataArgs&&... args):
-				mNextFn{nextFn}, mData{std::forward<DataArgs>(args)...} {}
-		auto operator * () & noexcept -> Data& { return mData; }
-		auto operator * () const& noexcept -> const Data& { return mData; }
-		auto operator * () && noexcept -> Data&& { return std::move(mData); }
-		auto operator -> () noexcept -> Data* { return &mData; }
-		auto operator -> () const noexcept -> const Data* { return &mData; }
-		auto callNextFn() -> std::optional<T> { return mNextFn(mData); }
-	};
-	template<typename T, typename Data>
-	struct GenBase<
-		T, Data, std::enable_if_t<std::is_same_v<Data, void>>
-		>
-	{
-	protected:
-		std::function<std::optional<T>()> mNextFn;
-	
-	public:
-		GenBase(decltype(mNextFn) nextFn) noexcept: mNextFn{nextFn} {}
-		auto callNextFn() -> std::optional<T> { return mNextFn(); }
-	};
-	template<typename T, typename Data=void>
-	class Gen: GenBase<T,Data> {
-	protected:
-		using GenBase<T,Data>::mNextFn;
-	
-	public:
+	template<typename T, typename Data, typename Functor>
+	struct Generator: GeneratorBase<T,Data,Functor> {
 		using TValue = T;
 		using TData = Data;
-		using TNextFn = decltype(mNextFn);
+		using TFunctor = Functor;
 		using value_type = TValue;
 		
+		/**
+		iterator class
+		
+		This is the input iterator class instantiated by Generator's begin() and
+		end() methods. Its ++ operator calls on your functor to generate the
+		next value, which you can then dereference with the * or -> operators.
+		(The begin() method performs ++ for you once to get you started.)
+		
+		You can check if the std::optional your functor returned actually
+		contains a value by testing the iterator, whose bool operator is
+		overloaded for this purpose. Alternatively, you can compare it against
+		the iterator returned by end().
+		
+		Should you dereference an iterator with no value, it may throw an
+		exception, but likely only in debug mode. (See the
+		std::optional<...>::value method docs for more info on the exception.)
+		
+		Note that Generator does not currently supply any const methods and
+		therefore does not define a const_iterator class. Within the binon
+		codebase, generators yield elements by value and there has been no need
+		to protect the source from modification. The class may be expanded to
+		include a const_iterator at some point should the need arise.
+		
+		The * operator does, however, support move semantics. Let's say your
+		generator was yielding std::string objects. You could write
+		
+			std::string s = *std::move(myGen);
+		
+		to avoid an unnecessary copy.
+		**/
 		struct iterator {
 			using iterator_category = std::input_iterator_tag;
-			using value_type = Gen::value_type;
+			using value_type = Generator::value_type;
 			using difference_type = std::ptrdiff_t;
 			using reference = value_type&;
 			using pointer = value_type*;
 			
-			explicit iterator(const Gen& gen) noexcept:
-				mPGen{const_cast<Gen*>(&gen)} {}
-			explicit operator bool() const noexcept
+			explicit iterator(Generator& gen) noexcept:
+				mPGen{&gen} {}
+			explicit operator bool() noexcept
 				{ return mOptVal.has_value(); }
-			auto operator == (const iterator& rhs) const noexcept
+			auto operator == (const iterator& rhs) noexcept
 				{ return mOptVal == rhs.mOptVal; }
-			auto operator != (const iterator& rhs) const noexcept
+			auto operator != (const iterator& rhs) noexcept
 				{ return mOptVal != rhs.mOptVal; }
-			auto operator * () & -> value_type&
-				{ return BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
-			auto operator * () const& -> const value_type&
+			auto operator * () & -> reference
 				{ return BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
 			auto operator * () && -> value_type&& {
-					using std::move;
 					return BINON_IF_DBG_REL(
-						move(mOptVal).value(), *move(mOptVal));
+						std::move(mOptVal).value(), *std::move(mOptVal));
 				}
-			auto operator -> () -> value_type*
-				{ return &BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
-			auto operator -> () const -> const value_type*
+			auto operator -> () -> pointer
 				{ return &BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
 			auto operator ++ () -> iterator&
-				{ return mOptVal = mPGen->callNextFn(), *this; }
-			auto operator ++ () const -> const iterator&
-				{ return mOptVal = mPGen->callNextFn(), *this; }
-			auto operator ++ (int) const -> iterator {
+				{ return mOptVal = mPGen->callFunctor(), *this; }
+			auto operator ++ (int) -> iterator {
 					iterator copy{*this};
 					return ++*this, copy;
 				}
 		
 		private:
-			Gen* mPGen;
-			mutable std::optional<value_type> mOptVal;
+			Generator* mPGen;
+			std::optional<value_type> mOptVal;
 		};
 		
-		using GenBase<T,Data>::GenBase;
-		auto begin() const -> iterator { return ++iterator{*this}; }
-		auto end() const -> iterator { return iterator{*this}; }
+		using GeneratorBase<T,Data,Functor>::GeneratorBase;
+		
+		auto begin() -> iterator { return ++iterator{*this}; }
+		auto end() -> iterator { return iterator{*this}; }
 	};
+	
+	/**
+	MakeGenerator function template
+	
+	This helper function is essentially the same as instantiating a Generator by
+	constructor except that it supplies a default value for the Data template
+	argument: void
+	
+	Template Args:
+		typename T (any type): the value type the generator produces
+		typename Data (any type, optional): defaults to void
+		typename Functor: inferred from functor function arg
+		typename... DataArgs: inferred from dataArgs function args
+	
+	Args:
+		functor (Functor): your functor
+			It should take one of two forms:
+	
+				std::optional<T> functor();
+				std::optional<T> functor(Data&);
+			
+			The second form applies if you supply a Data type other than void.
+		dataArgs... (DataArgs...): any extra args to initialize a Data instance
+			Clearly, these only make sense if your Data type is not void.
+	
+	Returns:
+		Generator<T,Data,Functor>
+	**/
+	template<
+		typename T, typename Data=void,
+		typename Functor, typename... DataArgs
+		>
+	auto MakeGenerator(Functor functor, DataArgs&&... dataArgs)
+		-> Generator<T,Data,Functor> {
+			return Generator<T,Data,Functor>{
+				functor, std::forward<DataArgs>(dataArgs)...};
+		}
 }
 
 #endif

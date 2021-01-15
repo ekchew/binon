@@ -314,7 +314,7 @@ namespace binon {
 	**/
 	template<typename BoolIt, typename EndIt>
 		auto PackedBoolsGen(BoolIt boolIt, const EndIt& endIt) {
-			return Gen<std::byte, PackedBoolsGenData<BoolIt, EndIt>>{
+			return MakeGenerator<std::byte, PackedBoolsGenData<BoolIt, EndIt>>(
 				[](PackedBoolsGenData<BoolIt,EndIt>& data) {
 					auto& [boolIt, endIt, boolCnt] = data;
 					auto byteVal = 0x00u;
@@ -328,7 +328,7 @@ namespace binon {
 					}
 					boolCnt += i;
 					return MakeOpt(i, ToByte(byteVal));
-				}, boolIt, endIt, 0u};
+				}, boolIt, endIt, 0u);
 		}
 
 	/**
@@ -351,7 +351,7 @@ namespace binon {
 	auto UnpackedBoolsGen(ByteIt byteIt, std::size_t boolCnt) {
 		decltype(boolCnt) i = 0u;
 		auto byteVal = 0x00u;
-		return Gen<bool>(
+		return MakeGenerator<bool>(
 			[byteIt, boolCnt, i, byteVal]() mutable {
 				bool gotBool = i < boolCnt;
 				if((i & 0x7u) == 0x0u && gotBool) {

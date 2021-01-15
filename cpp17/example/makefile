@@ -1,6 +1,6 @@
-#CXX := c++
+CXX := c++
 #CXX := clang++
-CXX := xcrun g++-10
+#CXX := xcrun g++-10
 DBG_FLAGS := -g -D DEBUG
 REL_FLAGS := -O2
 CMN_FLAGS := -std=c++17

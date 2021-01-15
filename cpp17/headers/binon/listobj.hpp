@@ -314,11 +314,11 @@ namespace binon {
 		//	Read data of all elements consecutively.
 		mCtnr.clear();
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			auto byteGen = Gen<std::byte>{
+			auto byteGen = MakeGenerator<std::byte>(
 				[&stream] {
 					return std::make_optional(
 						ReadWord<std::byte>(stream, kSkipRequireIO));
-				}};
+				});
 			int n = 0;
 			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
 				mCtnr.push_back(b);
