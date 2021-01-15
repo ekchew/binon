@@ -121,24 +121,17 @@ namespace binon {
 
 		//	Write data of all elements consecutively.
 		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
-			
+
 			//	Special case for booleans which get packed 8 to a byte.
-			std::byte byt = 0x00_byte;
-			auto n = mValue.mList.size();
-			decltype(n) i;
-			for(i = 0; i < n; ++i) {
-				auto&& pObj = mValue.mList[i];
-				byt <<= 1;
-				if(*pObj) {
-					byt |= 0x01_byte;
-				}
-				if((i & 0x7u) == 0x7u) {
-					WriteWord(byt, stream, kSkipRequireIO);
-					byt = 0x00_byte;
-				}
-			}
-			if(i & 0x7u) {
-				byt <<= 8 - i;
+			auto& list = mValue.mList;
+			auto boolGen = MakeGenerator<bool>(
+				[it = list.begin(), endIt = list.end()]() mutable
+					-> std::optional<bool>
+				{
+					return it == endIt ? std::nullopt
+						: std::make_optional<bool>(**it++);
+				});
+			for(auto byt: PackedBoolsGen(boolGen.begin(), boolGen.end())) {
 				WriteWord(byt, stream, kSkipRequireIO);
 			}
 		}
@@ -157,21 +150,22 @@ namespace binon {
 		auto pBaseObj = FromCodeByte(mValue.mElemCode);
 
 		//	Read data of all elements consecutively.
-		mValue.mList.resize(count);
+		
 		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
 
 			//	Special case for booleans packed 8 to a byte.
-			std::byte byt = 0x00_byte;
-			for(decltype(count) i = 0; i < count; ++i) {
-				if((i & 0x7u) == 0x0u) {
-					byt = ReadWord<decltype(byt)>(stream, kSkipRequireIO);
-				}
-				mValue.mList[i] = std::make_shared<BoolObj>(
-					(byt & 0x80_byte) != 0x00_byte);
-				byt <<= 1;
+			auto byteGen = MakeGenerator<std::byte>(
+				[&stream] {
+					return std::make_optional(
+						ReadWord<std::byte>(stream, kSkipRequireIO));
+				});
+			mValue.mList.clear();
+			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
+				mValue.mList.push_back(std::make_shared<BoolObj>(b));
 			}
 		}
 		else {
+			mValue.mList.resize(count);
 			for(auto&& pObj: mValue.mList) {
 				pObj = pBaseObj->makeCopy();
 				pObj->decodeData(stream, kSkipRequireIO);

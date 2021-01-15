@@ -282,7 +282,6 @@ namespace binon {
 		code.write(stream, kSkipRequireIO);
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
 			for(auto byt: PackedBoolsGen(mCtnr.begin(), mCtnr.end())) {
-				
 				WriteWord(byt, stream, kSkipRequireIO);
 			}
 		}
@@ -319,7 +318,6 @@ namespace binon {
 					return std::make_optional(
 						ReadWord<std::byte>(stream, kSkipRequireIO));
 				});
-			int n = 0;
 			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
 				mCtnr.push_back(b);
 			}
