@@ -59,7 +59,7 @@ auto main() -> int {
 		d.decode(iss);
 		cout << "after decoding: " << d << '\n';
 
-		SListT<bool> slt{
+		SListT<BoolObj> slt{
 			true, true, false, true, true, true, false, false,
 			true, true, true, false, true, true, true
 		};

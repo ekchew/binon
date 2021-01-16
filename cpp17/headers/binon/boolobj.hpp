@@ -20,7 +20,7 @@ namespace binon {
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kBoolObjCode &&
-					*this == static_cast<const BoolObj&>(other);
+					mValue == static_cast<const BoolObj&>(other).mValue;
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<BoolObj>(mValue); }

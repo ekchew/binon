@@ -27,6 +27,17 @@ namespace binon {
 		constexpr auto& subcls() const noexcept
 			{ return *static_cast<const Subcls*>(this); }
 	};
+	template<typename Subcls> struct Read_mValue<Subcls,bool> {
+		using TValue = bool;
+
+		virtual ~Read_mValue() {}
+
+	protected:
+		constexpr auto& subcls() noexcept
+			{ return *static_cast<Subcls*>(this); }
+		constexpr auto& subcls() const noexcept
+			{ return *static_cast<const Subcls*>(this); }
+	};
 
 	template<typename Subcls, typename Value>
 		struct Access_mValue: Read_mValue<Subcls,Value>

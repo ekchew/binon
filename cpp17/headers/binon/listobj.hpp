@@ -7,6 +7,7 @@
 #include "intobj.hpp"
 #include "strobj.hpp"
 
+#include <functional>
 #include <initializer_list>
 #include <sstream>
 #include <string_view>
@@ -38,17 +39,17 @@ namespace binon {
 			bool requireIO=true) -> TValue;
 		static auto DecodedElemsGen(
 			TIStream& stream, TValue::size_type count, bool requireIO=true) {
-					return MakeGenerator<TSPBinONObj,RequireIO>(
-						[&stream, count](RequireIO&) mutable
-							-> std::optional<TSPBinONObj>
-						{
-							return MakeOptByFn<TSPBinONObj>(count--,
-								[&stream] {
-									return Decode(stream, kSkipRequireIO);
-								});
-						},
-						stream, requireIO);
-				}
+				return MakeGenerator<TSPBinONObj,RequireIO>(
+					[&stream, count](RequireIO&) mutable
+						-> std::optional<TSPBinONObj>
+					{
+						return MakeOptByFn<TSPBinONObj>(count--,
+							[&stream] {
+								return Decode(stream, kSkipRequireIO);
+							});
+					},
+					stream, requireIO);
+			}
 
 		TValue mValue;
 
@@ -192,8 +193,36 @@ namespace binon {
 	template<typename T, typename Ctnr=std::vector<T>>
 	struct SListT: BinONObj {
 		using TElem = T;
+		using TElemRW = std::reference_wrapper<TElem>;
 		using TWrap = TWrapper<T>;
 		using TCtnr = Ctnr;
+		using TSize = typename Ctnr::size_type;
+
+		static void EncodeData(
+			const TCtnr& v, TOStream& stream, bool requireIO=true);
+		static void EncodeElems(
+			const TCtnr& v, TOStream& stream, bool requireIO=true);
+		template<typename ElemIt, typename EndIt>
+			static void EncodeElems(ElemIt it, EndIt endIt,
+				TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
+		static auto DecodeElems(TIStream& stream, TSize count,
+			bool requireIO=true) -> TCtnr;
+		/*static auto DecodedElemsGen(
+			TIStream& stream, TSize count, bool requireIO=true) {
+				return MakeGenerator<TElemRW,RequireIO>(
+					[&stream, count](RequireIO&) mutable
+						-> std::optional<TSPBinONObj>
+					{
+						return MakeOptByFn<TSPBinONObj>(count--,
+							[&stream] {
+								return TWrap::DecodeData(
+									stream, kSkipRequireIO);
+							});
+					},
+					stream, requireIO);
+			}*/
+
 		Ctnr mValue;
 
 		SListT(std::initializer_list<TElem> lst): mValue{lst} {}
@@ -304,6 +333,55 @@ namespace binon {
 	//---- SListT -------------------------------------------------------------
 
 	template<typename T, typename Ctnr>
+	void SListT<T,Ctnr>::EncodeData(
+		const TCtnr& v, TOStream& stream, bool requireIO)
+	{
+		RequireIO rio{stream, requireIO};
+		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
+		EncodeElems(v, stream, kSkipRequireIO);
+	}
+	template<typename T, typename Ctnr>
+	void SListT<T,Ctnr>::EncodeElems(
+		const TCtnr& v, TOStream& stream, bool requireIO)
+	{
+		EncodeElems(v.begin(), v.end(), stream, requireIO);
+	}
+	template<typename T, typename Ctnr>
+	template<typename ElemIt, typename EndIt>
+	void SListT<T,Ctnr>::EncodeElems(
+		ElemIt it, EndIt endIt, TOStream& stream, bool requireIO)
+	{
+		RequireIO rio{stream, requireIO};
+		TWrap{}.typeCode().write(stream, kSkipRequireIO);
+		if constexpr(std::is_same_v<TWrap, BoolObj>) {
+			for(auto byt: PackedBoolsGen(it, endIt)) {
+				WriteWord(byt, stream, kSkipRequireIO);
+			}
+		}
+		else if constexpr(kIsWrapper<T>) {
+			for(; it != endIt; ++it) {
+				it->encodeData(stream, kSkipRequireIO);
+			}
+		}
+		else {
+			for(; it != endIt; ++it) {
+				TWrap::EncodeData(*it, stream, kSkipRequireIO);
+			}
+		}
+	}
+	template<typename T, typename Ctnr>
+	auto SListT<T,Ctnr>::DecodeData(TIStream& stream, bool requireIO) -> TCtnr
+	{
+		RequireIO rio{stream, requireIO};
+		auto count = UIntObj::DecodeData(stream, kSkipRequireIO);
+		return DecodeElems(stream, count, kSkipRequireIO);
+	}
+	template<typename T, typename Ctnr>
+	auto SListT<T,Ctnr>::DecodeElems(TIStream& stream, TSize count,
+		bool requireIO) -> TCtnr
+	{
+	}
+	template<typename T, typename Ctnr>
 	SListT<T,Ctnr>::SListT(const SList& sList) {
 		for(auto&& p: sList.mValue.mList) {
 			auto pElem = BinONObj::Cast<TWrap>(p);
@@ -312,10 +390,7 @@ namespace binon {
 	}
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
-		RequireIO rio{stream, requireIO};
-		UIntObj count{mValue.size()};
-		count.encodeData(stream, kSkipRequireIO);
-		encodeElems(stream, kSkipRequireIO);
+		EncodeData(mValue, stream, requireIO);
 	}
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
@@ -326,24 +401,7 @@ namespace binon {
 	}
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::encodeElems(TOStream& stream, bool requireIO) const {
-		RequireIO rio{stream, requireIO};
-		auto code = TWrap{}.typeCode();
-		code.write(stream, kSkipRequireIO);
-		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			for(auto byt: PackedBoolsGen(mValue.begin(), mValue.end())) {
-				WriteWord(byt, stream, kSkipRequireIO);
-			}
-		}
-		else {
-			for(auto&& elem: mValue) {
-				if constexpr(kIsWrapper<T>) {
-					elem.encodeData(stream, kSkipRequireIO);
-				}
-				else {
-					TWrap{elem}.encodeData(stream, kSkipRequireIO);
-				}
-			}
-		}
+		EncodeElems(mValue, stream, requireIO);
 	}
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::decodeElems(
