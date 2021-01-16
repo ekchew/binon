@@ -41,32 +41,44 @@ namespace binon {
 
 	//---- ListObj -------------------------------------------------------------
 
-	void ListObj::encodeData(TOStream& stream, bool requireIO) const {
+	void ListObj::EncodeData(const TValue& v, TOStream& stream, bool requireIO)
+	{
 		RequireIO rio{stream, requireIO};
-		UIntObj count{mValue.size()};
-		count.encodeData(stream, kSkipRequireIO);
-		encodeElems(stream, kSkipRequireIO);
+		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
+		EncodeElems(v, stream, kSkipRequireIO);
+	}
+	void ListObj::EncodeElems(const TValue& v, TOStream& stream, bool requireIO)
+	{
+		EncodeElems(v.begin(), v.end(), stream, requireIO);
+	}
+	auto ListObj::DecodeData(TIStream& stream, bool requireIO) -> TValue {
+		RequireIO rio{stream, requireIO};
+		auto count = UIntObj::DecodeData(stream, kSkipRequireIO);
+		return DecodeElems(stream, count, kSkipRequireIO);
+	}
+	auto ListObj::DecodeElems(TIStream& stream, TValue::size_type count,
+		bool requireIO) -> TValue
+	{
+		TValue v(count);
+		v.clear();
+		for(auto&& elem: DecodedElemsGen(stream, count, requireIO)) {
+			v.push_back(elem);
+		}
+		return std::move(v);
+	}
+	void ListObj::encodeData(TOStream& stream, bool requireIO) const {
+		EncodeData(mValue, stream, requireIO);
 	}
 	void ListObj::decodeData(TIStream& stream, bool requireIO) {
-		RequireIO rio{stream, requireIO};
-		UIntObj count;
-		count.decodeData(stream, kSkipRequireIO);
-		decodeElems(stream, count, kSkipRequireIO);
+		mValue = DecodeData(stream, requireIO);
 	}
 	void ListObj::encodeElems(TOStream& stream, bool requireIO) const {
-		RequireIO rio{stream, requireIO};
-		for(auto&& pObj: mValue) {
-			pObj->encode(stream, kSkipRequireIO);
-		}
+		EncodeElems(mValue, stream, requireIO);
 	}
 	void ListObj::decodeElems(
 		TIStream& stream, TValue::size_type count, bool requireIO)
 	{
-		RequireIO rio{stream, requireIO};
-		mValue.resize(count);
-		for(auto&& pObj: mValue) {
-			pObj = Decode(stream, kSkipRequireIO);
-		}
+		mValue = DecodeElems(stream, count, requireIO);
 	}
 	auto ListObj::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {
@@ -77,16 +89,13 @@ namespace binon {
 
 	//---- SList ---------------------------------------------------------------
 
-	auto SList::typeCode() const noexcept -> CodeByte {
-		return kSListCode;
-	}
-	void SList::assertElemTypes() const {
-		auto n = mValue.mList.size();
+	void SList::AssertElemTypes(const TValue& v) {
+		auto n = v.mList.size();
 		for(decltype(n) i = 0; i < n; ++i) {
-			auto tc = mValue.mList[i]->typeCode();
-			if(tc != mValue.mElemCode) {
+			auto tc = v.mList[i]->typeCode();
+			if(tc != v.mElemCode) {
 				std::ostringstream oss;
-				auto hex0 = AsHex(mValue.mElemCode);
+				auto hex0 = AsHex(v.mElemCode);
 				auto hex1 = AsHex(tc);
 				oss	<< "SList element " << i << " type code 0x" << hex1
 					<< " does not match expected 0x" << hex0;
@@ -94,64 +103,66 @@ namespace binon {
 			}
 		}
 	}
-	void SList::encodeData(TOStream& stream, bool requireIO) const {
-		BINON_IF_DEBUG(assertElemTypes();)
+	void SList::EncodeData(
+		const TValue& v, TOStream& stream,
+		bool requireIO, bool assertTypes)
+	{
 		RequireIO rio{stream, requireIO};
-		UIntObj count{mValue.mList.size()};
-		count.encodeData(stream, kSkipRequireIO);
-		encodeElems(stream, kSkipRequireIO, kSkipAssertTypes);
+		UIntObj::EncodeData(v.mList.size(), stream, kSkipRequireIO);
+		EncodeElems(v, stream, kSkipRequireIO);
 	}
-	void SList::decodeData(TIStream& stream, bool requireIO) {
-		RequireIO rio{stream, requireIO};
-		UIntObj count;
-		count.decodeData(stream, kSkipRequireIO);
-		mValue.mList.resize(count);
-		decodeElems(stream, count, kSkipRequireIO);
-	}
-	void SList::encodeElems(
-		TOStream& stream, bool requireIO, bool assertTypes) const
+	void SList::EncodeElems(
+		const TValue& v, TOStream& stream,
+		bool requireIO, bool assertTypes)
 	{
 		if(assertTypes) {
-			assertElemTypes();
+			AssertElemTypes(v);
 		}
 
 		//	Write element code.
 		RequireIO rio{stream, requireIO};
-		mValue.mElemCode.write(stream, kSkipRequireIO);
+		v.mElemCode.write(stream, kSkipRequireIO);
 
 		//	Write data of all elements consecutively.
-		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
+		if(v.mElemCode.baseType() == kBoolObjCode.baseType()) {
 
 			//	Special case for booleans which get packed 8 to a byte.
-			auto& list = mValue.mList;
+			auto& list = v.mList;
 			auto boolGen = MakeGenerator<bool>(
 				[it = list.begin(), endIt = list.end()]() mutable
 					-> std::optional<bool>
 				{
-					return it == endIt ? std::nullopt
-						: std::make_optional<bool>(**it++);
+					return MakeOptByFn<bool>(it == endIt,
+						[&it]() -> bool { return static_cast<bool>(**it++); }
+						);
 				});
 			for(auto byt: PackedBoolsGen(boolGen.begin(), boolGen.end())) {
 				WriteWord(byt, stream, kSkipRequireIO);
 			}
 		}
 		else {
-			for(auto&& pObj: mValue.mList) {
+			for(auto&& pObj: v.mList) {
 				pObj->encodeData(stream, kSkipRequireIO);
 			}
 		}
 	}
-	void SList::decodeElems(
-		TIStream& stream, TList::size_type count, bool requireIO)
+	auto SList::DecodeData(TIStream& stream, bool requireIO) -> TValue {
+		RequireIO rio{stream, requireIO};
+		auto count = UIntObj::DecodeData(stream, kSkipRequireIO);
+		return DecodeElems(stream, count, kSkipRequireIO);
+	}
+	auto SList::DecodeElems(
+		TIStream& stream, TList::size_type count, bool requireIO) -> TValue
 	{
 		//	Read element code.
 		RequireIO rio{stream, requireIO};
-		mValue.mElemCode = CodeByte::Read(stream, kSkipRequireIO);
-		auto pBaseObj = FromCodeByte(mValue.mElemCode);
+		auto elemCode = CodeByte::Read(stream, kSkipRequireIO);
+		auto pBaseObj = FromCodeByte(elemCode);
 
 		//	Read data of all elements consecutively.
 		
-		if(mValue.mElemCode.baseType() == kBoolObjCode.baseType()) {
+		TValue v{elemCode, TList(count)};
+		if(v.mElemCode.baseType() == kBoolObjCode.baseType()) {
 
 			//	Special case for booleans packed 8 to a byte.
 			auto byteGen = MakeGenerator<std::byte>(
@@ -159,18 +170,41 @@ namespace binon {
 					return std::make_optional(
 						ReadWord<std::byte>(stream, kSkipRequireIO));
 				});
-			mValue.mList.clear();
+			v.mList.clear();
 			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
-				mValue.mList.push_back(std::make_shared<BoolObj>(b));
+				v.mList.push_back(std::make_shared<BoolObj>(b));
 			}
 		}
 		else {
-			mValue.mList.resize(count);
-			for(auto&& pObj: mValue.mList) {
+			for(auto&& pObj: v.mList) {
 				pObj = pBaseObj->makeCopy();
 				pObj->decodeData(stream, kSkipRequireIO);
 			}
 		}
+		return std::move(v);
+	}
+	auto SList::typeCode() const noexcept -> CodeByte {
+		return kSListCode;
+	}
+	void SList::assertElemTypes() const {
+		AssertElemTypes(mValue);
+	}
+	void SList::encodeData(TOStream& stream, bool requireIO) const
+	{
+		EncodeData(mValue, stream, requireIO);
+	}
+	void SList::decodeData(TIStream& stream, bool requireIO) {
+		mValue = DecodeData(stream, requireIO);
+	}
+	void SList::encodeElems(
+		TOStream& stream, bool requireIO, bool assertTypes) const
+	{
+		EncodeElems(mValue, stream, requireIO, assertTypes);
+	}
+	void SList::decodeElems(
+		TIStream& stream, TList::size_type count, bool requireIO)
+	{
+		mValue = DecodeElems(stream, count, requireIO);
 	}
 	auto SList::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {

@@ -6,16 +6,18 @@
 namespace binon {
 
 	struct FloatObj: BinONObj, Access_mValue<FloatObj,types::TFloat64> {
+		static void EncodeData(
+			TValue data, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+		
 		TValue mValue;
 
 		FloatObj(TValue v=0.0) noexcept: mValue{v} {}
 		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kFloatObjCode;}
-		void encodeData(TOStream& stream, bool requireIO=true) const final
-			{ WriteWord(mValue, stream, requireIO); }
-		void decodeData(TIStream& stream, bool requireIO=true) final
-		    { mValue = ReadWord<decltype(mValue)>(stream, requireIO); }
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kFloatObjCode &&
@@ -30,16 +32,18 @@ namespace binon {
 	};
 
 	struct Float32Obj: BinONObj, Access_mValue<Float32Obj,types::TFloat32> {
+		static void EncodeData(
+			TValue data, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		Float32Obj(TValue v=0.0f) noexcept: mValue{v} {}
 		explicit operator bool() const noexcept override
 			{ return mValue != 0; }
 		auto typeCode() const noexcept -> CodeByte final {return kFloat32Code;}
-		void encodeData(TOStream& stream, bool requireIO=true) const final
-			{ WriteWord(mValue, stream, requireIO); }
-		void decodeData(TIStream& stream, bool requireIO=true) final
-		    { mValue = ReadWord<decltype(mValue)>(stream, requireIO); }
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kFloat32Code &&

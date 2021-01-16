@@ -10,6 +10,9 @@ namespace binon {
 	};
 
 	struct IntObj: BinONObj, Access_mValue<IntObj,std::int64_t> {
+		static void EncodeData(TValue v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		IntObj(TValue v=0) noexcept: mValue{v} {}
@@ -32,6 +35,10 @@ namespace binon {
 	};
 
 	struct UIntObj: BinONObj, Access_mValue<UIntObj,std::uint64_t> {
+		static void EncodeData(
+			TValue v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		UIntObj(TValue v=0) noexcept: mValue{v} {}

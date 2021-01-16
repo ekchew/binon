@@ -317,17 +317,20 @@ namespace binon {
 			return MakeGenerator<std::byte, PackedBoolsGenData<BoolIt, EndIt>>(
 				[](PackedBoolsGenData<BoolIt,EndIt>& data) {
 					auto& [boolIt, endIt, boolCnt] = data;
-					auto byteVal = 0x00u;
+					auto byt = 0x00_byte;
 					auto i = 0u;
 					for(; boolIt != endIt && i < 8u; ++boolIt, ++i) {
-						byteVal <<= 1;
-						byteVal |= *boolIt ? 0x01u : 0x00u;
+						byt <<= 1;
+						byt |= *boolIt ? 0x01_byte : 0x00_byte;
 					}
-					if(i < 8u) {
-						byteVal <<= 8u - i;
-					}
-					boolCnt += i;
-					return MakeOpt(i, ToByte(byteVal));
+					return MakeOptByFn<std::byte>(i,
+						[](auto i, auto byt, auto& boolCnt) {
+							if(i < 8u) {
+								byt <<= 8u - i;
+							}
+							boolCnt += i;
+							return byt;
+						}, i, byt, boolCnt);
 				}, boolIt, endIt, 0u);
 		}
 
@@ -348,23 +351,24 @@ namespace binon {
 		Generator of bool
 	**/
 	template<typename ByteIt>
-	auto UnpackedBoolsGen(ByteIt byteIt, std::size_t boolCnt) {
-		decltype(boolCnt) i = 0u;
-		auto byteVal = 0x00u;
-		return MakeGenerator<bool>(
-			[byteIt, boolCnt, i, byteVal]() mutable {
-				bool gotBool = i < boolCnt;
-				if((i & 0x7u) == 0x0u && gotBool) {
-					if(i) {
-						++byteIt;
-					}
-					byteVal = std::to_integer<decltype(byteVal)>(*byteIt);
+		auto UnpackedBoolsGen(ByteIt byteIt, std::size_t boolCnt) {
+			auto nextBool = [](auto& byteIt, auto boolCnt, auto i, auto& byt) {
+				if((i & 0x7u) == 0x0u) {
+					byt = i > 0u ? *++byteIt : *byteIt;
 				}
-				else { byteVal <<= 1; }
-				++i;
-				return MakeOpt(gotBool, (byteVal & 0x80u) != 0x00u);
-			});
-	}
+				else { byt <<= 1; }
+				return (byt & 0x80_byte) != 0x00_byte;
+			};
+			decltype(boolCnt) i = 0u;
+			auto byt = 0x00_byte;
+			return MakeGenerator<bool>(
+				[byteIt, boolCnt, nextBool, i, byt]() mutable {
+					++i;
+					return MakeOptByFn<bool>(
+						i <= boolCnt, nextBool,
+						byteIt, boolCnt, i - 1u, byt);
+				});
+		}
 }
 
 #endif

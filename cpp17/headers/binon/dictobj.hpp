@@ -81,6 +81,10 @@ namespace binon {
 	};
 
 	struct DictObj: DictBase, AccessContainer_mValue<DictObj,TDict> {
+		static void EncodeData(
+			const TValue& v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		DictObj(const TDict& v): mValue{v} {}
@@ -104,6 +108,10 @@ namespace binon {
 		TDict mDict;
 	};
 	struct SKDict: DictBase, AccessContainer_mValue<SKDict,SKDictVal> {
+		static void EncodeData(
+			const TValue& v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		SKDict(CodeByte keyCode) noexcept: mValue{keyCode} {}
@@ -130,6 +138,10 @@ namespace binon {
 		TDict mDict;
 	};
 	struct SDict: DictBase, AccessContainer_mValue<SDict,SDictVal> {
+		static void EncodeData(
+			const TValue& v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		SDict(CodeByte keyCode, CodeByte valCode=kIntObjCode) noexcept:

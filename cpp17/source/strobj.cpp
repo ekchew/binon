@@ -3,18 +3,26 @@
 
 namespace binon {
 
-	void StrObj::encodeData(TOStream& stream, bool requireIO) const {
+	void StrObj::EncodeData(
+		const TValue& v, TOStream& stream, bool requireIO)
+	{
 		RequireIO rio{stream, requireIO};
-		UIntObj size{mValue.size()};
-		size.encodeData(stream, kSkipRequireIO);
-		stream.write(mValue.data(), mValue.size());
+		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
+		stream.write(v.data(), v.size());
+	}
+	auto StrObj::DecodeData(TIStream& stream, bool requireIO) -> TValue {
+		RequireIO rio{stream, requireIO};
+		auto size = UIntObj::DecodeData(stream, kSkipRequireIO);
+		TValue v;
+		v.resize(size);
+		stream.read(v.data(), size);
+		return std::move(v);
+	}
+	void StrObj::encodeData(TOStream& stream, bool requireIO) const {
+		EncodeData(mValue, stream, requireIO);
 	}
 	void StrObj::decodeData(TIStream& stream, bool requireIO) {
-		RequireIO rio{stream, requireIO};
-		UIntObj len;
-		len.decodeData(stream, kSkipRequireIO);
-		mValue.resize(len);
-		stream.read(mValue.data(), mValue.size());
+		mValue = DecodeData(stream, requireIO);
 	}
 
 }

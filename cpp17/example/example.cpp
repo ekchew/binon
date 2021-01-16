@@ -25,6 +25,7 @@ auto main() -> int {
 	using namespace binon::types;
 	using namespace std;
 	try {
+		/*
 		SDict sd{kStrObjCode, kUIntCode};
 		sd.value<StrObj,UInt>("foo") = 0;
 		sd.value<StrObj,UInt>("bar") = 1;
@@ -40,6 +41,23 @@ auto main() -> int {
 		istringstream iss{move(s)};
 		sd.decode(iss);
 		cout << "after decoding: " << sd << '\n';
+		*/
+		
+		DictObj d;
+		d.value<UInt>(make_shared<StrObj>("foo")) = 0;
+		d.value<UInt>(make_shared<StrObj>("bar")) = 1;
+		d.value<UInt>(make_shared<StrObj>("baz")) = 2;
+		cout << "before encoding: " << d << '\n';
+
+		ostringstream oss;
+		d.encode(oss);
+		auto s{move(oss).str()};
+
+		DumpBinON(s);
+
+		istringstream iss{move(s)};
+		d.decode(iss);
+		cout << "after decoding: " << d << '\n';
 
 		SListT<bool> slt{
 			true, true, false, true, true, true, false, false,

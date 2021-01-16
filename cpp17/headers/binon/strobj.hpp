@@ -8,6 +8,10 @@
 namespace binon {
 
 	struct StrObj: BinONObj, AccessContainer_mValue<StrObj,TString> {
+		static void EncodeData(
+			const TValue& v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		StrObj(const TValue& v): mValue{v} {}

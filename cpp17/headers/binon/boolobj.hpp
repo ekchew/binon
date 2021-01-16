@@ -6,14 +6,17 @@
 namespace binon {
 
 	struct BoolObj: BinONObj, Access_mValue<BoolObj,bool> {
+		static void EncodeData(TValue v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		BoolObj(TValue v=false) noexcept: mValue{v} {}
 		explicit operator bool() const noexcept override
 			{ return mValue; }
 		auto typeCode() const noexcept -> CodeByte final {return kBoolObjCode;}
-		void encodeData(TOStream& stream, TValue requireIO=true) const final;
-		void decodeData(TIStream& stream, TValue requireIO=true) final;
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kBoolObjCode &&

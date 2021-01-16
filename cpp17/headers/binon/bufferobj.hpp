@@ -6,6 +6,10 @@
 namespace binon {
 
 	struct BufferObj: BinONObj, AccessContainer_mValue<BufferObj,TBuffer> {
+		static void EncodeData(
+			const TValue& v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+
 		TValue mValue;
 
 		BufferObj(const TValue& v): mValue{v} {}

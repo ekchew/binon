@@ -26,6 +26,30 @@ namespace binon {
 	};
 
 	struct ListObj: ListBase, AccessContainer_mValue<ListObj,TList> {
+		static void EncodeData(
+			const TValue& v, TOStream& stream, bool requireIO=true);
+		static void EncodeElems(
+			const TValue& v, TOStream& stream, bool requireIO=true);
+		template<typename ElemIt, typename EndIt>
+			static void EncodeElems(ElemIt it, EndIt endIt,
+				TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+		static auto DecodeElems(TIStream& stream, TValue::size_type count,
+			bool requireIO=true) -> TValue;
+		static auto DecodedElemsGen(
+			TIStream& stream, TValue::size_type count, bool requireIO=true) {
+					return MakeGenerator<TSPBinONObj,RequireIO>(
+						[&stream, count](RequireIO&) mutable
+							-> std::optional<TSPBinONObj>
+						{
+							return MakeOptByFn<TSPBinONObj>(count--,
+								[&stream] {
+									return Decode(stream, kSkipRequireIO);
+								});
+						},
+						stream, requireIO);
+				}
+
 		TValue mValue;
 
 		ListObj(const TValue& v): mValue{v} {}
@@ -58,7 +82,17 @@ namespace binon {
 		TList mList;
 	};
 	struct SList: ListBase,  AccessContainer_mValue<SList,SListVal> {
-		static constexpr bool kSkipAssertTypes = false;
+		static void AssertElemTypes(const TValue& v);
+		static void EncodeData(
+			const TValue& v, TOStream& stream,
+			bool requireIO=true, bool assertTypes=BINON_DEBUG);
+		static void EncodeElems(
+			const TValue& v, TOStream& stream,
+			bool requireIO=true, bool assertTypes=BINON_DEBUG);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
+		static auto DecodeElems(
+			TIStream& stream, TList::size_type count,
+			bool requireIO=true) -> TValue;
 
 		TValue mValue;
 
@@ -160,17 +194,17 @@ namespace binon {
 		using TElem = T;
 		using TWrap = TWrapper<T>;
 		using TCtnr = Ctnr;
-		Ctnr mCtnr;
+		Ctnr mValue;
 
-		SListT(std::initializer_list<TElem> lst): mCtnr{lst} {}
+		SListT(std::initializer_list<TElem> lst): mValue{lst} {}
 		SListT(const SList& sList);
-		SListT(const Ctnr& ctnr): mCtnr(ctnr) {}
-		SListT(Ctnr&& ctnr) noexcept: mCtnr(std::move(ctnr)) {}
+		SListT(const Ctnr& ctnr): mValue(ctnr) {}
+		SListT(Ctnr&& ctnr) noexcept: mValue(std::move(ctnr)) {}
 		SListT() noexcept = default;
-		operator Ctnr&() noexcept { return mCtnr; }
-		operator const Ctnr&() const noexcept { return mCtnr; }
+		operator Ctnr&() noexcept { return mValue; }
+		operator const Ctnr&() const noexcept { return mValue; }
 		explicit operator bool() const noexcept override
-			{ return mCtnr.size() != 0; }
+			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kSListCode; }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
@@ -183,9 +217,10 @@ namespace binon {
 		void printArgsRepr(std::ostream& stream) const override;
 	};
 
-	//---- Template Implementation --------------------------------------------
+	//==== Template Implementation ============================================
 
-	//	ListBase
+	//---- ListBase -----------------------------------------------------------
+
 	template<typename Obj, typename... Args>
 	auto ListBase::emplaceBack(Args&&... args) -> TSPBinONObj& {
 		auto& lst = list();
@@ -194,7 +229,20 @@ namespace binon {
 		return lst.back();
 	}
 
-	//	TypeInfo specializations.
+	//---- ListObj ------------------------------------------------------------
+
+	template<typename ElemIt, typename EndIt>
+	void ListObj::EncodeElems(ElemIt it, EndIt endIt,
+		TOStream& stream, bool requireIO)
+	{
+		RequireIO rio{stream, requireIO};
+		for(; it != endIt; ++it) {
+			(*it)->encode(stream, kSkipRequireIO);
+		}
+	}
+
+	//---- TypeInfo specializations -------------------------------------------
+
 	template<typename T>
 	struct TypeInfo<
 		T, std::enable_if_t<kIsWrapper<T>>
@@ -253,18 +301,19 @@ namespace binon {
 		static auto TypeName() -> std::string { return "TBuffer"; }
 	};
 
-	//	SListT
+	//---- SListT -------------------------------------------------------------
+
 	template<typename T, typename Ctnr>
 	SListT<T,Ctnr>::SListT(const SList& sList) {
 		for(auto&& p: sList.mValue.mList) {
 			auto pElem = BinONObj::Cast<TWrap>(p);
-			mCtnr.push_back(static_cast<T>(pElem->mValue));
+			mValue.push_back(static_cast<T>(pElem->mValue));
 		}
 	}
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
-		UIntObj count{mCtnr.size()};
+		UIntObj count{mValue.size()};
 		count.encodeData(stream, kSkipRequireIO);
 		encodeElems(stream, kSkipRequireIO);
 	}
@@ -281,12 +330,12 @@ namespace binon {
 		auto code = TWrap{}.typeCode();
 		code.write(stream, kSkipRequireIO);
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			for(auto byt: PackedBoolsGen(mCtnr.begin(), mCtnr.end())) {
+			for(auto byt: PackedBoolsGen(mValue.begin(), mValue.end())) {
 				WriteWord(byt, stream, kSkipRequireIO);
 			}
 		}
 		else {
-			for(auto&& elem: mCtnr) {
+			for(auto&& elem: mValue) {
 				if constexpr(kIsWrapper<T>) {
 					elem.encodeData(stream, kSkipRequireIO);
 				}
@@ -311,7 +360,7 @@ namespace binon {
 		}
 
 		//	Read data of all elements consecutively.
-		mCtnr.clear();
+		mValue.clear();
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
 			auto byteGen = MakeGenerator<std::byte>(
 				[&stream] {
@@ -319,7 +368,7 @@ namespace binon {
 						ReadWord<std::byte>(stream, kSkipRequireIO));
 				});
 			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
-				mCtnr.push_back(b);
+				mValue.push_back(b);
 			}
 		}
 		else {
@@ -327,12 +376,12 @@ namespace binon {
 				if constexpr(kIsWrapper<T>) {
 					T obj;
 					obj.decodeData(stream, kSkipRequireIO);
-					mCtnr.push_back(obj);
+					mValue.push_back(obj);
 				}
 				else {
 					TWrap obj;
 					obj.decodeData(stream, kSkipRequireIO);
-					mCtnr.push_back(static_cast<T>(obj.mValue));
+					mValue.push_back(static_cast<T>(obj.mValue));
 				}
 			}
 		}
@@ -352,7 +401,7 @@ namespace binon {
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::printArgsRepr(std::ostream& stream) const {
 		bool first = true;
-		for(auto&& elem: mCtnr) {
+		for(auto&& elem: mValue) {
 			if(first) {
 				first = false;
 			}
