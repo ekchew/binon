@@ -281,7 +281,7 @@ namespace binon {
 		EndIt endIt;
 		std::size_t boolCount;
 	};
-	
+
 	/**
 	PackedBoolsGen function template
 

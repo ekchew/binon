@@ -208,20 +208,6 @@ namespace binon {
 		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
 		static auto DecodeElems(TIStream& stream, TSize count,
 			bool requireIO=true) -> TCtnr;
-		/*static auto DecodedElemsGen(
-			TIStream& stream, TSize count, bool requireIO=true) {
-				return MakeGenerator<TElemRW,RequireIO>(
-					[&stream, count](RequireIO&) mutable
-						-> std::optional<TSPBinONObj>
-					{
-						return MakeOptByFn<TSPBinONObj>(count--,
-							[&stream] {
-								return TWrap::DecodeData(
-									stream, kSkipRequireIO);
-							});
-					},
-					stream, requireIO);
-			}*/
 
 		Ctnr mValue;
 
