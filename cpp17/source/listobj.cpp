@@ -132,7 +132,7 @@ namespace binon {
 				[it = list.begin(), endIt = list.end()]() mutable
 					-> std::optional<bool>
 				{
-					return MakeOptByFn<bool>(it == endIt,
+					return MakeOpt<bool>(it == endIt,
 						[&it]() -> bool { return static_cast<bool>(**it++); }
 						);
 				});

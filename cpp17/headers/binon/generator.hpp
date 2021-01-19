@@ -16,6 +16,11 @@ namespace binon {
 	This parent class of Generator has a specialization for dealing with the
 	Data type void. See the Generator class and MakeGenerator function template
 	docs for more info.
+
+	Template Args:
+		T (type): see Generator
+		Data (type): see Generator
+		Functor (type): see Generator
 	**/
 	template<typename T, typename Data, typename Functor>
 	struct GeneratorBase {
@@ -32,7 +37,7 @@ namespace binon {
 		GeneratorBase's constructor is exposed by Generator.
 
 		Template Args:
-			typename... DataArgs: inferred from dataArgs constructor arg
+			DataArgs (types): inferred from dataArgs constructor args
 
 		Args:
 			functor (Functor): your functor
@@ -115,9 +120,9 @@ namespace binon {
 		capture i in mutable form into the lambda.
 
 		Source:
-			auto gen = binon::MakeGenerator(
+			auto gen = binon::MakeGenerator<int>(
 				[i = 0]() mutable {
-					return ++i, binon::MakeOpt(i <= 5, i);
+					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
 				});
 			for(auto i: gen) {
 				std::cout << i << '\n';
@@ -143,7 +148,7 @@ namespace binon {
 		Source:
 			auto gen = binon::MakeGenerator<int>(
 				[](int& i) {
-					return ++i, binon::MakeOpt(i <= 5, i);
+					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
 				}, 0);
 			for(auto i: gen) {
 				std::cout << i << '\n';
@@ -159,9 +164,15 @@ namespace binon {
 			final i: 6
 
 	Template Args:
-		typename T: value type emitted by Generator
-		typename Data: type of data passed to your functor by reference
-		typename Functor: a functor you supply to generate values.
+		T (type, required): value type emitted by Generator
+		Data (type, required): optional extra data for functor
+			Set to void if your functor needs no extra data. (See also
+			MakeGenerator function template.)
+		Functor (type, inferred):
+			Takes one of 2 forms:
+				std::optional<T> fn()
+				std::optional<T> fn(Data&)
+			The 1st form applies if the Data type is void.
 	**/
 	template<typename T, typename Data, typename Functor>
 	struct Generator: GeneratorBase<T,Data,Functor> {
@@ -207,13 +218,16 @@ namespace binon {
 			using reference = value_type&;
 			using pointer = value_type*;
 
+			Generator* mPGen;
+			std::optional<value_type> mOptVal;
+
 			explicit iterator(Generator& gen) noexcept:
 				mPGen{&gen} {}
-			explicit operator bool() noexcept
+			explicit operator bool() const noexcept
 				{ return mOptVal.has_value(); }
-			auto operator == (const iterator& rhs) noexcept
+			auto operator == (const iterator& rhs) const noexcept
 				{ return mOptVal == rhs.mOptVal; }
-			auto operator != (const iterator& rhs) noexcept
+			auto operator != (const iterator& rhs) const noexcept
 				{ return mOptVal != rhs.mOptVal; }
 			auto operator * () & -> reference
 				{ return BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
@@ -229,10 +243,6 @@ namespace binon {
 					iterator copy{*this};
 					return ++*this, copy;
 				}
-
-		private:
-			Generator* mPGen;
-			std::optional<value_type> mOptVal;
 		};
 
 		using GeneratorBase<T,Data,Functor>::GeneratorBase;
@@ -249,19 +259,13 @@ namespace binon {
 	argument: void
 
 	Template Args:
-		typename T (any type): the value type the generator produces
-		typename Data (any type, optional): defaults to void
-		typename Functor: inferred from functor function arg
-		typename... DataArgs: inferred from dataArgs function args
+		T (type, required): the value type the generator produces
+		Data (type, optional): defaults to void
+		Functor (type, inferred): see Generator
+		DataArgs (types, inferred)
 
 	Args:
-		functor (Functor): your functor
-			It should take one of two forms:
-
-				std::optional<T> functor();
-				std::optional<T> functor(Data&);
-
-			The second form applies if you supply a Data type other than void.
+		functor (Functor): see Generator
 		dataArgs... (DataArgs...): any extra args to initialize a Data instance
 			Clearly, these only make sense if your Data type is not void.
 
@@ -272,31 +276,82 @@ namespace binon {
 		typename T, typename Data=void,
 		typename Functor, typename... DataArgs
 		>
-	auto MakeGenerator(Functor functor, DataArgs&&... dataArgs)
-		-> Generator<T,Data,Functor> {
-			return Generator<T,Data,Functor>{
-				functor, std::forward<DataArgs>(dataArgs)...};
+		auto MakeGenerator(Functor functor, DataArgs&&... dataArgs)
+			-> Generator<T,Data,Functor> {
+				return Generator<T,Data,Functor>{
+					functor, std::forward<DataArgs>(dataArgs)...};
+			}
+
+	/**
+	MakeIterGen function template
+
+	This function wraps a Generator around a begin/end iterator pair.
+
+	Template Args:
+		BgnIt (type, inferred)
+		EndIt (type, inferred)
+
+	Args:
+		bgnIt (BgnIt): begin iterator
+		endIt (EndIt): end iterator
+
+	Returns:
+		Generator of BgnIt::value_type
+	**/
+	template<typename BgnIt, typename EndIt>
+		auto MakeIterGen(BgnIt bgnIt, EndIt endIt) {
+			using T = typename BgnIt::value_type;
+			auto nextT = [](auto& it) {
+				return *it++;
+			};
+			auto nextOptT = [bgnIt, endIt, nextT]() mutable {
+				return MakeOpt<T>(bgnIt != endIt, nextT, bgnIt);
+			};
+			return MakeGenerator<T>(nextOptT);
 		}
 
+	/**
+	ChildGenData struct template
+
+	This is the Generator Data type used in conjunction with the ChainGenerators
+	function template.
+	
+	Template Args:
+		ParentGen (type, required): parent Generator type
+		ChildData (type, required): child Generator's Data type
+	
+	Type Definitions:
+		TParentGen: ParentGen
+		TChildData: ChildData
+		TParentIter: ParentGen::iterator
+	
+	Data Members:
+		parentGen (TParentGen): instance of the parent generator
+		parentIter (TParentIter): current iterator into parent generator
+		childData (TChildData, optional): any extra data used by child functor
+			This is only defined provided the ChildData type is not void.
+			You can access it externally with myChildGen->childData.
+	**/
 	template<typename ParentGen, typename ChildData>
 	struct ChildGenData {
 		using TParentGen = ParentGen;
 		using TChildData = ChildData;
 		using TParentIter = typename ParentGen::iterator;
 
-		TParentGen parentGen;
 		TParentIter parentIter;
+		TParentGen parentGen;
 		TChildData childData;
 
 		template<typename... ChildArgs>
-			ChildGenData(const TParentGen& parentGen, ChildArgs&&... args):
-				parentGen{parentGen},
+			ChildGenData(TParentGen parentGen, ChildArgs&&... args):
+				parentIter(parentGen.begin()),
+				parentGen{std::move(parentGen)},
 				childData{std::forward<ChildArgs>(args)...} {
-					parentIter = parentGen.begin();
+					parentIter.mPGen = &this->parentGen;
 				}
 		template<typename Functor>
 			static auto WrapFunctor(Functor functor) {
-				return [&](ChildGenData& cgd) {
+				return [functor](ChildGenData& cgd) mutable {
 					return functor(
 						cgd.parentGen, cgd.parentIter, cgd.childData);
 				};
@@ -308,31 +363,111 @@ namespace binon {
 		using TChildData = void;
 		using TParentIter = typename ParentGen::iterator;
 
-		TParentGen parentGen;
 		TParentIter parentIter;
+		TParentGen parentGen;
 
-		ChildGenData(const TParentGen& parentGen):
-			parentGen{parentGen} {
-				parentIter = parentGen.begin();
+		ChildGenData(TParentGen parentGen):
+			parentIter{parentGen.begin()},
+			parentGen{std::move(parentGen)} {
+				parentIter.mPGen = &this->parentGen;
 			}
 		template<typename Functor>
 			static auto WrapFunctor(Functor functor) {
-				return [&](ChildGenData& cgd) {
-					return functor(cgd.parentGen, cgd.parentIter);
+				return [fn = std::move(functor)](ChildGenData& cgd) mutable {
+					return fn(cgd.parentGen, cgd.parentIter);
 				};
 			}
 	};
 
+	/**
+	ChainGenerators function template
+
+	Often with generators you want to pipe the output of one into the input of
+	another. This function helps with that.
+
+	Example:
+		Taking the example from earlier under the Generator class template,
+		let's say we want the int-counting Generator to feed its output to one
+		that yields the square root of anything you hand it. We'll call the
+		former gen1 and the latter gen2.
+		
+		gen1 is the parent generator that is chained to gen2 by calling
+		ChainGenerators. Note that while gen1 can technically stand alone, gen2
+		needs gen1 in its definition because an instance of gen1 is saved within
+		gen2's data.
+		
+		gen2's functor takes a minimum of 2 arguments: a reference to gen1 and a
+		reference to a gen1 iterator marking where you are within the parent
+		generator. You would typically compare this iterator to gen1.end()
+		before dereferencing it.
+
+		Source:
+			auto gen1 = binon::MakeGenerator<int>(
+				[i = 0]() mutable {
+					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
+				});
+			auto gen2 = binon::ChainGenerators<double>(
+				std::move(gen1),
+				[](auto& gen1, auto& gen1_it) {
+					return binon::MakeOpt<double>(
+						gen1_it != gen1.end(),
+						[&gen1_it] { return std::sqrt(*gen1_it++); }
+						);
+				});
+			for(auto x: gen2) {
+				std::cout << x << '\n';
+			}
+
+		Output:
+			1
+			1.41421
+			1.73205
+			2
+			2.23607
+
+	Template Args:
+		ChildT (type, required): value type child Generator produces
+		ChildData (type, optional): may contain extra data for child functor
+			Defaults to void, in which case the functor should only expect the 2
+			required args. If you set this type to something other than void,
+			you can also access it externally as myGen2->childData.
+		ParentGen (type, inferred)
+		Functor (type, inferred)
+		ChildArgs (type, inferred)
+	
+	Args:
+		gen (ParentGen): instance of the parent Generator
+			Since the child generator will store its own instance of the parent
+			Generator (within its ChildGenData structure), and in most cases any
+			parent Generator instance won't be needed anymore once it has been
+			incorporated into the child, you may want to move the parent into
+			the child rather than copy it, as in the above example. (Here, since
+			these trivial example Generators do not carry around any big
+			containers, it doesn't really matter, but it's good form. By the
+			way, if you can think of why it is a good idea to encapsulate the
+			parent into the child rather than say just store a pointer to it,
+			you get a gold star!)
+		functor (Functor):
+			There are 2 possible forms for this functor:
+				std::optional<ChildT> fn(ParentGen&, ParentGen::iterator&)
+				std::optional<ChildT>
+					fn(ParentGen&, ParentGen::iterator&, ChildData&)
+			The second form applies if you set the ChildData template argument
+			to something other than the default void. You could also reach this
+			externally with myChildGen->childData. (The parent Generator's data
+			would be at *myChildGen->parentGen.)
+		args (ChildArgs): extra args to initialize ChildData
+	**/
 	template<
 		typename ChildT, typename ChildData=void,
 		typename ParentGen, typename Functor, typename... ChildArgs
 		>
 		auto ChainGenerators(
-			const ParentGen& gen, Functor functor, ChildArgs&&... args)
+			ParentGen gen, Functor functor, ChildArgs&&... args)
 		{
 			using CGD = ChildGenData<ParentGen,ChildData>;
 			return MakeGenerator<ChildT,CGD>(
-				CGD::WrapFunctor(functor), gen,
+				CGD::WrapFunctor(std::move(functor)), std::move(gen),
 				std::forward<ChildArgs>(args)...
 			);
 		}

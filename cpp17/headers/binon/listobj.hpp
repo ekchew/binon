@@ -43,7 +43,7 @@ namespace binon {
 					[&stream, count](RequireIO&) mutable
 						-> std::optional<TSPBinONObj>
 					{
-						return MakeOptByFn<TSPBinONObj>(count--,
+						return MakeOpt<TSPBinONObj>(count--,
 							[&stream] {
 								return Decode(stream, kSkipRequireIO);
 							});

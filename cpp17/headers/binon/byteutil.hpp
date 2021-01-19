@@ -39,7 +39,7 @@ namespace binon {
 	is an alternative.
 
 	Template Args:
-		typename I: inferred from function i arg
+		I (type, inferred)
 
 	Args:
 		i (integral type): value to convert to std::byte
@@ -141,7 +141,7 @@ namespace binon {
 	a big-endian byte order (regardless of what the compiler target prefers).
 
 	Template Args:
-		typename Word: inferred from function word arg
+		Word (type, inferred)
 			You are strongly advised to use a type with a rigorously-defined
 			size such as std::int32_t or binon::types::TFloat64 for code
 			portability's sake.
@@ -176,7 +176,7 @@ namespace binon {
 	byte buffer.
 
 	Template Args:
-		typename Word: see WriteWord byte buffer variant
+		Word (type, inferred)
 
 	Args:
 		word (Word): see WriteWOrd byte buffer variant
@@ -205,7 +205,7 @@ namespace binon {
 	Reads back the word you wrote into a byte buffer with WriteWord.
 
 	Template Args:
-		typename Word: word type to read back
+		Word (type, required): word type to read back
 
 	Args:
 		buffer (const std::byte*): base address of byte buffer
@@ -232,7 +232,7 @@ namespace binon {
 	ReadWord function template - stream variant
 
 	Template Args:
-		typename Word: word type to read back
+		Word (type, required): word type to read back
 
 	Args:
 		stream (TIStream): binary input stream
@@ -266,38 +266,18 @@ namespace binon {
 	//-------------------------------------------------------------------------
 
 	/**
-	PackedBoolsGenData struct template
-
-	This is the ancillary data type associated with the Generator returned by
-	the PackedBoolsGen template function. It contains the boolean iterators used
-	internally, but of more interest is the boolCount field. If you read
-	myGen->boolCount after your iteration loop, it should indicate how many
-	bools were packed into the bytes: a useful number to know later when you
-	call UnpackedBoolsGen.
-	**/
-	template<typename BoolIt, typename EndIt>
-	struct PackedBoolsGenData {
-		BoolIt boolIt;
-		EndIt endIt;
-		std::size_t boolCount;
-	};
-
-	/**
 	PackedBoolsGen function template
 
 	This function returns a generator that produced bytes from bools, with up to
 	8 bools packed into each byte.
 
 	Template Args:
-		typename BoolIt: inferred from boolIt function arg
-		typename EndIt: inferred from endIt function arg
+		BoolGen (type, inferred)
 
 	Args:
-		boolIt (BoolIt): input iterator to bool values
-			This iterator will only be accessed sequentially until endIt is
-			reached. (Technically, PackedBoolsGen can work with any value type
-			that can evaluate as bool in a conditional expression.)
-		endIt (EndIt): suitable end iterator for boolIt
+		boolGen (BoolGen): Generator of bool or bool-like values
+			Technically, any type that can evaluate as boolean for the purposes
+			of an if statement should work here.
 
 	Returns:
 		Generator of std::byte:
@@ -309,29 +289,30 @@ namespace binon {
 			If there are not enough bools to fill the final byte, the remaining
 			least-significant bits will be cleared.
 
-			Note that you can read myGen->boolCount to check how many bools
-			were packed into the bytes.
+			Note that you can dereference the returned Generator (*myGen) after
+			your iteration loop to see how many bools were packed. (This would
+			be useful to know when you eventually call UnpackedBoolsGen.)
 	**/
+	template<typename BoolGen>
+		auto PackedBoolsGen(BoolGen boolGen) {
+			auto byteGen = [](auto& gen, auto& it, auto& n) {
+				auto byt = 0x00_byte;
+				auto i = 0u;
+				for(; it != gen.end() && i < 8u; ++it, ++i) {
+					byt <<= 1;
+					byt |= *it ? 0x01_byte : 0x00_byte;
+				}
+				if(i < 8u) {
+					byt <<= 8u - i;
+				}
+				n += i;
+				return MakeOpt<std::byte>(i, [byt] { return byt; });
+			};
+			return ChainGenerators<std::byte,std::size_t>(boolGen, byteGen, 0u);
+		}
 	template<typename BoolIt, typename EndIt>
-		auto PackedBoolsGen(BoolIt boolIt, const EndIt& endIt) {
-			return MakeGenerator<std::byte, PackedBoolsGenData<BoolIt, EndIt>>(
-				[](PackedBoolsGenData<BoolIt,EndIt>& data) {
-					auto& [boolIt, endIt, boolCnt] = data;
-					auto byt = 0x00_byte;
-					auto i = 0u;
-					for(; boolIt != endIt && i < 8u; ++boolIt, ++i) {
-						byt <<= 1;
-						byt |= *boolIt ? 0x01_byte : 0x00_byte;
-					}
-					return MakeOptByFn<std::byte>(i,
-						[](auto i, auto byt, auto& boolCnt) {
-							if(i < 8u) {
-								byt <<= 8u - i;
-							}
-							boolCnt += i;
-							return byt;
-						}, i, byt, boolCnt);
-				}, boolIt, endIt, 0u);
+		auto PackedBoolsGen(BoolIt boolIt, EndIt endIt) {
+			return PackedBoolsGen(MakeIterGen(boolIt, endIt));
 		}
 
 	/**
@@ -341,7 +322,7 @@ namespace binon {
 	returns a generator that reproduces those bools.
 
 	Template Args:
-		typename ByteIt: inferred fromo byteIt function arg
+		ByteIt (type, inferred)
 
 	Args:
 		byteIt (ByteIt): an input iterator with a value_type of std::byte
@@ -364,7 +345,7 @@ namespace binon {
 			return MakeGenerator<bool>(
 				[byteIt, boolCnt, nextBool, i, byt]() mutable {
 					++i;
-					return MakeOptByFn<bool>(
+					return MakeOpt<bool>(
 						i <= boolCnt, nextBool,
 						byteIt, boolCnt, i - 1u, byt);
 				});

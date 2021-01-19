@@ -63,11 +63,11 @@ namespace binon {
 			};
 		auto keysGen = MakeGenerator<TKey>(
 			[it = v.begin(), endIt = v.end(), nextKey]() mutable {
-				return MakeOptByFn<TKey>(it != endIt, nextKey, it);
+				return MakeOpt<TKey>(it != endIt, nextKey, it);
 			});
 		auto valsGen = MakeGenerator<TVal>(
 			[it = v.begin(), endIt = v.end(), nextVal]() mutable {
-				return MakeOptByFn<TVal>(it != endIt, nextVal, it);
+				return MakeOpt<TVal>(it != endIt, nextVal, it);
 			});
 		ListObj::EncodeElems(
 			keysGen.begin(), keysGen.end(), stream, kSkipRequireIO);

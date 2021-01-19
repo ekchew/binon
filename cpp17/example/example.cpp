@@ -1,5 +1,6 @@
 #include "binon/binon.hpp"
 
+#include <cmath>
 #include <iostream>
 #include <sstream>
 
