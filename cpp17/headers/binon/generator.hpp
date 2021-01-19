@@ -11,10 +11,10 @@
 namespace binon {
 
 	/**
-	GeneratorBase class template
+	GenBase class template
 
 	This parent class of Generator has a specialization for dealing with the
-	Data type void. See the Generator class and MakeGenerator function template
+	Data type void. See the Generator class and MakeGen function template
 	docs for more info.
 
 	Template Args:
@@ -23,7 +23,7 @@ namespace binon {
 		Functor (type): see Generator
 	**/
 	template<typename T, typename Data, typename Functor>
-	struct GeneratorBase {
+	struct GenBase {
 		static_assert(
 			std::is_same_v<
 				std::invoke_result_t<Functor, Data&>, std::optional<T>
@@ -34,7 +34,7 @@ namespace binon {
 		/**
 		constructor
 
-		GeneratorBase's constructor is exposed by Generator.
+		GenBase's constructor is exposed by Generator.
 
 		Template Args:
 			DataArgs (types): inferred from dataArgs constructor args
@@ -45,7 +45,7 @@ namespace binon {
 				Clearly, these only make sense if your Data type is not void.
 		**/
 		template<typename... DataArgs>
-			GeneratorBase(Functor functor, DataArgs&&... dataArgs):
+			GenBase(Functor functor, DataArgs&&... dataArgs):
 				mFunctor{functor}, mData{std::forward<DataArgs>(dataArgs)...} {}
 
 		/**
@@ -77,7 +77,7 @@ namespace binon {
 		auto callFunctor() -> std::optional<T> { return mFunctor(mData); }
 	};
 	template<typename T, typename Functor>
-	struct GeneratorBase<T, void, Functor> {
+	struct GenBase<T, void, Functor> {
 		static_assert(
 			std::is_same_v<
 				std::invoke_result_t<Functor>, std::optional<T>
@@ -85,7 +85,7 @@ namespace binon {
 			"Generator functor must take the form: std::optional<T> fn()"
 			);
 
-		GeneratorBase(Functor functor) noexcept: mFunctor{functor} {}
+		GenBase(Functor functor) noexcept: mFunctor{functor} {}
 
 	protected:
 		Functor mFunctor;
@@ -107,7 +107,7 @@ namespace binon {
 	std::optional<T>{} if you prefer).
 
 	The above form applies when the Data template argument is set to void (as it
-	is by default when you call the MakeGenerator helper function). If you set
+	is by default when you call the MakeGen helper function). If you set
 	the Data type to something other than void, Generator will store an internal
 	instance of that type and pass it to your functor by reference.
 
@@ -120,7 +120,7 @@ namespace binon {
 		capture i in mutable form into the lambda.
 
 		Source:
-			auto gen = binon::MakeGenerator<int>(
+			auto gen = binon::MakeGen<int>(
 				[i = 0]() mutable {
 					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
 				});
@@ -136,7 +136,7 @@ namespace binon {
 			5
 
 	Example 2: Same thing, but use Generator data to hold counter
-		This time, we tell MakeGenerator to store an int (1st template arg) we
+		This time, we tell MakeGen to store an int (1st template arg) we
 		initialize to 0 (2nd function arg). Then an int& is supplied to the
 		functor and we can increment it as in the first example.
 
@@ -146,7 +146,7 @@ namespace binon {
 		the i data member with gen->i.)
 
 		Source:
-			auto gen = binon::MakeGenerator<int>(
+			auto gen = binon::MakeGen<int>(
 				[](int& i) {
 					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
 				}, 0);
@@ -167,7 +167,7 @@ namespace binon {
 		T (type, required): value type emitted by Generator
 		Data (type, required): optional extra data for functor
 			Set to void if your functor needs no extra data. (See also
-			MakeGenerator function template.)
+			MakeGen function template.)
 		Functor (type, inferred):
 			Takes one of 2 forms:
 				std::optional<T> fn()
@@ -175,7 +175,7 @@ namespace binon {
 			The 1st form applies if the Data type is void.
 	**/
 	template<typename T, typename Data, typename Functor>
-	struct Generator: GeneratorBase<T,Data,Functor> {
+	struct Generator: GenBase<T,Data,Functor> {
 		using TValue = T;
 		using TData = Data;
 		using TFunctor = Functor;
@@ -245,14 +245,14 @@ namespace binon {
 				}
 		};
 
-		using GeneratorBase<T,Data,Functor>::GeneratorBase;
+		using GenBase<T,Data,Functor>::GenBase;
 
 		auto begin() -> iterator { return ++iterator{*this}; }
 		auto end() -> iterator { return iterator{*this}; }
 	};
 
 	/**
-	MakeGenerator function template
+	MakeGen function template
 
 	This helper function is essentially the same as instantiating a Generator by
 	constructor except that it supplies a default value for the Data template
@@ -276,7 +276,7 @@ namespace binon {
 		typename T, typename Data=void,
 		typename Functor, typename... DataArgs
 		>
-		auto MakeGenerator(Functor functor, DataArgs&&... dataArgs)
+		auto MakeGen(Functor functor, DataArgs&&... dataArgs)
 			-> Generator<T,Data,Functor> {
 				return Generator<T,Data,Functor>{
 					functor, std::forward<DataArgs>(dataArgs)...};
@@ -307,13 +307,13 @@ namespace binon {
 			auto nextOptT = [bgnIt, endIt, nextT]() mutable {
 				return MakeOpt<T>(bgnIt != endIt, nextT, bgnIt);
 			};
-			return MakeGenerator<T>(nextOptT);
+			return MakeGen<T>(nextOptT);
 		}
 
 	/**
 	ChildGenData struct template
 
-	This is the Generator Data type used in conjunction with the ChainGenerators
+	This is the Generator Data type used in conjunction with the ChainGens
 	function template.
 	
 	Template Args:
@@ -380,10 +380,10 @@ namespace binon {
 	};
 
 	/**
-	ChainGenerators function template
+	ChainGens function template
 
 	Often with generators you want to pipe the output of one into the input of
-	another. This function helps with that.
+	another. This function can help you with that.
 
 	Example:
 		Taking the example from earlier under the Generator class template,
@@ -392,7 +392,7 @@ namespace binon {
 		former gen1 and the latter gen2.
 		
 		gen1 is the parent generator that is chained to gen2 by calling
-		ChainGenerators. Note that while gen1 can technically stand alone, gen2
+		ChainGens. Note that while gen1 can technically stand alone, gen2
 		needs gen1 in its definition because an instance of gen1 is saved within
 		gen2's data.
 		
@@ -402,11 +402,11 @@ namespace binon {
 		before dereferencing it.
 
 		Source:
-			auto gen1 = binon::MakeGenerator<int>(
+			auto gen1 = binon::MakeGen<int>(
 				[i = 0]() mutable {
 					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
 				});
-			auto gen2 = binon::ChainGenerators<double>(
+			auto gen2 = binon::ChainGens<double>(
 				std::move(gen1),
 				[](auto& gen1, auto& gen1_it) {
 					return binon::MakeOpt<double>(
@@ -462,11 +462,11 @@ namespace binon {
 		typename ChildT, typename ChildData=void,
 		typename ParentGen, typename Functor, typename... ChildArgs
 		>
-		auto ChainGenerators(
+		auto ChainGens(
 			ParentGen gen, Functor functor, ChildArgs&&... args)
 		{
 			using CGD = ChildGenData<ParentGen,ChildData>;
-			return MakeGenerator<ChildT,CGD>(
+			return MakeGen<ChildT,CGD>(
 				CGD::WrapFunctor(std::move(functor)), std::move(gen),
 				std::forward<ChildArgs>(args)...
 			);

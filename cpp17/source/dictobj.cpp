@@ -61,11 +61,11 @@ namespace binon {
 				auto val = it->second;
 				return ++it, val;
 			};
-		auto keysGen = MakeGenerator<TKey>(
+		auto keysGen = MakeGen<TKey>(
 			[it = v.begin(), endIt = v.end(), nextKey]() mutable {
 				return MakeOpt<TKey>(it != endIt, nextKey, it);
 			});
-		auto valsGen = MakeGenerator<TVal>(
+		auto valsGen = MakeGen<TVal>(
 			[it = v.begin(), endIt = v.end(), nextVal]() mutable {
 				return MakeOpt<TVal>(it != endIt, nextVal, it);
 			});

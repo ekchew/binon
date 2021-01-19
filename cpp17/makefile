@@ -44,13 +44,15 @@ ${DEST_DIR}/lib/libbinon.a: ${OBJS}
 	touch ${HDR}binon.hpp
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
-DEP0 := ${HDR}macros.hpp makefile
+DEP0 := \
+	${HDR}generator.hpp \
+	${HDR}macros.hpp \
+	${HDR}optutil.hpp \
+	makefile
 DEP1 := \
 	${HDR}byteutil.hpp \
-	${HDR}generator.hpp \
 	${HDR}ioutil.hpp \
 	${HDR}literals.hpp \
-	${HDR}optutil.hpp \
 	${DEP0}
 DEP2 := ${HDR}codebyte.hpp ${DEP1}
 DEP3 := \

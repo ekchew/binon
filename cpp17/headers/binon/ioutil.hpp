@@ -1,9 +1,11 @@
 #ifndef BINON_IOUTIL_HPP
 #define BINON_IOUTIL_HPP
 
+#include "generator.hpp"
 #include "macros.hpp"
 
 #include <istream>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -45,7 +47,36 @@ namespace binon {
 
 	//	Named constant to set second arg of RequireIO constructor false.
 	constexpr bool kSkipRequireIO = false;
-
+	
+	template<typename ByteGen>
+		auto StreamBytes(ByteGen& byteGen, TOStream& stream,
+			bool requireIO=true) -> std::size_t
+		{
+			RequireIO rio{stream, requireIO};
+			std::size_t count = 0u;
+			for(auto byt: byteGen) {
+				static_assert(sizeof byt == 1u,
+					"binon::StreamBytes generator not yielding bytes");
+				stream.write(reinterpret_cast<const TStreamByte*>(&byt), 1u);
+				++count;
+			}
+			return count;
+		}
+	inline auto StreamedBytesGen(TIStream& stream, std::size_t count,
+		bool requireIO=true)
+		{
+			auto nextByte = [&stream](decltype(count)& n) {
+				TStreamByte byt;
+				stream.read(&byt, 1u);
+				--n;
+				return reinterpret_cast<std::byte&>(byt);
+			};
+			auto nextOptByte = [count, nextByte](RequireIO&) mutable {
+				return MakeOpt<std::byte>(count > 0u, nextByte, count);
+			};
+			return MakeGen<std::byte, RequireIO>(
+				nextOptByte, stream, requireIO);
+		}
 }
 
 #endif

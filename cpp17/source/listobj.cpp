@@ -128,7 +128,7 @@ namespace binon {
 
 			//	Special case for booleans which get packed 8 to a byte.
 			auto& list = v.mList;
-			auto boolGen = MakeGenerator<bool>(
+			auto boolGen = MakeGen<bool>(
 				[it = list.begin(), endIt = list.end()]() mutable
 					-> std::optional<bool>
 				{
@@ -136,7 +136,7 @@ namespace binon {
 						[&it]() -> bool { return static_cast<bool>(**it++); }
 						);
 				});
-			for(auto byt: PackedBoolsGen(boolGen.begin(), boolGen.end())) {
+			for(auto byt: PackedBoolsGen(boolGen)) {
 				WriteWord(byt, stream, kSkipRequireIO);
 			}
 		}
@@ -165,13 +165,10 @@ namespace binon {
 		if(v.mElemCode.baseType() == kBoolObjCode.baseType()) {
 
 			//	Special case for booleans packed 8 to a byte.
-			auto byteGen = MakeGenerator<std::byte>(
-				[&stream] {
-					return std::make_optional(
-						ReadWord<std::byte>(stream, kSkipRequireIO));
-				});
+			auto byteGen = StreamedBytesGen(
+				stream, (count + 7u) >> 3, kSkipRequireIO);
 			v.mList.clear();
-			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
+			for(auto b: UnpackedBoolsGen(std::move(byteGen), count)) {
 				v.mList.push_back(std::make_shared<BoolObj>(b));
 			}
 		}

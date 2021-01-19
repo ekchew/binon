@@ -1,7 +1,6 @@
 #ifndef BINON_BYTEUTIL_HPP
 #define BINON_BYTEUTIL_HPP
 
-#include "generator.hpp"
 #include "ioutil.hpp"
 #include "literals.hpp"
 
@@ -308,7 +307,7 @@ namespace binon {
 				n += i;
 				return MakeOpt<std::byte>(i, [byt] { return byt; });
 			};
-			return ChainGenerators<std::byte,std::size_t>(boolGen, byteGen, 0u);
+			return ChainGens<std::byte,std::size_t>(boolGen, byteGen, 0u);
 		}
 	template<typename BoolIt, typename EndIt>
 		auto PackedBoolsGen(BoolIt boolIt, EndIt endIt) {
@@ -331,7 +330,8 @@ namespace binon {
 	Returns:
 		Generator of bool
 	**/
-	template<typename ByteIt>
+	/*
+		template<typename ByteIt>
 		auto UnpackedBoolsGen(ByteIt byteIt, std::size_t boolCnt) {
 			auto nextBool = [](auto& byteIt, auto boolCnt, auto i, auto& byt) {
 				if((i & 0x7u) == 0x0u) {
@@ -342,7 +342,7 @@ namespace binon {
 			};
 			decltype(boolCnt) i = 0u;
 			auto byt = 0x00_byte;
-			return MakeGenerator<bool>(
+			return MakeGen<bool>(
 				[byteIt, boolCnt, nextBool, i, byt]() mutable {
 					++i;
 					return MakeOpt<bool>(
@@ -350,7 +350,8 @@ namespace binon {
 						byteIt, boolCnt, i - 1u, byt);
 				});
 		}
-	/*template<typename ByteGen>
+	*/
+	template<typename ByteGen>
 		auto UnpackedBoolsGen(ByteGen byteGen, std::size_t boolCnt) {
 			using Size = decltype(boolCnt);
 			auto byt = 0x00_byte;
@@ -362,13 +363,12 @@ namespace binon {
 				return (byt & 0x80_byte) != 0x00_byte;
 			};
 			Size i = 0u;
-			auto nextOptBool = [boolCnt, i](auto&, auto& it) mutable {
+			auto nextOptBool = [boolCnt, i, nextBool](auto&, auto& it) mutable {
 				auto j = i++;
 				return MakeOpt<bool>(j < boolCnt, nextBool, it, j);
 			};
-			return ChainGenerator<bool>(byteGen, nextOptBool);
+			return ChainGens<bool>(byteGen, nextOptBool);
 		}
-	*/
 }
 
 #endif

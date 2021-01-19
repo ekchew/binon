@@ -39,7 +39,7 @@ namespace binon {
 			bool requireIO=true) -> TValue;
 		static auto DecodedElemsGen(
 			TIStream& stream, TValue::size_type count, bool requireIO=true) {
-				return MakeGenerator<TSPBinONObj,RequireIO>(
+				return MakeGen<TSPBinONObj,RequireIO>(
 					[&stream, count](RequireIO&) mutable
 						-> std::optional<TSPBinONObj>
 					{
@@ -406,12 +406,9 @@ namespace binon {
 		//	Read data of all elements consecutively.
 		mValue.clear();
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			auto byteGen = MakeGenerator<std::byte>(
-				[&stream] {
-					return std::make_optional(
-						ReadWord<std::byte>(stream, kSkipRequireIO));
-				});
-			for(auto b: UnpackedBoolsGen(byteGen.begin(), count)) {
+			auto byteGen = StreamedBytesGen(
+				stream, (count + 7u) >> 3, kSkipRequireIO);
+			for(auto b: UnpackedBoolsGen(std::move(byteGen), count)) {
 				mValue.push_back(b);
 			}
 		}
