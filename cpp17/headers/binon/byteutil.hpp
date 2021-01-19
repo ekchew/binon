@@ -350,6 +350,25 @@ namespace binon {
 						byteIt, boolCnt, i - 1u, byt);
 				});
 		}
+	/*template<typename ByteGen>
+		auto UnpackedBoolsGen(ByteGen byteGen, std::size_t boolCnt) {
+			using Size = decltype(boolCnt);
+			auto byt = 0x00_byte;
+			auto nextBool = [byt](auto& it, Size i) mutable {
+				if((i & 0x7u) == 0x0u) {
+					byt = i > 0u ? *++it : *it;
+				}
+				else { byt <<= 1; }
+				return (byt & 0x80_byte) != 0x00_byte;
+			};
+			Size i = 0u;
+			auto nextOptBool = [boolCnt, i](auto&, auto& it) mutable {
+				auto j = i++;
+				return MakeOpt<bool>(j < boolCnt, nextBool, it, j);
+			};
+			return ChainGenerator<bool>(byteGen, nextOptBool);
+		}
+	*/
 }
 
 #endif
