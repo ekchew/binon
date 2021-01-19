@@ -115,6 +115,7 @@ namespace binon {
 		const TValue& v, TOStream& stream,
 		bool requireIO, bool assertTypes)
 	{
+		//	Make sure all elements in the list are of the correct type?
 		if(assertTypes) {
 			AssertElemTypes(v);
 		}
@@ -123,26 +124,17 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		v.mElemCode.write(stream, kSkipRequireIO);
 
-		//	Write data of all elements consecutively.
+		//	Write just the data (no code bytes) of all the elements
+		//	consecutively. Booleans constitute a special case in which we pack
+		//	them 8 to a byte before writing them to the stream.
 		if(v.mElemCode.baseType() == kBoolObjCode.baseType()) {
-
-			//	Special case for booleans which get packed 8 to a byte.
-			auto& list = v.mList;
-			auto boolGen = MakeGen<bool>(
-				[it = list.begin(), endIt = list.end()]() mutable
-					-> std::optional<bool>
-				{
-					return MakeOpt<bool>(it == endIt,
-						[&it]() -> bool { return static_cast<bool>(**it++); }
-						);
-				});
-			for(auto byt: PackedBoolsGen(boolGen)) {
-				WriteWord(byt, stream, kSkipRequireIO);
-			}
+			StreamBytes(
+				PackedBoolsGen(MakeIterGen(v.mList.begin(), v.mList.end())),
+				stream, kSkipRequireIO);
 		}
 		else {
-			for(auto&& pObj: v.mList) {
-				pObj->encodeData(stream, kSkipRequireIO);
+			for(auto&& pElem: v.mList) {
+				pElem->encodeData(stream, kSkipRequireIO);
 			}
 		}
 	}

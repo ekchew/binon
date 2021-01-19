@@ -205,6 +205,9 @@ namespace binon {
 		template<typename ElemIt, typename EndIt>
 			static void EncodeElems(ElemIt it, EndIt endIt,
 				TOStream& stream, bool requireIO=true);
+		template<typename ElemGen>
+			static void EncodeElems(
+				ElemGen gen, TOStream& stream, bool requireIO=true);
 		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
 		static auto DecodeElems(TIStream& stream, TSize count,
 			bool requireIO=true) -> TCtnr;
@@ -330,28 +333,26 @@ namespace binon {
 	void SListT<T,Ctnr>::EncodeElems(
 		const TCtnr& v, TOStream& stream, bool requireIO)
 	{
-		EncodeElems(v.begin(), v.end(), stream, requireIO);
+		EncodeElems(MakeIterGen(v.begin(), v.end()), stream, requireIO);
 	}
 	template<typename T, typename Ctnr>
-	template<typename ElemIt, typename EndIt>
+	template<typename ElemGen>
 	void SListT<T,Ctnr>::EncodeElems(
-		ElemIt it, EndIt endIt, TOStream& stream, bool requireIO)
+		ElemGen gen, TOStream& stream, bool requireIO)
 	{
 		RequireIO rio{stream, requireIO};
 		TWrap{}.typeCode().write(stream, kSkipRequireIO);
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			for(auto byt: PackedBoolsGen(it, endIt)) {
-				WriteWord(byt, stream, kSkipRequireIO);
-			}
+			StreamBytes(PackedBoolsGen(gen), stream, kSkipRequireIO);
 		}
 		else if constexpr(kIsWrapper<T>) {
-			for(; it != endIt; ++it) {
-				it->encodeData(stream, kSkipRequireIO);
+			for(auto&& elem: gen) {
+				elem.encodeData(stream, kSkipRequireIO);
 			}
 		}
 		else {
-			for(; it != endIt; ++it) {
-				TWrap::EncodeData(*it, stream, kSkipRequireIO);
+			for(auto&& elem: gen) {
+				TWrap::EncodeData(elem, stream, kSkipRequireIO);
 			}
 		}
 	}

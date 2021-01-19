@@ -49,7 +49,7 @@ namespace binon {
 	constexpr bool kSkipRequireIO = false;
 	
 	template<typename ByteGen>
-		auto StreamBytes(ByteGen& byteGen, TOStream& stream,
+		auto StreamBytes(ByteGen byteGen, TOStream& stream,
 			bool requireIO=true) -> std::size_t
 		{
 			RequireIO rio{stream, requireIO};
