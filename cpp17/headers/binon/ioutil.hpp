@@ -4,6 +4,7 @@
 #include "generator.hpp"
 #include "macros.hpp"
 
+#include <cstdref>
 #include <istream>
 #include <optional>
 #include <ostream>
@@ -37,6 +38,8 @@ namespace binon {
 		//	go through the motions of constructing a RequireIO object without
 		//	necessarily setting the exception bits.
 		RequireIO(TIOS& stream, bool enable=true);
+
+		RequireIO(RequireIO&& rio) noexcept;
 
 		~RequireIO();
 
