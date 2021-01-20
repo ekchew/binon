@@ -4,7 +4,7 @@
 #include "generator.hpp"
 #include "macros.hpp"
 
-#include <cstdref>
+#include <cstddef>
 #include <istream>
 #include <optional>
 #include <ostream>
