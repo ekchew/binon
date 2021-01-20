@@ -367,7 +367,7 @@ namespace binon {
 				auto j = i++;
 				return MakeOpt<bool>(j < boolCnt, nextBool, it, j);
 			};
-			return ChainGens<bool>(byteGen, nextOptBool);
+			return ChainGens<bool>(std::move(byteGen), nextOptBool);
 		}
 }
 
