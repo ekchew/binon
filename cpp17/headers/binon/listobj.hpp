@@ -193,7 +193,6 @@ namespace binon {
 	template<typename T, typename Ctnr=std::vector<T>>
 	struct SListT: BinONObj {
 		using TElem = T;
-		using TElemRW = std::reference_wrapper<TElem>;
 		using TWrap = TWrapper<T>;
 		using TCtnr = Ctnr;
 		using TSize = typename Ctnr::size_type;
@@ -202,17 +201,11 @@ namespace binon {
 			const TCtnr& v, TOStream& stream, bool requireIO=true);
 		static void EncodeElems(
 			const TCtnr& v, TOStream& stream, bool requireIO=true);
-		template<typename ElemIt, typename EndIt>
-			static void EncodeElems(ElemIt it, EndIt endIt,
-				TOStream& stream, bool requireIO=true);
-		template<typename ElemGen>
-			static void EncodeElems(
-				ElemGen gen, TOStream& stream, bool requireIO=true);
 		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
 		static auto DecodeElems(TIStream& stream, TSize count,
 			bool requireIO=true) -> TCtnr;
 
-		Ctnr mValue;
+		TCtnr mValue;
 
 		SListT(std::initializer_list<TElem> lst): mValue{lst} {}
 		SListT(const SList& sList);
@@ -235,6 +228,25 @@ namespace binon {
 		void printArgsRepr(std::ostream& stream) const override;
 	};
 
+	/**
+	EncodeElems function template
+
+	Given a generator of list elements, EncodeElems writes a code byte followed
+	by the data for each element to an output stream. It is smart enough to
+	handle wrapped references to elements coming out of the generator.
+
+	Template Args:
+		T (type, required): the element type
+		Gen (type, inferred)
+
+	Args:
+		gen (Gen): generator of T or std::reference_wrapper<T>
+		stream (TOStream): output stream
+		requireIO (bool, optional): throw exception on I/O error? (default=true)
+	**/
+	template<typename T, typename Gen>
+		void EncodeElems(Gen gen, TOStream& stream, bool requireIO=true);
+	
 	//==== Template Implementation ============================================
 
 	//---- ListBase -----------------------------------------------------------
@@ -333,28 +345,8 @@ namespace binon {
 	void SListT<T,Ctnr>::EncodeElems(
 		const TCtnr& v, TOStream& stream, bool requireIO)
 	{
-		EncodeElems(MakeIterGen(v.begin(), v.end()), stream, requireIO);
-	}
-	template<typename T, typename Ctnr>
-	template<typename ElemGen>
-	void SListT<T,Ctnr>::EncodeElems(
-		ElemGen gen, TOStream& stream, bool requireIO)
-	{
-		RequireIO rio{stream, requireIO};
-		TWrap{}.typeCode().write(stream, kSkipRequireIO);
-		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			StreamBytes(PackedBoolsGen(gen), stream, kSkipRequireIO);
-		}
-		else if constexpr(kIsWrapper<T>) {
-			for(auto&& elem: gen) {
-				elem.encodeData(stream, kSkipRequireIO);
-			}
-		}
-		else {
-			for(auto&& elem: gen) {
-				TWrap::EncodeData(elem, stream, kSkipRequireIO);
-			}
-		}
+		binon::EncodeElems<T>(
+			MakeIterGen(v.begin(), v.end()), stream, requireIO);
 	}
 	template<typename T, typename Ctnr>
 	auto SListT<T,Ctnr>::DecodeData(TIStream& stream, bool requireIO) -> TCtnr
@@ -473,6 +465,36 @@ namespace binon {
 				auto i = s.find('{') + 1u;
 				auto n = s.rfind('}') - i;
 				stream << std::string_view{s}.substr(i, n);
+			}
+		}
+	}
+
+	//---- Functions ----------------------------------------------------------
+
+	template<typename T, typename Gen>
+	void EncodeElems(Gen gen, TOStream& stream, bool requireIO) {
+		using TWrap = TWrapper<T>;
+		RequireIO rio{stream, requireIO};
+		TWrap{}.typeCode().write(stream, kSkipRequireIO);
+		if constexpr(std::is_same_v<TWrap, BoolObj>) {
+			auto nextBool = [](auto& it) {
+				return static_cast<T>(*it++);
+			};
+			auto nextOptBool = [nextBool](auto& gen, auto& it) {
+				return MakeOpt<T>(it != gen.end(), nextBool, it);
+			};
+			auto boolGen = ChainGens<T>(std::move(gen), nextOptBool);
+			StreamBytes(PackedBoolsGen(boolGen), stream, kSkipRequireIO);
+		}
+		else {
+			for(auto& ref: gen) {
+				auto& elem = static_cast<T&>(ref);
+				if constexpr(kIsWrapper<T>) {
+					elem.encodeData(stream, kSkipRequireIO);
+				}
+				else {
+					TWrap::EncodeData(elem, stream, kSkipRequireIO);
+				}
 			}
 		}
 	}
