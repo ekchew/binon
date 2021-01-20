@@ -239,6 +239,26 @@ namespace binon {
 	template<typename T, typename Gen>
 		void EncodeElems(Gen gen, TOStream& stream, bool requireIO=true);
 
+	/**
+	DecodedElemsGen function template
+
+	Generates element values from what it reads off an input stream.
+	
+	Template Args:
+		T (type, required): the element type
+			This can be either a binon type such as IntObj or a supported
+			primitive type like int.
+
+	Args:
+		stream (TIStream&): binary input stream
+		count (std::size_t): number of elements to read
+		requireIO (bool, optional): set stream exception bits? (default=true)
+
+	Returns:
+		Generator of T:
+			Note that the T elements are yielded from the Generator by value
+			using move semantics.
+	**/
 	template<typename T>
 		auto DecodedElemsGen(
 			TIStream& stream, std::size_t count, bool requireIO=true)
