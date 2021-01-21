@@ -221,6 +221,8 @@ namespace binon {
 		void printArgsRepr(std::ostream& stream) const override;
 	};
 
+	//---- Low-Level Support Functions -----------------------------------------
+
 	/**
 	EncodeElems function template
 

@@ -82,7 +82,9 @@ namespace binon {
 		**/
 		RequireIO(TIOS& stream, bool enable=true);
 
+		RequireIO(const RequireIO& rio) = delete;
 		RequireIO(RequireIO&& rio) noexcept;
+		auto operator = (const RequireIO& rio) noexcept -> RequireIO& = delete;
 		auto operator = (RequireIO&& rio) noexcept -> RequireIO&;
 		~RequireIO();
 

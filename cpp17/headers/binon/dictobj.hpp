@@ -1,7 +1,7 @@
 #ifndef BINON_DICTOBJ_HPP
 #define BINON_DICTOBJ_HPP
 
-#include "binonobj.hpp"
+#include "listobj.hpp"
 
 #include <functional>
 #include <optional>
@@ -165,7 +165,76 @@ namespace binon {
 		void printArgsRepr(std::ostream& stream) const override;
 	};
 
-	//---- Template Implementation ---------------------------------------------
+	template<
+		typename K,
+		typename Ctnr = std::unordered_map<K,TSPBinONObj>
+		>
+	struct SKDictT: BinONObj {
+		using TKey = K;
+		using TCtnr = Ctnr;
+		using TKeyWrap = TWrapper<TKey>;
+		using TKeyVal = typename TCtnr::value_type;
+
+		static void EncodeData(
+			const TCtnr& v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
+
+		Ctnr mValue;
+
+		SKDictT(std::initializer_list<TKeyVal> lst);
+		SKDictT(const SKDict& dict);
+		SKDictT(const TCtnr& ctnr);
+		SKDictT(TCtnr&& ctnr) noexcept;
+		SKDictT() noexcept = default;
+		operator Ctnr&() noexcept;
+		operator const Ctnr&() const noexcept;
+		explicit operator bool() const noexcept override;
+		auto typeCode() const noexcept -> CodeByte final;
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+		auto clsName() const noexcept -> std::string override;
+		void printArgsRepr(std::ostream& stream) const override;
+	};
+
+	template<
+		typename K,
+		typename V,
+		typename Ctnr = std::unordered_map<K,V>
+		>
+	struct SDictT: BinONObj {
+		using TKey = K;
+		using TVal = V;
+		using TCtnr = Ctnr;
+		using TKeyWrap = TWrapper<TKey>;
+		using TValWrap = TWrapper<TVal>;
+		using TKeyVal = typename TCtnr::value_type;
+
+		static void EncodeData(
+			const TCtnr& v, TOStream& stream, bool requireIO=true);
+		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
+
+		Ctnr mValue;
+
+		SDictT(std::initializer_list<TKeyVal> lst);
+		SDictT(const SDict& dict);
+		SDictT(const TCtnr& ctnr);
+		SDictT(TCtnr&& ctnr) noexcept;
+		SDictT() noexcept = default;
+		operator Ctnr&() noexcept;
+		operator const Ctnr&() const noexcept;
+		explicit operator bool() const noexcept override;
+		auto typeCode() const noexcept -> CodeByte final;
+		void encodeData(TOStream& stream, bool requireIO=true) const final;
+		void decodeData(TIStream& stream, bool requireIO=true) final;
+		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+		auto clsName() const noexcept -> std::string override;
+		void printArgsRepr(std::ostream& stream) const override;
+	};
+
+	//==== Template Implementation =============================================
+	
+	//---- DictBase ------------------------------------------------------------
 
 	template<typename Key, typename... Args>
 	auto DictBase::hasKey(Args&&... args) const -> bool {
@@ -216,6 +285,38 @@ namespace binon {
 	auto DictBase::value(Args&&... args) -> Val& {
 		auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
 		return value<Val>(pKey);
+	}
+
+	//---- SKDictT -------------------------------------------------------------
+
+	template<typename K, typename Ctnr>
+	SKDictT<K,Ctnr>::SKDictT(std::initializer_list<TKeyVal> lst):
+		mValue{lst}
+	{
+	}
+	template<typename K, typename Ctnr>
+	SKDictT<K,Ctnr>::SKDictT(const SKDict& dict) {
+		for(auto& [pKey0, pVal0]: dict.mValue.mDict) {
+			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+			mValue[static_cast<TKey>(pKey->mValue)] = pVal0;
+		}
+	}
+
+	//---- SDictT --------------------------------------------------------------
+
+	template<typename K, typename V, typename Ctnr>
+	SDictT<K,V,Ctnr>::SDictT(std::initializer_list<TKeyVal> lst):
+		mValue{lst}
+	{
+	}
+	template<typename K, typename V, typename Ctnr>
+	SDictT<K,V,Ctnr>::SDictT(const SDict& dict) {
+		for(auto& [pKey0, pVal0]: dict.mValue.mDict) {
+			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+			auto pVal = BinONObj::Cast<TValWrap>(pVal0);
+			mValue[static_cast<TKey>(pKey->mValue)]
+				= static_cast<TVal>(pVal->mValue);
+		}
 	}
 }
 
