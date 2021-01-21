@@ -187,8 +187,8 @@ namespace binon {
 		SKDictT(const TCtnr& ctnr);
 		SKDictT(TCtnr&& ctnr) noexcept;
 		SKDictT() noexcept = default;
-		operator Ctnr&() noexcept;
-		operator const Ctnr&() const noexcept;
+		operator TCtnr&() noexcept;
+		operator const TCtnr&() const noexcept;
 		explicit operator bool() const noexcept override;
 		auto typeCode() const noexcept -> CodeByte final;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
@@ -224,8 +224,8 @@ namespace binon {
 		SDictT(const TCtnr& ctnr);
 		SDictT(TCtnr&& ctnr) noexcept;
 		SDictT() noexcept = default;
-		operator Ctnr&() noexcept;
-		operator const Ctnr&() const noexcept;
+		operator TCtnr&() noexcept;
+		operator const TCtnr&() const noexcept;
 		explicit operator bool() const noexcept override;
 		auto typeCode() const noexcept -> CodeByte final;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
@@ -293,6 +293,41 @@ namespace binon {
 	//---- SKDictT -------------------------------------------------------------
 
 	template<typename K, typename Ctnr>
+	void SKDictT<K,Ctnr>::EncodeData(
+		const TCtnr& v, TOStream& stream, bool requireIO)
+	{
+		RequireIO rio{stream, requireIO};
+		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
+
+		auto nextOptKey = [&v, it=v.begin()]() mutable {
+			return MakeOpt(it != v.end(),
+				[&it]() -> TKeyRW { return (*it++).first; });
+		};
+		EncodeElems<TKey>(MakeGen<TKeyRW>(nextOptKey), stream, kSkipRequireIO);
+
+		auto nextOptVal = [&v, it=v.begin()]() mutable {
+			return MakeOpt(it != v.end(),
+				[&it]() { return (*it++).second; });
+		};
+		ListObj::EncodeElems(
+			MakeGen<TKeyRW>(nextOptVal), stream, kSkipRequireIO);
+	}
+	template<typename K, typename Ctnr>
+	auto SKDictT<K,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
+		-> TCtnr
+	{
+		RequireIO rio{stream, requireIO};
+		auto keys = SListT<TKey>::DecodeData(stream, kSkipRequireIO);
+		auto valGen = ListObj::DecodedElemsGen(
+			stream, keys.mValue.size(), kSkipRequireIO);
+		auto keyIt = keys.mValue.begin();
+		TCtnr ctnr;
+		for(auto val: valGen) {
+			ctnr[*keyIt++] = val;
+		}
+		return std::move(ctnr);
+	}
+	template<typename K, typename Ctnr>
 	SKDictT<K,Ctnr>::SKDictT(std::initializer_list<TKeyVal> lst):
 		mValue{lst}
 	{
@@ -304,9 +339,111 @@ namespace binon {
 			mValue[static_cast<TKey>(pKey->mValue)] = pVal0;
 		}
 	}
+	template<typename K, typename Ctnr>
+	SKDictT<K,Ctnr>::SKDictT(const TCtnr& ctnr): mValue{ctnr} {
+	}
+	template<typename K, typename Ctnr>
+	SKDictT<K,Ctnr>::SKDictT(TCtnr&& ctnr) noexcept: mValue{std::move(ctnr)} {
+	}
+	template<typename K, typename Ctnr>
+	SKDictT<K,Ctnr>::operator TCtnr&() noexcept {
+		return mValue;
+	}
+	template<typename K, typename Ctnr>
+	SKDictT<K,Ctnr>::operator const TCtnr&() const noexcept {
+		return mValue;
+	}
+	template<typename K, typename Ctnr>
+	SKDictT<K,Ctnr>::operator bool() const noexcept {
+		return mValue.size() > 0u;
+	}
+	template<typename K, typename Ctnr>
+	auto SKDictT<K,Ctnr>::typeCode() const noexcept -> CodeByte {
+		return kSKDictCode;
+	}
+	template<typename K, typename Ctnr>
+	void SKDictT<K,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
+		EncodeData(mValue, stream, requireIO);
+	}
+	template<typename K, typename Ctnr>
+	void SKDictT<K,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
+		mValue = DecodeData(stream, requireIO);
+	}
+	template<typename K, typename Ctnr>
+	auto SKDictT<K,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
+		if(deep) {
+			auto pCopy = std::make_shared<SKDictT<K,Ctnr>>();
+			auto& dict = pCopy->mValue;
+			for(auto& [key, val]: mValue) {
+				dict[key] = val->makeCopy(deep);
+			}
+			return std::move(pCopy);
+		}
+		else {
+			return std::make_shared<SKDictT<K,Ctnr>>(*this);
+		}
+	}
+	template<typename K, typename Ctnr>
+	auto SKDictT<K,Ctnr>::clsName() const noexcept -> std::string {
+		constexpr bool kCtnrIsUMap
+			= std::is_same_v<Ctnr, std::unordered_map<K,TSPBinONObj>>;
+		std::ostringstream oss;
+		oss << "SKDictT<" << (kCtnrIsUMap ? "unordered_map" : "DICT")
+			<< '<' << TypeInfo<K>::TypeName() << ">>";
+		return std::move(oss).str();
+	}
+	template<typename K, typename Ctnr>
+	void SKDictT<K,Ctnr>::printArgsRepr(std::ostream& stream) const {
+		bool first = true;
+		for(auto& [key, val]: mValue) {
+			if(first) {
+				first = false;
+			}
+			else { stream << ", "; }
+			stream << '{';
+			PrintRepr(key, stream);
+			stream << ", ";
+			val->printRepr(stream);
+			stream << '}';
+		}
+	}
 
 	//---- SDictT --------------------------------------------------------------
 
+	template<typename K, typename V, typename Ctnr>
+	void SDictT<K,V,Ctnr>::EncodeData(
+		const TCtnr& v, TOStream& stream, bool requireIO)
+	{
+		RequireIO rio{stream, requireIO};
+		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
+
+		auto nextOptKey = [&v, it=v.begin()]() mutable {
+			return MakeOpt(it != v.end(),
+				[&it]() -> TKeyRW { return (*it++).first; });
+		};
+		EncodeElems<TKey>(MakeGen<TKeyRW>(nextOptKey), stream, kSkipRequireIO);
+
+		auto nextOptVal = [&v, it=v.begin()]() mutable {
+			return MakeOpt(it != v.end(),
+				[&it]() -> TValRW { return (*it++).second; });
+		};
+		EncodeElems<TVal>(MakeGen<TValRW>(nextOptVal), stream, kSkipRequireIO);
+	}
+	template<typename K, typename V, typename Ctnr>
+	auto SDictT<K,V,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
+		-> TCtnr
+	{
+		RequireIO rio{stream, requireIO};
+		auto keys = SListT<TKey>::DecodeData(stream, kSkipRequireIO);
+		auto valGen = DecodedElemsGen<TVal>(
+			stream, keys.mValue.size(), kSkipRequireIO);
+		auto keyIt = keys.mValue.begin();
+		TCtnr ctnr;
+		for(auto val: valGen) {
+			ctnr[*keyIt++] = std::move(val);
+		}
+		return std::move(ctnr);
+	}
 	template<typename K, typename V, typename Ctnr>
 	SDictT<K,V,Ctnr>::SDictT(std::initializer_list<TKeyVal> lst):
 		mValue{lst}
@@ -319,6 +456,65 @@ namespace binon {
 			auto pVal = BinONObj::Cast<TValWrap>(pVal0);
 			mValue[static_cast<TKey>(pKey->mValue)]
 				= static_cast<TVal>(pVal->mValue);
+		}
+	}
+	template<typename K, typename V, typename Ctnr>
+	SDictT<K,V,Ctnr>::SDictT(const TCtnr& ctnr): mValue{ctnr} {
+	}
+	template<typename K, typename V, typename Ctnr>
+	SDictT<K,V,Ctnr>::SDictT(TCtnr&& ctnr) noexcept: mValue{std::move(ctnr)} {
+	}
+	template<typename K, typename V, typename Ctnr>
+	SDictT<K,V,Ctnr>::operator TCtnr&() noexcept {
+		return mValue;
+	}
+	template<typename K, typename V, typename Ctnr>
+	SDictT<K,V,Ctnr>::operator const TCtnr&() const noexcept {
+		return mValue;
+	}
+	template<typename K, typename V, typename Ctnr>
+	SDictT<K,V,Ctnr>::operator bool() const noexcept {
+		return mValue.size() > 0u;
+	}
+	template<typename K, typename V, typename Ctnr>
+	auto SDictT<K,V,Ctnr>::typeCode() const noexcept -> CodeByte {
+		return kSDictCode;
+	}
+	template<typename K, typename V, typename Ctnr>
+	void SDictT<K,V,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
+		EncodeData(mValue, stream, requireIO);
+	}
+	template<typename K, typename V, typename Ctnr>
+	void SDictT<K,V,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
+		mValue = DecodeData(stream, requireIO);
+	}
+	template<typename K, typename V, typename Ctnr>
+	auto SDictT<K,V,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
+		return std::make_shared<SDictT<K,V,Ctnr>>(*this);
+	}
+	template<typename K, typename V, typename Ctnr>
+	auto SDictT<K,V,Ctnr>::clsName() const noexcept -> std::string {
+		constexpr bool kCtnrIsUMap
+			= std::is_same_v<Ctnr, std::unordered_map<K,V>>;
+		std::ostringstream oss;
+		oss << "SDictT<" << (kCtnrIsUMap ? "unordered_map" : "DICT")
+			<< '<' << TypeInfo<K>::TypeName()
+			<< ',' << TypeInfo<V>::TypeName() << ">>";
+		return std::move(oss).str();
+	}
+	template<typename K, typename V, typename Ctnr>
+	void SDictT<K,V,Ctnr>::printArgsRepr(std::ostream& stream) const {
+		bool first = true;
+		for(auto& [key, val]: mValue) {
+			if(first) {
+				first = false;
+			}
+			else { stream << ", "; }
+			stream << '{';
+			PrintRepr(key, stream);
+			stream << ", ";
+			PrintRepr(val, stream);
+			stream << '}';
 		}
 	}
 }

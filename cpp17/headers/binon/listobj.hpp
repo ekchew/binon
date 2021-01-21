@@ -300,7 +300,10 @@ namespace binon {
 				return MakeGen<T, RequireIO>(nextOptT, stream, requireIO);
 			}
 		}
-	
+
+	template<typename T>
+		void PrintRepr(const T& value, std::ostream& stream);
+
 	//==== Template Implementation ============================================
 
 	//---- ListBase -----------------------------------------------------------
@@ -437,37 +440,14 @@ namespace binon {
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::printArgsRepr(std::ostream& stream) const {
 		bool first = true;
-		for(auto&& elem: mValue) {
+		for(auto& elem: mValue) {
 			if(first) {
 				first = false;
 			}
 			else {
 				stream << ", ";
 			}
-
-			if constexpr(kIsWrapper<T>) {
-				elem.printRepr(stream);
-			}
-			else {
-
-				//	First generate a repr string for elem using the
-				//	appropriate BinON wrapper class. (Note that when we
-				//	extract the string out of the ostringstream, C++20 now
-				//	supports move semantics. That's why std::move() is called,
-				//	but under C++17, it will still just allocate a copy of the
-				//	string.)
-				std::ostringstream oss;
-				TWrap{elem}.printRepr(oss);
-				auto s{std::move(oss).str()};
-
-				//	At this point, we have something like StrObj{"foo"} and we
-				//	want just the "foo" part, so what we print to the stream
-				//	should be a string view of everything within the curly
-				//	brackets.
-				auto i = s.find('{') + 1u;
-				auto n = s.rfind('}') - i;
-				stream << std::string_view{s}.substr(i, n);
-			}
+			PrintRepr(elem, stream);
 		}
 	}
 
@@ -492,6 +472,30 @@ namespace binon {
 			for(auto& elem: gen) {
 				TWrap::EncodeData(elem, stream, kSkipRequireIO);
 			}
+		}
+	}
+	template<typename T>
+	void PrintRepr(const T& value, std::ostream& stream) {
+
+		//	If the value is already a BinON type, we can simply call its
+		//	printRepr() method.
+		if constexpr(kIsWrapper<T>) {
+			value.printRepr(stream);
+		}
+
+		//	Otherwise, it is hopefully a primitive type we can wrap in a BinON
+		//	object of some sort.
+		else {
+			std::ostringstream oss;
+			TWrapper<T>{value}.printRepr(oss);
+			auto s{std::move(oss).str()};
+
+			//	Assuming we have made it this far, we should have a string s
+			//	that reads something like "IntObj{42}", for example. But what
+			//	we actually want to print is "42" in this case.
+			auto i = s.find('{') + 1u;
+			auto n = s.rfind('}') - i;
+			stream << std::string_view{s}.substr(i, n);
 		}
 	}
 }
