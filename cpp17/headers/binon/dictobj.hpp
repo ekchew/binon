@@ -173,6 +173,7 @@ namespace binon {
 		using TKey = K;
 		using TCtnr = Ctnr;
 		using TKeyWrap = TWrapper<TKey>;
+		using TKeyRW = std::reference_wrapper<TKey>;
 		using TKeyVal = typename TCtnr::value_type;
 
 		static void EncodeData(
@@ -207,7 +208,9 @@ namespace binon {
 		using TVal = V;
 		using TCtnr = Ctnr;
 		using TKeyWrap = TWrapper<TKey>;
+		using TKeyRW = std::reference_wrapper<TKey>;
 		using TValWrap = TWrapper<TVal>;
+		using TValRW = std::reference_wrapper<TVal>;
 		using TKeyVal = typename TCtnr::value_type;
 
 		static void EncodeData(

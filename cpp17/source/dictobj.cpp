@@ -69,10 +69,8 @@ namespace binon {
 			[it = v.begin(), endIt = v.end(), nextVal]() mutable {
 				return MakeOpt<TVal>(it != endIt, nextVal, it);
 			});
-		ListObj::EncodeElems(
-			keysGen.begin(), keysGen.end(), stream, kSkipRequireIO);
-		ListObj::EncodeElems(
-			valsGen.begin(), valsGen.end(), stream, kSkipRequireIO);
+		ListObj::EncodeElems(keysGen, stream, kSkipRequireIO);
+		ListObj::EncodeElems(valsGen, stream, kSkipRequireIO);
 	}
 	auto DictObj::DecodeData(TIStream& stream, bool requireIO) -> TValue {
 		TValue v;
@@ -105,28 +103,33 @@ namespace binon {
 		const TValue& v, TOStream& stream, bool requireIO)
 	{
 		RequireIO rio{stream, requireIO};
-		auto n = v.mDict.size();
-		SList keys{SListVal{v.mKeyCode, TList(n)}};
-		ListObj vals{TList(n)};
-		decltype(n) i = 0;
-		for(auto&& pair: v.mDict) {
-			keys.mValue.mList[i] = pair.first;
-			vals.mValue[i] = pair.second;
-			++i;
+
+		SList keys{SListVal{v.mKeyCode, TList(v.mDict.size())}};
+		auto& keyList = keys.mValue.mList;
+		keyList.clear();
+		for(auto& [key, val]: v.mDict) {
+			keyList.push_back(key);
 		}
 		keys.encodeData(stream, kSkipRequireIO);
-		vals.encodeElems(stream, kSkipRequireIO);
+
+		auto nextVal = [](auto& it) { return (*it++).second; };
+		auto valsGen = MakeGen<TSPBinONObj>(
+			[it=v.mDict.begin(), endIt=v.mDict.end(), nextVal]() mutable {
+				return MakeOpt<TSPBinONObj>(it != endIt, nextVal, it);
+			});
+		ListObj::EncodeElems(valsGen, stream, kSkipRequireIO);
 	}
 	auto SKDict::DecodeData(TIStream& stream, bool requireIO) -> TValue {
 		RequireIO rio{stream, requireIO};
 		SList keys;
 		keys.decodeData(stream, kSkipRequireIO);
+		auto& keyList = keys.mValue.mList;
+		auto keyIt = keyList.begin();
 		TValue v{keys.mValue.mElemCode};
-		auto n = keys.mValue.mList.size();
-		ListObj vals{TList(n)};
-		vals.decodeElems(stream, n, kSkipRequireIO);
-		for(decltype(n) i = 0; i < n; ++i) {
-			v.mDict[keys.mValue.mList[i]] = vals.mValue[i];
+		auto valsGen = ListObj::DecodedElemsGen(
+			stream, keyList.size(), kSkipRequireIO);
+		for(auto val: valsGen) {
+			v.mDict[*keyIt++] = val;
 		}
 		return std::move(v);
 	}
@@ -161,11 +164,13 @@ namespace binon {
 		auto n = v.mDict.size();
 		SList keys{SListVal{v.mKeyCode, TList(n)}};
 		SList vals{SListVal{v.mValCode, TList(n)}};
-		decltype(n) i = 0;
-		for(auto&& pair: v.mDict) {
-			keys.mValue.mList[i] = pair.first;
-			vals.mValue.mList[i] = pair.second;
-			++i;
+		auto& keyList = keys.mValue.mList;
+		auto& valList = vals.mValue.mList;
+		keyList.clear();
+		valList.clear();
+		for(auto& [key, val]: v.mDict) {
+			keyList.push_back(key);
+			valList.push_back(val);
 		}
 		keys.encodeData(stream, kSkipRequireIO);
 		vals.encodeElems(stream, kSkipRequireIO);

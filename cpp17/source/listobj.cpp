@@ -45,20 +45,13 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
-		EncodeElems(v, stream, kSkipRequireIO);
-	}
-	void ListObj::EncodeElems(const TValue& v, TOStream& stream, bool requireIO)
-	{
-		EncodeElems(v.begin(), v.end(), stream, requireIO);
+		EncodeElems(
+			MakeIterGen(v.begin(), v.end()),
+			stream, kSkipRequireIO);
 	}
 	auto ListObj::DecodeData(TIStream& stream, bool requireIO) -> TValue {
 		RequireIO rio{stream, requireIO};
 		auto count = UIntObj::DecodeData(stream, kSkipRequireIO);
-		return DecodeElems(stream, count, kSkipRequireIO);
-	}
-	auto ListObj::DecodeElems(TIStream& stream, TValue::size_type count,
-		bool requireIO) -> TValue
-	{
 		TValue v(count);
 		v.clear();
 		for(auto&& elem: DecodedElemsGen(stream, count, requireIO)) {
@@ -71,14 +64,6 @@ namespace binon {
 	}
 	void ListObj::decodeData(TIStream& stream, bool requireIO) {
 		mValue = DecodeData(stream, requireIO);
-	}
-	void ListObj::encodeElems(TOStream& stream, bool requireIO) const {
-		EncodeElems(mValue, stream, requireIO);
-	}
-	void ListObj::decodeElems(
-		TIStream& stream, TValue::size_type count, bool requireIO)
-	{
-		mValue = DecodeElems(stream, count, requireIO);
 	}
 	auto ListObj::makeCopy(bool deep) const -> TSPBinONObj {
 		if(deep) {

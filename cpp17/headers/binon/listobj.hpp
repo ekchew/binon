@@ -29,14 +29,10 @@ namespace binon {
 	struct ListObj: ListBase, AccessContainer_mValue<ListObj,TList> {
 		static void EncodeData(
 			const TValue& v, TOStream& stream, bool requireIO=true);
-		static void EncodeElems(
-			const TValue& v, TOStream& stream, bool requireIO=true);
-		template<typename ElemIt, typename EndIt>
-			static void EncodeElems(ElemIt it, EndIt endIt,
+		template<typename ElemGen>
+			static void EncodeElems(ElemGen elemGen,
 				TOStream& stream, bool requireIO=true);
 		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TValue;
-		static auto DecodeElems(TIStream& stream, TValue::size_type count,
-			bool requireIO=true) -> TValue;
 		static auto DecodedElemsGen(
 			TIStream& stream, TValue::size_type count, bool requireIO=true) {
 				return MakeGen<TSPBinONObj,RequireIO>(
@@ -62,15 +58,6 @@ namespace binon {
 		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
-
-		//	encodeElems() is like encodeData() except that it does not encode
-		//	the length of the list. It jumps straight to encoding the
-		//	elements. These methods, then, are useful if you can already tell
-		//	what the length is through some other means.
-		void encodeElems(TOStream& stream, bool requireIO=true) const;
-		void decodeElems(TIStream& stream, TValue::size_type count,
-			bool requireIO=true);
-
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept -> std::string override
 			{ return "ListObj"; }
@@ -328,13 +315,13 @@ namespace binon {
 
 	//---- ListObj ------------------------------------------------------------
 
-	template<typename ElemIt, typename EndIt>
-	void ListObj::EncodeElems(ElemIt it, EndIt endIt,
+	template<typename ElemGen>
+	void ListObj::EncodeElems(ElemGen elemGen,
 		TOStream& stream, bool requireIO)
 	{
 		RequireIO rio{stream, requireIO};
-		for(; it != endIt; ++it) {
-			(*it)->encode(stream, kSkipRequireIO);
+		for(auto& elem: elemGen) {
+			elem->encode(stream, kSkipRequireIO);
 		}
 	}
 
