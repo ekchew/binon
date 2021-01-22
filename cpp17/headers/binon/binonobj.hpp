@@ -59,8 +59,8 @@ namespace binon {
 		//	true otherwise.
 		explicit virtual operator bool() const noexcept { return false; }
 		
-		auto operator == (const BinONObj& rhs) const { return equals(rhs); }
-		auto operator != (const BinONObj& rhs) const { return !equals(rhs); }
+		//auto operator == (const BinONObj& rhs) const { return equals(rhs); }
+		//auto operator != (const BinONObj& rhs) const { return !equals(rhs); }
 
 		virtual auto typeCode() const noexcept -> CodeByte = 0;
 
@@ -84,7 +84,10 @@ namespace binon {
 		virtual ~BinONObj() {}
 	};
 
+	auto operator != (const BinONObj& lhs, const BinONObj& rhs) -> bool;
+	auto operator == (const BinONObj& lhs, const BinONObj& rhs) -> bool;
 	auto operator == (const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool;
+	auto operator != (const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool;
 	auto operator << (std::ostream& stream, const BinONObj& obj)
 		-> std::ostream&;
 	auto operator << (std::ostream& stream, const TSPBinONObj& pObj)

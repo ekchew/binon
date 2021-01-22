@@ -21,7 +21,7 @@ namespace binon {
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kFloatObjCode &&
-					*this == static_cast<const FloatObj&>(other);
+					mValue == static_cast<const FloatObj&>(other).mValue;
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<FloatObj>(mValue); }
@@ -47,7 +47,7 @@ namespace binon {
 		auto getHash() const -> std::size_t override {return hash();}
 		auto equals(const BinONObj& other) const -> bool override {
 				return other.typeCode() == kFloat32Code &&
-					*this == static_cast<const Float32Obj&>(other);
+					mValue == static_cast<const Float32Obj&>(other).mValue;
 			}
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override
 			{ return std::make_shared<Float32Obj>(mValue); }

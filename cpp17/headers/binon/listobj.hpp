@@ -331,9 +331,13 @@ namespace binon {
 	//---- TypeInfo specializations -------------------------------------------
 
 	template<typename T>
-	struct TypeInfo<
-		T, std::enable_if_t<kIsWrapper<T>>
-		>
+	struct TypeInfo<std::reference_wrapper<T>> {
+		using Wrapper = typename TypeInfo<T>::Wrapper;
+		static auto TypeName() -> std::string
+			{ return TypeInfo<T>::TypeName(); }
+	};
+	template<typename T>
+	struct TypeInfo<T, std::enable_if_t<kIsWrapper<T>>>
 	{
 		using Wrapper = T;
 		static auto TypeName() -> std::string { return T{}.clsName(); }

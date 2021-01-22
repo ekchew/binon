@@ -215,7 +215,7 @@ namespace binon {
 			using iterator_category = std::input_iterator_tag;
 			using value_type = Generator::value_type;
 			using difference_type = std::ptrdiff_t;
-			using reference = value_type&;
+			using reference = TUnwrappedRef<value_type>;
 			using pointer = value_type*;
 
 			Generator* mPGen;
@@ -230,11 +230,9 @@ namespace binon {
 			auto operator != (const iterator& rhs) const noexcept
 				{ return mOptVal != rhs.mOptVal; }
 			auto operator * () & -> reference
-				{ return BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
-			auto operator * () && -> value_type&& {
-					return BINON_IF_DBG_REL(
-						std::move(mOptVal).value(), *std::move(mOptVal));
-				}
+				{ return DerefOpt(mOptVal); }
+			auto operator * () && -> TRefBase<value_type>&&
+				{ return DerefOpt(std::move(mOptVal)); }
 			auto operator -> () -> pointer
 				{ return &BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
 			auto operator ++ () -> iterator&

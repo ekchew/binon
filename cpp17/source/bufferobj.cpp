@@ -1,6 +1,8 @@
 #include "binon/bufferobj.hpp"
 #include "binon/intobj.hpp"
 
+#include <cstring>
+
 namespace binon {
 
 	void BufferObj::EncodeData(
@@ -19,10 +21,14 @@ namespace binon {
 		stream.read(data, size);
 		return std::move(v);
 	}
-	auto BufferObj::operator==(const BufferObj& rhs) const noexcept -> bool {
-		return
-			mValue.size() == rhs.mValue.size() &&
-			std::memcmp(mValue.data(), rhs.mValue.data(), mValue.size()) == 0;
+	auto BufferObj::equals(const BinONObj& other) const -> bool {
+		if(other.typeCode() != kBufferObjCode) {
+			return false;
+		}
+		auto& buf0 = mValue;
+		auto& buf1 = static_cast<const BufferObj&>(other).mValue;
+		return buf0.size() == buf1.size()
+			&& std::memcmp(buf0.data(), buf1.data(), buf0.size()) == 0;
 	}
 	void BufferObj::encodeData(TOStream& stream, bool requireIO) const {
 		EncodeData(mValue, stream, requireIO);

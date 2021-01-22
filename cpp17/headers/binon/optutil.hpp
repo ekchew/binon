@@ -1,6 +1,7 @@
 #ifndef BINON_OPTUTIL_HPP
 #define BINON_OPTUTIL_HPP
 
+#include <functional>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -37,6 +38,33 @@ namespace binon {
 				? std::optional<T>{
 					getValue(std::forward<GetTArgs>(args)...)}
 				: std::nullopt;
+		}
+
+	namespace details {
+		template<typename T> struct Ref {
+			using Base = T;
+			using Unwrapped = T&;
+		};
+		template<typename T> struct Ref<std::reference_wrapper<T>> {
+			using Base = T;
+			using Unwrapped = T&;
+		};
+	}
+
+	template<typename T>
+		using TRefBase = typename details::Ref<T>::Base;
+	template<typename T>
+		using TUnwrappedRef = typename details::Ref<T>::Unwrapped;
+	template<typename T>
+		auto UnwrappedRef(T&& ref) -> TUnwrappedRef<T> { return ref; }
+
+	template<typename T>
+		auto DerefOpt(std::optional<T>& opt) -> TUnwrappedRef<T> {
+		#if BINON_DEBUG
+			return opt.value();
+		#else
+			return *opt;
+		#endif
 		}
 }
 

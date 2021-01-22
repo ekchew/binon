@@ -112,9 +112,17 @@ namespace binon {
 		stream << ')';
 	}
 
+	auto operator == (const BinONObj& lhs, const BinONObj& rhs) -> bool
+		{ return lhs.equals(rhs); }
+	auto operator != (const BinONObj& lhs, const BinONObj& rhs) -> bool
+		{ return !lhs.equals(rhs); }
 	auto operator == (const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool
 	{
 		return pLHS->equals(*pRHS);
+	}
+	auto operator != (const TSPBinONObj& pLHS, const TSPBinONObj& pRHS) -> bool
+	{
+		return !pLHS->equals(*pRHS);
 	}
 	auto operator << (std::ostream& stream, const BinONObj& obj)
 		-> std::ostream&

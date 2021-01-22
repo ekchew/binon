@@ -418,16 +418,22 @@ namespace binon {
 		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
 
 		auto nextOptKey = [&v, it=v.begin()]() mutable {
-			return MakeOpt(it != v.end(),
-				[&it]() -> TKeyRW { return (*it++).first; });
+			return MakeOpt<TKeyRW>(it != v.end(),
+				[&it]() -> TKeyRW {
+					return const_cast<TKey&>((*it++).first);
+				});
 		};
-		EncodeElems<TKey>(MakeGen<TKeyRW>(nextOptKey), stream, kSkipRequireIO);
+		EncodeElems<TKeyRW>(
+			MakeGen<TKeyRW>(nextOptKey), stream, kSkipRequireIO);
 
 		auto nextOptVal = [&v, it=v.begin()]() mutable {
-			return MakeOpt(it != v.end(),
-				[&it]() -> TValRW { return (*it++).second; });
+			return MakeOpt<TValRW>(it != v.end(),
+				[&it]() -> TValRW {
+					return const_cast<TVal&>((*it++).second);
+				});
 		};
-		EncodeElems<TVal>(MakeGen<TValRW>(nextOptVal), stream, kSkipRequireIO);
+		EncodeElems<TValRW>(
+			MakeGen<TValRW>(nextOptVal), stream, kSkipRequireIO);
 	}
 	template<typename K, typename V, typename Ctnr>
 	auto SDictT<K,V,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
@@ -436,8 +442,8 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		auto keys = SListT<TKey>::DecodeData(stream, kSkipRequireIO);
 		auto valGen = DecodedElemsGen<TVal>(
-			stream, keys.mValue.size(), kSkipRequireIO);
-		auto keyIt = keys.mValue.begin();
+			stream, keys.size(), kSkipRequireIO);
+		auto keyIt = keys.begin();
 		TCtnr ctnr;
 		for(auto val: valGen) {
 			ctnr[*keyIt++] = std::move(val);
