@@ -50,7 +50,22 @@ namespace binon {
 	/**
 	EqualOpts function template
 
-	In many cases, you can 
+	In many cases, you can compare two std::optional with nothing more than the
+	== operator, but there seem to be some edge cases involving
+	std::reference_wrapper. For example, comparing
+	optional<reference_wrapper<string>>>'s is problematic. Since the BinON
+	library does sometimes do this sort of thing internally, it needed a
+	function to work around this.
+
+	Template Args:
+		T (type, inferred)
+
+	Args:
+		optA (const std::optional<T>&): first optional value
+		optB (const std::optional<T>&): second optional value
+
+	Returns:
+		bool: true if optA equals optB
 	**/
 	template<typename T> constexpr
 		auto EqualOpts(
