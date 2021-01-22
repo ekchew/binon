@@ -300,17 +300,19 @@ namespace binon {
 		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
 
 		auto nextOptKey = [&v, it=v.begin()]() mutable {
-			return MakeOpt(it != v.end(),
-				[&it]() -> TKeyRW { return (*it++).first; });
+			return MakeOpt<TKeyRW>(it != v.end(),
+				[&it]() -> TKeyRW {
+					return const_cast<TKey&>((*it++).first);
+				});
 		};
 		EncodeElems<TKey>(MakeGen<TKeyRW>(nextOptKey), stream, kSkipRequireIO);
 
 		auto nextOptVal = [&v, it=v.begin()]() mutable {
-			return MakeOpt(it != v.end(),
+			return MakeOpt<TSPBinONObj>(it != v.end(),
 				[&it]() { return (*it++).second; });
 		};
 		ListObj::EncodeElems(
-			MakeGen<TKeyRW>(nextOptVal), stream, kSkipRequireIO);
+			MakeGen<TSPBinONObj>(nextOptVal), stream, kSkipRequireIO);
 	}
 	template<typename K, typename Ctnr>
 	auto SKDictT<K,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
@@ -319,8 +321,8 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		auto keys = SListT<TKey>::DecodeData(stream, kSkipRequireIO);
 		auto valGen = ListObj::DecodedElemsGen(
-			stream, keys.mValue.size(), kSkipRequireIO);
-		auto keyIt = keys.mValue.begin();
+			stream, keys.size(), kSkipRequireIO);
+		auto keyIt = keys.begin();
 		TCtnr ctnr;
 		for(auto val: valGen) {
 			ctnr[*keyIt++] = val;
