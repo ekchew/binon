@@ -226,9 +226,9 @@ namespace binon {
 			explicit operator bool() const noexcept
 				{ return mOptVal.has_value(); }
 			auto operator == (const iterator& rhs) const noexcept
-				{ return mOptVal == rhs.mOptVal; }
+				{ return EqualOpts(mOptVal, rhs.mOptVal); }
 			auto operator != (const iterator& rhs) const noexcept
-				{ return mOptVal != rhs.mOptVal; }
+				{ return !EqualOpts(mOptVal, rhs.mOptVal); }
 			auto operator * () & -> reference
 				{ return DerefOpt(mOptVal); }
 			auto operator * () && -> TRefBase<value_type>&&

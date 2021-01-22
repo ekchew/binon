@@ -19,6 +19,7 @@
 #include "macros.hpp"
 #include "nullobj.hpp"
 #include "optutil.hpp"
+#include "refutil.hpp"
 #include "strobj.hpp"
 
 #endif

@@ -1,7 +1,14 @@
 #ifndef BINON_OPTUTIL_HPP
 #define BINON_OPTUTIL_HPP
 
-#include <functional>
+/**
+optutil module
+
+Contains utility functions related to std::optional.
+**/
+
+#include "refutil.hpp"
+
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -40,31 +47,47 @@ namespace binon {
 				: std::nullopt;
 		}
 
-	namespace details {
-		template<typename T> struct Ref {
-			using Base = T;
-			using Unwrapped = T&;
-		};
-		template<typename T> struct Ref<std::reference_wrapper<T>> {
-			using Base = T;
-			using Unwrapped = T&;
-		};
-	}
+	/**
+	EqualOpts function template
 
-	template<typename T>
-		using TRefBase = typename details::Ref<T>::Base;
-	template<typename T>
-		using TUnwrappedRef = typename details::Ref<T>::Unwrapped;
-	template<typename T>
-		auto UnwrappedRef(T&& ref) -> TUnwrappedRef<T> { return ref; }
+	In many cases, you can 
+	**/
+	template<typename T> constexpr
+		auto EqualOpts(
+			const std::optional<T>& optA,
+			const std::optional<T>& optB) noexcept
+		{
+			auto hasVal = optA.has_value();
+			return hasVal == optB.has_value() && (!hasVal || (
+				static_cast<TUnwrappedRef<const T>>(*optA) ==
+				static_cast<TUnwrappedRef<const T>>(*optB)
+				));
+		}
 
-	template<typename T>
+	/**
+	DerefOpt function template
+
+	This function returns the value contained within a std::optional. Should
+	there be no value available, it should throw std::bad_optional_access in
+	debug mode only. (Otherwise, the behavior is undefined.)
+
+	DerefOpt will also unwrap the value if it is a std::reference_wrapper,
+	returning a normal T& reference instead.
+
+	Template Args:
+		T (type, inferred)
+
+	Args:
+		opt (std::optional<T>&): an optional value
+
+	Returns:
+		TUnwrappedRef<T>:
+			This should be a reference with any std::reference_wrapper stripped
+			off.
+	**/
+	template<typename T> constexpr
 		auto DerefOpt(std::optional<T>& opt) -> TUnwrappedRef<T> {
-		#if BINON_DEBUG
-			return opt.value();
-		#else
-			return *opt;
-		#endif
+			return BINON_IF_DBG_REL(opt.value(), *opt);
 		}
 }
 

@@ -48,6 +48,7 @@ DEP0 := \
 	${HDR}generator.hpp \
 	${HDR}macros.hpp \
 	${HDR}optutil.hpp \
+	${HDR}refutil.hpp \
 	makefile
 DEP1 := \
 	${HDR}byteutil.hpp \

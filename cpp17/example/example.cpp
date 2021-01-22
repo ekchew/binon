@@ -37,7 +37,7 @@ auto main() -> int {
 	using namespace binon;
 	using namespace binon::types;
 	try {
-		SDictT<StrObj, int> v1;
+		SDictT<std::string, int> v1;
 		v1.mValue["foo"] = 0;
 		v1.mValue["bar"] = 1;
 		v1.mValue["baz"] = 2;
