@@ -236,7 +236,7 @@ namespace binon {
 	};
 
 	//==== Template Implementation =============================================
-	
+
 	//---- DictBase ------------------------------------------------------------
 
 	template<typename Key, typename... Args>
@@ -305,7 +305,8 @@ namespace binon {
 					return const_cast<TKey&>((*it++).first);
 				});
 		};
-		EncodeElems<TKey>(MakeGen<TKeyRW>(nextOptKey), stream, kSkipRequireIO);
+		EncodeElems<TKey>(MakeGen<TKeyRW>(
+			std::move(nextOptKey)), stream, kSkipRequireIO);
 
 		auto nextOptVal = [&v, it=v.begin()]() mutable {
 			return MakeOpt<TSPBinONObj>(it != v.end(),

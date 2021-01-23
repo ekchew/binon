@@ -162,7 +162,7 @@ namespace binon {
 				return MakeOpt<std::byte>(count > 0u, nextByte, count);
 			};
 			return MakeGen<std::byte, RequireIO>(
-				nextOptByte, stream, requireIO);
+				std::move(nextOptByte), stream, requireIO);
 		}
 }
 

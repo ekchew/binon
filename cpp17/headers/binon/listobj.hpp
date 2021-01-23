@@ -232,7 +232,7 @@ namespace binon {
 	DecodedElemsGen function template
 
 	Generates element values from what it reads off an input stream.
-	
+
 	Template Args:
 		T (type, required): the element type
 			This can be either a binon type such as IntObj or a supported
@@ -276,7 +276,7 @@ namespace binon {
 					count);
 			}
 			else {
-				
+
 				//	Otherwise, we need a single generator that decodes the
 				//	data for each element one at a time.
 				auto nextOptT = [&stream, count](RequireIO&) mutable {
@@ -286,7 +286,8 @@ namespace binon {
 							return TWrap::DecodeData(stream, kSkipRequireIO);
 						});
 				};
-				return MakeGen<T, RequireIO>(nextOptT, stream, requireIO);
+				return MakeGen<T, RequireIO>(
+					std::move(nextOptT), stream, requireIO);
 			}
 		}
 
