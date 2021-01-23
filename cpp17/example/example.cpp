@@ -47,6 +47,8 @@ auto main() -> int {
 		v2.mValue["bar"] = std::make_shared<StrObj>("qux");
 		v2.mValue["baz"] = std::make_shared<BoolObj>(true);
 		RunTest(v2);
+		SListT<bool> v3{true,true,false,true,true,true,false};
+		RunTest(v3);
 	}
 	catch(const std::exception& err) {
 		std::cerr << "ERROR: " << err.what() << '\n';

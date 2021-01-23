@@ -336,7 +336,7 @@ namespace binon {
 	}
 	template<typename K, typename Ctnr>
 	SKDictT<K,Ctnr>::SKDictT(const SKDict& dict) {
-		for(auto& [pKey0, pVal0]: dict.mValue.mDict) {
+		for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
 			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
 			mValue[static_cast<TKey>(pKey->mValue)] = pVal0;
 		}
@@ -376,7 +376,7 @@ namespace binon {
 		if(deep) {
 			auto pCopy = std::make_shared<SKDictT<K,Ctnr>>();
 			auto& dict = pCopy->mValue;
-			for(auto& [key, val]: mValue) {
+			for(auto&& [key, val]: mValue) {
 				dict[key] = val->makeCopy(deep);
 			}
 			return std::move(pCopy);
@@ -397,7 +397,7 @@ namespace binon {
 	template<typename K, typename Ctnr>
 	void SKDictT<K,Ctnr>::printArgsRepr(std::ostream& stream) const {
 		bool first = true;
-		for(auto& [key, val]: mValue) {
+		for(auto&& [key, val]: mValue) {
 			if(first) {
 				first = false;
 			}
@@ -459,7 +459,7 @@ namespace binon {
 	}
 	template<typename K, typename V, typename Ctnr>
 	SDictT<K,V,Ctnr>::SDictT(const SDict& dict) {
-		for(auto& [pKey0, pVal0]: dict.mValue.mDict) {
+		for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
 			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
 			auto pVal = BinONObj::Cast<TValWrap>(pVal0);
 			mValue[static_cast<TKey>(pKey->mValue)]
@@ -513,7 +513,7 @@ namespace binon {
 	template<typename K, typename V, typename Ctnr>
 	void SDictT<K,V,Ctnr>::printArgsRepr(std::ostream& stream) const {
 		bool first = true;
-		for(auto& [key, val]: mValue) {
+		for(auto&& [key, val]: mValue) {
 			if(first) {
 				first = false;
 			}

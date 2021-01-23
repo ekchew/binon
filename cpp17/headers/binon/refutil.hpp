@@ -30,11 +30,14 @@ namespace binon {
 			std::reference_wrapper<U>. In that case TRefBase<T> will be U.
 			(Note: If the reference_wrapper is const, U will also be const.)
 		TUnwrappedRef<T>: equivalent to TRefBase<T>&
+		TUnwrappedRRef<T>: equivalent to TRefBase<T>&&
 	**/
 	template<typename T>
 		using TRefBase = typename details::Ref<T>::Base;
 	template<typename T>
 		using TUnwrappedRef = typename details::Ref<T>::Base&;
+	template<typename T>
+		using TUnwrappedRRef = typename details::Ref<T>::Base&&;
 }
 
 #endif

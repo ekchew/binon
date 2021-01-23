@@ -311,7 +311,7 @@ namespace binon {
 	/**
 	ChildGenData struct template
 
-	This is the Generator Data type used in conjunction with the ChainGens
+	This is the Generator Data type used in conjunction with the PipeGen
 	function template.
 	
 	Template Args:
@@ -349,9 +349,30 @@ namespace binon {
 				}
 		template<typename Functor>
 			static auto WrapFunctor(Functor functor) {
-				return [functor](ChildGenData& cgd) mutable {
-					return functor(
+				return [fn = std::move(functor)](ChildGenData& cgd) mutable {
+					return fn(
 						cgd.parentGen, cgd.parentIter, cgd.childData);
+				};
+			}
+		template<typename T, typename Functor>
+			static auto IterFunctor(Functor functor) {
+				return [fn = std::move(functor)](
+					auto& parGen, auto& parIt, auto& chdData) mutable
+				{
+					return MakeOpt<T>(
+						parIt != parGen.end(), fn, parIt, chdData);
+				};
+			}
+		template<typename T, typename Functor>
+			static auto RefFunctor(Functor functor) {
+				return [fn = std::move(functor)](
+					auto& parGen, auto& parIt, auto& chdData) mutable
+					-> std::optional<T>
+				{
+					if(parIt == parGen.end()) {
+						return std::nullopt;
+					}
+					else { return fn(*parIt++, chdData); }
 				};
 			}
 	};
@@ -375,10 +396,30 @@ namespace binon {
 					return fn(cgd.parentGen, cgd.parentIter);
 				};
 			}
+		template<typename T, typename Functor>
+			static auto IterFunctor(Functor functor) {
+				return [fn = std::move(functor)](
+					auto& parGen, auto& parIt) mutable
+				{
+					return MakeOpt<T>(parIt != parGen.end(), fn, parIt);
+				};
+			}
+		template<typename T, typename Functor>
+			static auto RefFunctor(Functor functor) {
+				return [fn = std::move(functor)](
+					auto& parGen, auto& parIt) mutable
+					-> std::optional<T>
+				{
+					if(parIt == parGen.end()) {
+						return std::nullopt;
+					}
+					else { return fn(*parIt++); }
+				};
+			}
 	};
 
 	/**
-	ChainGens function template
+	PipeGen function template
 
 	Often with generators you want to pipe the output of one into the input of
 	another. This function can help you with that.
@@ -389,10 +430,9 @@ namespace binon {
 		that yields the square root of anything you hand it. We'll call the
 		former gen1 and the latter gen2.
 		
-		gen1 is the parent generator that is chained to gen2 by calling
-		ChainGens. Note that while gen1 can technically stand alone, gen2
-		needs gen1 in its definition because an instance of gen1 is saved within
-		gen2's data.
+		gen1 is the parent generator that is piped to gen2 by calling PipeGen.
+		Note that while gen1 can technically stand alone, gen2 needs gen1 in its
+		definition because an instance of gen1 is saved within gen2's data.
 		
 		gen2's functor takes a minimum of 2 arguments: a reference to gen1 and a
 		reference to a gen1 iterator marking where you are within the parent
@@ -404,7 +444,7 @@ namespace binon {
 				[i = 0]() mutable {
 					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
 				});
-			auto gen2 = binon::ChainGens<double>(
+			auto gen2 = binon::PipeGen<double>(
 				std::move(gen1),
 				[](auto& gen1, auto& gen1_it) {
 					return binon::MakeOpt<double>(
@@ -447,7 +487,8 @@ namespace binon {
 			you get a gold star!)
 		functor (Functor):
 			There are 2 possible forms for this functor:
-				std::optional<ChildT> fn(ParentGen&, ParentGen::iterator&)
+				std::optional<ChildT>
+					fn(ParentGen&, ParentGen::iterator&)
 				std::optional<ChildT>
 					fn(ParentGen&, ParentGen::iterator&, ChildData&)
 			The second form applies if you set the ChildData template argument
@@ -460,14 +501,78 @@ namespace binon {
 		typename ChildT, typename ChildData=void,
 		typename ParentGen, typename Functor, typename... ChildArgs
 		>
-		auto ChainGens(
+		auto PipeGen(
 			ParentGen gen, Functor functor, ChildArgs&&... args)
 		{
 			using CGD = ChildGenData<ParentGen,ChildData>;
 			return MakeGen<ChildT,CGD>(
 				CGD::WrapFunctor(std::move(functor)), std::move(gen),
-				std::forward<ChildArgs>(args)...
-			);
+				std::forward<ChildArgs>(args)...);
+		}
+
+	/**
+	PipeGenToIterFn function template
+
+	This higher-level version of PipeGen takes the same arguments except that
+	the functor you supply has a simpler form:
+
+		T fn(ParentGen::iterator&)
+		T fn(ParentGen::iterator&, ChildData&)
+
+	As you can see, you no longer receive a reference to the parent generator --
+	only an iterator to it. Unlike with PipeGen, you can safely assume the
+	iterator can be dereferenced. (It won't be the parent generator's end()
+	value, in other words.) You are responsible, however, for incrementing the
+	iterator when appropriate.
+
+	The return value is simply the value itself with no std::optional wrapper.
+
+	Compared to PipeGen, you cannot access the parent generator's custom data
+	(if it has any) or terminate the child generator early (before the parent is
+	exhausted). Compared to PipeGenToRefFn, you can increase the flow of data
+	coming out of the child generator. For example, you could have the child
+	generate 2 values for every 1 the parent generates by not incrementing the
+	parent iterator every time. (If you want to reduce the flow instead, you
+	will need to call the low-level PipeGen and read several values off of the
+	parent every time, but check for the end condition in your loop.)
+	**/
+	template<
+		typename ChildT, typename ChildData=void,
+		typename ParentGen, typename IterFn, typename... ChildArgs
+		>
+		auto PipeGenToIterFn(
+			ParentGen gen, IterFn iterFn, ChildArgs&&... args)
+		{
+			using CGD = ChildGenData<ParentGen,ChildData>;
+			return PipeGen<ChildT,ChildData>(
+				gen, CGD::template IterFunctor<ChildT>(std::move(iterFn)),
+				std::forward<ChildArgs>(args)...);
+		}
+
+	/**
+	PipeGenToRefFn function template
+
+	This highest-level version of PipeGen takes the same arguments except that
+	the functor you supply has the simplest of all forms:
+
+		T fn(ParentGen::TValue&)
+		T fn(ParentGen::TValue&, ChildData&)
+
+	You receive 1 value the parent generator yields and return 1 child value
+	each time your functor gets called. You would typically call PipeGenToRefFn
+	when you want to filter the output of a generator in some way.
+	**/
+	template<
+		typename ChildT, typename ChildData=void,
+		typename ParentGen, typename RefFn, typename... ChildArgs
+		>
+		auto PipeGenToRefFn(
+			ParentGen gen, RefFn refFn, ChildArgs&&... args)
+		{
+			using CGD = ChildGenData<ParentGen,ChildData>;
+			return PipeGen<ChildT,ChildData>(
+				gen, CGD::template RefFunctor<ChildT>(std::move(refFn)),
+				std::forward<ChildArgs>(args)...);
 		}
 }
 

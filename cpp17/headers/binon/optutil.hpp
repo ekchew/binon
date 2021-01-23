@@ -104,6 +104,10 @@ namespace binon {
 		auto DerefOpt(std::optional<T>& opt) -> TUnwrappedRef<T> {
 			return BINON_IF_DBG_REL(opt.value(), *opt);
 		}
+	template<typename T> constexpr
+		auto DerefOpt(std::optional<T>&& opt) -> TUnwrappedRRef<T> {
+			return BINON_IF_DBG_REL(std::move(opt).value(), *std::move(opt));
+		}
 }
 
 #endif

@@ -107,7 +107,7 @@ namespace binon {
 		SList keys{SListVal{v.mKeyCode, TList(v.mDict.size())}};
 		auto& keyList = keys.mValue.mList;
 		keyList.clear();
-		for(auto& [key, val]: v.mDict) {
+		for(auto&& [key, val]: v.mDict) {
 			keyList.push_back(key);
 		}
 		keys.encodeData(stream, kSkipRequireIO);
@@ -168,7 +168,7 @@ namespace binon {
 		auto& valList = vals.mValue.mList;
 		keyList.clear();
 		valList.clear();
-		for(auto& [key, val]: v.mDict) {
+		for(auto&& [key, val]: v.mDict) {
 			keyList.push_back(key);
 			valList.push_back(val);
 		}

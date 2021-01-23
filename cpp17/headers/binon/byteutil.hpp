@@ -307,7 +307,7 @@ namespace binon {
 				n += i;
 				return MakeOpt<std::byte>(i, [byt] { return byt; });
 			};
-			return ChainGens<std::byte,std::size_t>(boolGen, byteGen, 0u);
+			return PipeGen<std::byte,std::size_t>(boolGen, byteGen, 0u);
 		}
 	template<typename BoolIt, typename EndIt>
 		auto PackedBoolsGen(BoolIt boolIt, EndIt endIt) {
@@ -330,44 +330,24 @@ namespace binon {
 	Returns:
 		Generator of bool
 	**/
-	/*
-		template<typename ByteIt>
-		auto UnpackedBoolsGen(ByteIt byteIt, std::size_t boolCnt) {
-			auto nextBool = [](auto& byteIt, auto boolCnt, auto i, auto& byt) {
-				if((i & 0x7u) == 0x0u) {
-					byt = i > 0u ? *++byteIt : *byteIt;
-				}
-				else { byt <<= 1; }
-				return (byt & 0x80_byte) != 0x00_byte;
-			};
-			decltype(boolCnt) i = 0u;
-			auto byt = 0x00_byte;
-			return MakeGen<bool>(
-				[byteIt, boolCnt, nextBool, i, byt]() mutable {
-					++i;
-					return MakeOpt<bool>(
-						i <= boolCnt, nextBool,
-						byteIt, boolCnt, i - 1u, byt);
-				});
-		}
-	*/
 	template<typename ByteGen>
 		auto UnpackedBoolsGen(ByteGen byteGen, std::size_t boolCnt) {
 			using Size = decltype(boolCnt);
-			auto byt = 0x00_byte;
-			auto nextBool = [byt](auto& it, Size i) mutable {
+			Size i = 0u;
+			auto nextBool = [](auto& it, Size i, std::byte& byt) mutable {
 				if((i & 0x7u) == 0x0u) {
 					byt = i > 0u ? *++it : *it;
 				}
 				else { byt <<= 1; }
 				return (byt & 0x80_byte) != 0x00_byte;
 			};
-			Size i = 0u;
-			auto nextOptBool = [boolCnt, i, nextBool](auto&, auto& it) mutable {
+			auto nextOptBool = [boolCnt, i, byt = 0x00_byte, nextBool](
+				auto&, auto& it) mutable
+			{
 				auto j = i++;
-				return MakeOpt<bool>(j < boolCnt, nextBool, it, j);
+				return MakeOpt<bool>(j < boolCnt, nextBool, it, j, byt);
 			};
-			return ChainGens<bool>(std::move(byteGen), nextOptBool);
+			return PipeGen<bool>(std::move(byteGen), nextOptBool);
 		}
 }
 

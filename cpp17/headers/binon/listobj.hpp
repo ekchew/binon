@@ -270,17 +270,6 @@ namespace binon {
 			//	is a special case for when T is either bool or BoolObj. In
 			//	that case, the element data are packed 8 bools to a byte.
 			if constexpr(std::is_same_v<TWrap, BoolObj>) {
-
-				//	We can unpack the bools using 2 generators. The 1st simply
-				//	reads the stream and yields bytes from it. (Note that it
-				//	is not strictly necessary to provide an accurate byte
-				//	count, since the number of bytes read is effectively
-				//	determined by the 2nd generator. But it needs to be at
-				//	least the number calculated here.)
-				//
-				//	The 2nd generator then yield bools by unpacking them from
-				//	the bytes yielded by the first.
-				//
 				auto byteCnt = (count + 7u) >> 3;
 				return UnpackedBoolsGen(
 					StreamedBytesGen(stream, byteCnt, requireIO),
@@ -323,7 +312,7 @@ namespace binon {
 		TOStream& stream, bool requireIO)
 	{
 		RequireIO rio{stream, requireIO};
-		for(auto& elem: elemGen) {
+		for(auto&& elem: elemGen) {
 			elem->encode(stream, kSkipRequireIO);
 		}
 	}
@@ -444,14 +433,14 @@ namespace binon {
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::printArgsRepr(std::ostream& stream) const {
 		bool first = true;
-		for(auto& elem: mValue) {
+		for(auto&& elem: mValue) {
 			if(first) {
 				first = false;
 			}
 			else {
 				stream << ", ";
 			}
-			PrintRepr(elem, stream);
+			PrintRepr<TElem>(elem, stream);
 		}
 	}
 
@@ -469,11 +458,11 @@ namespace binon {
 			auto nextOptBool = [nextBool](auto& gen, auto& it) {
 				return MakeOpt<T>(it != gen.end(), nextBool, it);
 			};
-			auto boolGen = ChainGens<T>(std::move(gen), nextOptBool);
+			auto boolGen = PipeGen<T>(std::move(gen), nextOptBool);
 			StreamBytes(PackedBoolsGen(boolGen), stream, kSkipRequireIO);
 		}
 		else {
-			for(auto& elem: gen) {
+			for(auto&& elem: gen) {
 				TWrap::EncodeData(elem, stream, kSkipRequireIO);
 			}
 		}
