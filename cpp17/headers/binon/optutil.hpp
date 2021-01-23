@@ -38,12 +38,13 @@ namespace binon {
 			depending on whether hasValue is true.
 	**/
 	template<typename T, typename GetT, typename... GetTArgs> constexpr
-		auto MakeOpt(bool hasValue, GetT getValue, GetTArgs&&... args)
+		auto MakeOpt(bool hasValue, GetT&& getValue, GetTArgs&&... args)
 			-> std::optional<T>
 		{
+			using std::forward;
 			return hasValue
 				? std::optional<T>{
-					getValue(std::forward<GetTArgs>(args)...)}
+					forward<GetT>(getValue)(forward<GetTArgs>(args)...)}
 				: std::nullopt;
 		}
 
