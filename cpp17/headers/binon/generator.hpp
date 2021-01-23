@@ -364,7 +364,7 @@ namespace binon {
 				};
 			}
 		template<typename T, typename Functor>
-			static auto RefFunctor(Functor functor) {
+			static auto ValFunctor(Functor functor) {
 				return [fn = std::move(functor)](
 					auto& parGen, auto& parIt, auto& chdData) mutable
 					-> std::optional<T>
@@ -405,7 +405,7 @@ namespace binon {
 				};
 			}
 		template<typename T, typename Functor>
-			static auto RefFunctor(Functor functor) {
+			static auto ValFunctor(Functor functor) {
 				return [fn = std::move(functor)](
 					auto& parGen, auto& parIt) mutable
 					-> std::optional<T>
@@ -529,7 +529,7 @@ namespace binon {
 
 	Compared to PipeGen, you cannot access the parent generator's custom data
 	(if it has any) or terminate the child generator early (before the parent is
-	exhausted). Compared to PipeGenToRefFn, you can increase the flow of data
+	exhausted). Compared to PipeGenToValFn, you can increase the flow of data
 	coming out of the child generator. For example, you could have the child
 	generate 2 values for every 1 the parent generates by not incrementing the
 	parent iterator every time. (If you want to reduce the flow instead, you
@@ -550,7 +550,7 @@ namespace binon {
 		}
 
 	/**
-	PipeGenToRefFn function template
+	PipeGenToValFn function template
 
 	This highest-level version of PipeGen takes the same arguments except that
 	the functor you supply has the simplest of all forms:
@@ -566,12 +566,12 @@ namespace binon {
 		typename ChildT, typename ChildData=void,
 		typename ParentGen, typename RefFn, typename... ChildArgs
 		>
-		auto PipeGenToRefFn(
+		auto PipeGenToValFn(
 			ParentGen gen, RefFn refFn, ChildArgs&&... args)
 		{
 			using CGD = ChildGenData<ParentGen,ChildData>;
 			return PipeGen<ChildT,ChildData>(
-				gen, CGD::template RefFunctor<ChildT>(std::move(refFn)),
+				gen, CGD::template ValFunctor<ChildT>(std::move(refFn)),
 				std::forward<ChildArgs>(args)...);
 		}
 }
