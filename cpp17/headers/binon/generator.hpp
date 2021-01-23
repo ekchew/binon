@@ -424,6 +424,14 @@ namespace binon {
 	Often with generators you want to pipe the output of one into the input of
 	another. This function can help you with that.
 
+	Note that PipeGen incorporates all the data representing the parent
+	Generator into the child, so that the child object can then be passed around
+	without worries about the parent vanishing (e.g. because its declaration
+	goes out of scope). This may be overkill, though, if you are defining and
+	consuming all your Generators in the same function. In any case, it's good
+	form to move (rather than copy) the parent into the child in case the parent
+	has some heavy-weight data structures it uses internally.
+
 	Example:
 		Taking the example from earlier under the Generator class template,
 		let's say we want the int-counting Generator to feed its output to one
