@@ -365,7 +365,7 @@ namespace binon {
 				};
 			}
 		template<typename T, typename Fn>
-			static auto ValFunctor(Fn functor) {
+			static auto ValsFunctor(Fn functor) {
 				return [fn = Fn{std::move(functor)}](
 					auto& parGen, auto& parIt, auto& chdData) mutable
 					-> std::optional<T>
@@ -398,15 +398,7 @@ namespace binon {
 				};
 			}
 		template<typename T, typename Fn>
-			static auto IterFunctor(Fn functor) {
-				return [fn = Fn{std::move(functor)}](
-					auto& parGen, auto& parIt) mutable
-				{
-					return MakeOpt<T>(parIt != parGen.end(), fn, parIt);
-				};
-			}
-		template<typename T, typename Fn>
-			static auto ValFunctor(Fn functor) {
+			static auto ValsFunctor(Fn functor) {
 				return [fn = Fn{std::move(functor)}](
 					auto& parGen, auto& parIt) mutable
 					-> std::optional<T>
@@ -503,7 +495,7 @@ namespace binon {
 			The second form applies if you set the ChildData template argument
 			to something other than the default void. You could also reach this
 			externally with myChildGen->childData. (The parent Generator's data
-			would be at *myChildGen->parentGen.)
+			would be at *myChildGen->parentGen.
 		args (ChildArgs): extra args to initialize ChildData
 	**/
 	template<
@@ -520,67 +512,49 @@ namespace binon {
 		}
 
 	/**
-	PipeGenToIterFn function template
+	PipeGenVals function template
 
-	This higher-level version of PipeGen takes the same arguments except that
-	the functor you supply has a simpler form:
+	This is a higher level alternative to PipeGen in which your functor no
+	longer has to worry about managing iterators. It's called repeated with a
+	dereferenced iterator from the parent generator until all of the parent's
+	output is exhausted. It is therefore useful when you simply want to filter
+	the parent's output in some way, since there is a one-to-one correspondence
+	between the values the parent and child yield.
 
-		T fn(ParentGen::iterator&)
-		T fn(ParentGen::iterator&, ChildData&)
+	Template Args:
+		ChildT (type, required): value type child Generator produces
+		ChildData (type, optional): may contain extra data for child functor
+			Defaults to void, in which case the functor should only expect the 2
+			required args. If you set this type to something other than void,
+			you can also access it externally as myGen2->childData.
+		ParentGen (type, inferred)
+		Fn (type, inferred)
+		ChildArgs (type, inferred)
 
-	As you can see, you no longer receive a reference to the parent generator --
-	only an iterator to it. Unlike with PipeGen, you can safely assume the
-	iterator can be dereferenced. (It won't be the parent generator's end()
-	value, in other words.) You are responsible, however, for incrementing the
-	iterator when appropriate.
-
-	The return value is simply the value itself with no std::optional wrapper.
-
-	Compared to PipeGen, you cannot access the parent generator's custom data
-	(if it has any) or terminate the child generator early (before the parent is
-	exhausted). Compared to PipeGenToValFn, you can increase the flow of data
-	coming out of the child generator. For example, you could have the child
-	generate 2 values for every 1 the parent generates by not incrementing the
-	parent iterator every time. (If you want to reduce the flow instead, you
-	will need to call the low-level PipeGen and read several values off of the
-	parent every time, but check for the end condition in your loop.)
+	Args:
+		gen (ParentGen): instance of the parent Generator
+			See PipeGen for more info.
+		functor (Fn):
+			There are 2 possible forms for this functor:
+				std::optional<ChildT>
+					fn(ParentGen::TValue&)
+				std::optional<ChildT>
+					fn(ParentGen::TValue&, ChildData&)
+			Note that these arguments can be received as const references or
+			even by value depending on what your child generator wants to do
+			with them.
+		args (ChildArgs): extra args to initialize ChildData
 	**/
 	template<
 		typename ChildT, typename ChildData=void,
-		typename ParentGen, typename IterFn, typename... ChildArgs
+		typename ParentGen, typename Fn, typename... ChildArgs
 		>
-		auto PipeGenToIterFn(
-			ParentGen gen, IterFn iterFn, ChildArgs&&... args)
+		auto PipeGenVals(
+			ParentGen gen, Fn functor, ChildArgs&&... args)
 		{
 			using CGD = ChildGenData<ParentGen,ChildData>;
 			return PipeGen<ChildT,ChildData>(
-				gen, CGD::template IterFunctor<ChildT>(std::move(iterFn)),
-				std::forward<ChildArgs>(args)...);
-		}
-
-	/**
-	PipeGenToValFn function template
-
-	This highest-level version of PipeGen takes the same arguments except that
-	the functor you supply has the simplest of all forms:
-
-		T fn(ParentGen::TValue&)
-		T fn(ParentGen::TValue&, ChildData&)
-
-	You receive 1 value the parent generator yields and return 1 child value
-	each time your functor gets called. You would typically call PipeGenToRefFn
-	when you want to filter the output of a generator in some way.
-	**/
-	template<
-		typename ChildT, typename ChildData=void,
-		typename ParentGen, typename RefFn, typename... ChildArgs
-		>
-		auto PipeGenToValFn(
-			ParentGen gen, RefFn refFn, ChildArgs&&... args)
-		{
-			using CGD = ChildGenData<ParentGen,ChildData>;
-			return PipeGen<ChildT,ChildData>(
-				gen, CGD::template ValFunctor<ChildT>(std::move(refFn)),
+				gen, CGD::template ValsFunctor<ChildT>(std::move(functor)),
 				std::forward<ChildArgs>(args)...);
 		}
 }

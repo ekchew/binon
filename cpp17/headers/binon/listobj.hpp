@@ -453,7 +453,7 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		TWrap{}.typeCode().write(stream, kSkipRequireIO);
 		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			auto boolGen = PipeGenToValFn<T>(
+			auto boolGen = PipeGenVals<T>(
 				std::move(gen),
 				[](const auto& v) { return static_cast<const T&>(v); }
 				);
