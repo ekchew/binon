@@ -190,30 +190,20 @@ namespace binon {
 		/**
 		iterator class
 
-		This is the input iterator class instantiated by Generator's begin() and
-		end() methods. Its ++ operator calls on your functor to generate the
-		next value, which you can then dereference with the * or -> operators.
-		(The begin() method performs ++ for you once to get you started.)
+		This is an input iterator instantiated by Generator's begin and end
+		methods. It stores an instance of the last std::optional<T>
+		returned by your functor, which is updated by the ++ operator. You
+		can reach the T value by dereferencing the iterator with * or ->.
+		In debug mode, this may throw std::bad_optional_access if there is no
+		value. (In release mode, this check is suppressed for performance.)
 
-		You can check if the std::optional your functor returned actually
-		contains a value by testing the iterator, whose bool operator is
-		overloaded for this purpose. Alternatively, you can compare it against
-		the iterator returned by end().
+		There is no const_iterator class. That means you could mess around with
+		the iterator's value, but what's the point when it's going to get
+		overwritten by ++ anyway? The * operator does, however, support move
+		semantics. If you were generating std::string, for example, you could
+		avoid a needless copy with:
 
-		Should you dereference an iterator with no value, it may throw an
-		exception, but likely only in debug mode. (See the
-		std::optional<...>::value method docs for more info on the exception.)
-
-		Note that Generator does not currently supply any const methods and
-		therefore does not define a const_iterator class. This may eventually
-		be supported.
-
-		The * operator does, however, support move semantics. Let's say your
-		generator was yielding std::string objects. You could write
-
-			std::string s = *std::move(myGen);
-
-		to avoid an unnecessary copy.
+			auto myStr = *std::move(myIt);
 		**/
 		struct iterator {
 			using iterator_category = std::input_iterator_tag;
@@ -384,8 +374,9 @@ namespace binon {
 					}
 				}
 		template<typename Fn>
-			static auto WrapFunctor(Fn functor) {
-				return [fn = Fn{std::move(functor)}](
+			static auto WrapFunctor(Fn&& functor) {
+				using TFn = std::remove_reference_t<Fn>;
+				return [fn = TFn{std::forward<Fn>(functor)}](
 					ChildGenData& cgd) mutable
 				{
 					return fn(
@@ -393,10 +384,27 @@ namespace binon {
 				};
 			}
 		template<typename T, typename Fn>
-			static auto ValsFunctor(Fn functor) {
-				return [fn = Fn{std::move(functor)}](
+			static auto ValsFunctor(Fn&& functor) {
+				using TFn = std::remove_reference_t<Fn>;
+				return [fn = TFn{std::forward<Fn>(functor)}](
 					TParentGen& parGen, TParentIter& parIt, TChildData& chdData
 					) mutable -> std::optional<T>
+				{
+					if(parIt == parGen.end()) {
+						return std::nullopt;
+					}
+					else {
+						return std::make_optional<T>(
+							fn(*std::move(parIt)++, chdData));
+					}
+				};
+			}
+		template<typename T, typename Fn>
+			static auto RefsFunctor(Fn&& functor) {
+				using TFn = std::remove_reference_t<Fn>;
+				return [fn = TFn{std::forward<Fn>(functor)}](
+					TParentGen& parGen, TParentIter& parIt,
+					TChildData& chdData) mutable -> std::optional<T>
 				{
 					if(parIt == parGen.end()) {
 						return std::nullopt;
@@ -426,23 +434,42 @@ namespace binon {
 				}
 			}
 		template<typename Fn>
-			static auto WrapFunctor(Fn functor) {
-				return [fn = Fn{std::move(functor)}](
+			static auto WrapFunctor(Fn&& functor) {
+				using TFn = std::remove_reference_t<Fn>;
+				return [fn = TFn{std::forward<Fn>(functor)}](
 					ChildGenData& cgd) mutable
 				{
 					return fn(cgd.parentGen, cgd.parentIter);
 				};
 			}
 		template<typename T, typename Fn>
-			static auto ValsFunctor(Fn functor) {
-				return [fn = Fn{std::move(functor)}](
+			static auto ValsFunctor(Fn&& functor) {
+				using TFn = std::remove_reference_t<Fn>;
+				return [fn = TFn{std::forward<Fn>(functor)}](
 					TParentGen& parGen, TParentIter& parIt) mutable
 					-> std::optional<T>
 				{
 					if(parIt == parGen.end()) {
 						return std::nullopt;
 					}
-					else { return std::make_optional<T>(fn(*parIt++)); }
+					else {
+						return std::make_optional<T>(fn(*std::move(parIt)++));
+					}
+				};
+			}
+		template<typename T, typename Fn>
+			static auto RefsFunctor(Fn&& functor) {
+				using TFn = std::remove_reference_t<Fn>;
+				return [fn = TFn{std::forward<Fn>(functor)}](
+					TParentGen& parGen, TParentIter& parIt) mutable
+					-> std::optional<T>
+				{
+					if(parIt == parGen.end()) {
+						return std::nullopt;
+					}
+					else {
+						return std::make_optional<T>(fn(*parIt++));
+					}
 				};
 			}
 	};
@@ -530,9 +557,9 @@ namespace binon {
 		functor (Fn):
 			There are 2 possible forms for this functor:
 				std::optional<ChildT>
-					fn(ParentGen::TValue&)
+					fn(ParentGen::TValue)
 				std::optional<ChildT>
-					fn(ParentGen::TValue&, ChildData&)
+					fn(ParentGen::TValue, ChildData&)
 			Note that these arguments can be received as const references or
 			even by value depending on what your child generator wants to do
 			with them.
@@ -543,11 +570,25 @@ namespace binon {
 		typename ParentGen, typename Fn, typename... ChildArgs
 		>
 		auto PipeGenVals(
-			ParentGen gen, Fn functor, ChildArgs&&... args)
+			ParentGen gen, Fn&& functor, ChildArgs&&... args)
 		{
 			using CGD = ChildGenData<ParentGen,ChildData>;
 			return PipeGen<ChildT,ChildData>(
-				gen, CGD::template ValsFunctor<ChildT>(std::move(functor)),
+				gen,
+				CGD::template ValsFunctor<ChildT>(std::forward<Fn>(functor)),
+				std::forward<ChildArgs>(args)...);
+		}
+	template<
+		typename ChildT, typename ChildData=void,
+		typename ParentGen, typename Fn, typename... ChildArgs
+		>
+		auto PipeGenRefs(
+			ParentGen gen, Fn&& functor, ChildArgs&&... args)
+		{
+			using CGD = ChildGenData<ParentGen,ChildData>;
+			return PipeGen<ChildT,ChildData>(
+				gen,
+				CGD::template RefsFunctor<ChildT>(std::forward<Fn>(functor)),
 				std::forward<ChildArgs>(args)...);
 		}
 }
