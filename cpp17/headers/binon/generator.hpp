@@ -268,7 +268,14 @@ namespace binon {
 		typename Fn, typename... DataArgs
 		>
 		auto MakeGen(Fn&& functor, DataArgs&&... dataArgs) {
-			return Generator<T,Data,std::remove_reference_t<Fn>>{
+
+			//	If functor is passed in by L-value, Fn will be reference type,
+			//	and we don't want that for the Generator type since the functor
+			//	may lose any captured data if it is not fully copied into the
+			//	Generator.
+			using TFn = std::remove_reference_t<Fn>;
+
+			return Generator<T,Data,TFn>{
 				std::forward<Fn>(functor),
 				std::forward<DataArgs>(dataArgs)...};
 		}
