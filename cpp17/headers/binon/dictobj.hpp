@@ -190,6 +190,8 @@ namespace binon {
 		operator TCtnr&() noexcept;
 		operator const TCtnr&() const noexcept;
 		explicit operator bool() const noexcept override;
+		auto begin() { return mValue.begin(); }
+		auto end() { return mValue.end(); }
 		auto typeCode() const noexcept -> CodeByte final;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
@@ -227,6 +229,8 @@ namespace binon {
 		operator TCtnr&() noexcept;
 		operator const TCtnr&() const noexcept;
 		explicit operator bool() const noexcept override;
+		auto begin() { return mValue.begin(); }
+		auto end() { return mValue.end(); }
 		auto typeCode() const noexcept -> CodeByte final;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;

@@ -198,6 +198,8 @@ namespace binon {
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kSListCode; }
+		auto begin() { return mValue.begin(); }
+		auto end() { return mValue.end(); }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
@@ -427,14 +429,14 @@ namespace binon {
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::printArgsRepr(std::ostream& stream) const {
 		bool first = true;
-		for(TElem&& elem: mValue) {
+		for(auto&& elem: mValue) {
 			if(first) {
 				first = false;
 			}
 			else {
 				stream << ", ";
 			}
-			PrintRepr(elem, stream);
+			PrintRepr<TElem>(elem, stream);
 		}
 	}
 
