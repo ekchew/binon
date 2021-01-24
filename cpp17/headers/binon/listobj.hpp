@@ -313,7 +313,7 @@ namespace binon {
 		TOStream& stream, bool requireIO)
 	{
 		RequireIO rio{stream, requireIO};
-		for(TSPBinONObj& elem: elemGen) {
+		for(auto& elem: elemGen) {
 			elem->encode(stream, kSkipRequireIO);
 		}
 	}

@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <type_traits>
 
 namespace binon {
 
@@ -22,8 +23,9 @@ namespace binon {
 		Data (type): see Generator
 		Fn (type): see Generator
 	**/
+	namespace details { struct GenRoot{}; }
 	template<typename T, typename Data, typename Fn>
-	struct GenBase {
+	struct GenBase: details::GenRoot {
 		static_assert(
 			std::is_same_v<
 				std::invoke_result_t<Fn, Data&>, std::optional<T>
@@ -78,7 +80,7 @@ namespace binon {
 		auto callFunctor() -> std::optional<T> { return mFunctor(mData); }
 	};
 	template<typename T, typename Fn>
-	struct GenBase<T, void, Fn> {
+	struct GenBase<T, void, Fn>: details::GenRoot {
 		static_assert(
 			std::is_same_v<
 				std::invoke_result_t<Fn>, std::optional<T>
@@ -297,16 +299,112 @@ namespace binon {
 	Returns:
 		Generator of BgnIt::value_type
 	**/
+	template<typename Data, typename BgnIt, typename EndIt>
+	struct IterGen {
+		using TBgnIt = BgnIt;
+		using TEndIt = EndIt;
+		using TData = Data;
+		using iterator = TBgnIt;
+		template<typename... DataArgs> constexpr
+			IterGen(const BgnIt& bgnIt, const EndIt& endIt, DataArgs&&... args)
+				noexcept: mBgnIt{bgnIt}, mEndIt{endIt},
+				mData{std::forward<DataArgs>(args)...} {}
+		template<typename... DataArgs> constexpr
+			IterGen(const BgnIt& bgnIt, EndIt&& endIt, DataArgs&&... args)
+				noexcept: mBgnIt{bgnIt}, mEndIt{std::move(endIt)},
+				mData{std::forward<DataArgs>(args)...} {}
+		template<typename... DataArgs> constexpr
+			IterGen(BgnIt&& bgnIt, const EndIt& endIt, DataArgs&&... args)
+				noexcept: mBgnIt{std::move(bgnIt)}, mEndIt{endIt},
+				mData{std::forward<DataArgs>(args)...} {}
+		template<typename... DataArgs> constexpr
+			IterGen(BgnIt&& bgnIt, EndIt&& endIt, DataArgs&&... args)
+				noexcept: mBgnIt{std::move(bgnIt)}, mEndIt{std::move(endIt)},
+				mData{std::forward<DataArgs>(args)...} {}
+		constexpr auto begin() -> TBgnIt& { return mBgnIt; }
+		constexpr auto begin() const -> const TBgnIt& { return mBgnIt; }
+		constexpr auto end() -> TEndIt& { return mEndIt; }
+		constexpr auto end() const -> const TEndIt& { return mEndIt; }
+		constexpr auto operator * () & -> TData& { return mData; }
+		constexpr auto operator * () const& -> const TData& { return mData; }
+		constexpr auto operator * () && -> TData { return std::move(mData); }
+		constexpr auto operator -> () -> TData* { return &mData; }
+		constexpr auto operator -> () const -> const TData* { return &mData; }
+	private:
+		TBgnIt mBgnIt;
+		TEndIt mEndIt;
+		TData mData;
+	};
 	template<typename BgnIt, typename EndIt>
-		auto MakeIterGen(BgnIt bgnIt, EndIt endIt) {
-			using T = typename BgnIt::value_type;
-			auto nextT = [](decltype(bgnIt)& it) {
-				return *it++;
+	struct IterGen<void,BgnIt,EndIt> {
+		using TBgnIt = BgnIt;
+		using TEndIt = EndIt;
+		using TData = void;
+		using iterator = TBgnIt;
+		IterGen(const BgnIt& bgnIt, const EndIt& endIt) noexcept:
+			mBgnIt{bgnIt}, mEndIt{endIt} {}
+		IterGen(const BgnIt& bgnIt, EndIt&& endIt) noexcept:
+			mBgnIt{bgnIt}, mEndIt{std::move(endIt)} {}
+		IterGen(BgnIt&& bgnIt, const EndIt& endIt) noexcept:
+			mBgnIt{std::move(bgnIt)}, mEndIt{endIt} {}
+		IterGen(BgnIt&& bgnIt, EndIt&& endIt) noexcept:
+			mBgnIt{std::move(bgnIt)}, mEndIt{std::move(endIt)} {}
+		constexpr auto begin() -> TBgnIt& { return mBgnIt; }
+		constexpr auto begin() const -> const TBgnIt& { return mBgnIt; }
+		constexpr auto end() -> TEndIt& { return mEndIt; }
+		constexpr auto end() const -> const TEndIt& { return mEndIt; }
+	private:
+		TBgnIt mBgnIt;
+		TEndIt mEndIt;
+	};
+	template<typename Data=void,
+		typename BgnIt, typename EndIt, typename... DataArgs> constexpr
+		auto MakeIterGen(const BgnIt& bgnIt, const EndIt& endIt,
+			DataArgs&&... args)
+		{
+			using std::remove_reference_t;
+			using TBgnIt = remove_reference_t<BgnIt>;
+			using TEndIt = remove_reference_t<EndIt>;
+			return IterGen<Data,BgnIt,EndIt>{
+				bgnIt, endIt, std::forward<DataArgs>(args)...
 			};
-			auto nextOptT = [bgnIt, endIt, nextT]() mutable {
-				return MakeOpt<T>(bgnIt != endIt, nextT, bgnIt);
+		}
+	template<typename Data=void,
+		typename BgnIt, typename EndIt, typename... DataArgs> constexpr
+		auto MakeIterGen(const BgnIt& bgnIt, EndIt&& endIt,
+			DataArgs&&... args)
+		{
+			using std::remove_reference_t;
+			using TBgnIt = remove_reference_t<BgnIt>;
+			using TEndIt = remove_reference_t<EndIt>;
+			return IterGen<Data,BgnIt,EndIt>{
+				bgnIt, std::move(endIt), std::forward<DataArgs>(args)...
 			};
-			return MakeGen<T>(nextOptT);
+		}
+	template<typename Data=void,
+		typename BgnIt, typename EndIt, typename... DataArgs> constexpr
+		auto MakeIterGen(BgnIt&& bgnIt, const EndIt& endIt,
+			DataArgs&&... args)
+		{
+			using std::remove_reference_t;
+			using TBgnIt = remove_reference_t<BgnIt>;
+			using TEndIt = remove_reference_t<EndIt>;
+			return IterGen<Data,BgnIt,EndIt>{
+				std::move(bgnIt), endIt, std::forward<DataArgs>(args)...
+			};
+		}
+	template<typename Data=void,
+		typename BgnIt, typename EndIt, typename... DataArgs> constexpr
+		auto MakeIterGen(BgnIt&& bgnIt, EndIt&& endIt,
+			DataArgs&&... args)
+		{
+			using std::remove_reference_t;
+			using TBgnIt = remove_reference_t<BgnIt>;
+			using TEndIt = remove_reference_t<EndIt>;
+			return IterGen<Data,BgnIt,EndIt>{
+				std::move(bgnIt), std::move(endIt),
+				std::forward<DataArgs>(args)...
+			};
 		}
 
 	/**
@@ -346,7 +444,11 @@ namespace binon {
 				parentIter(parentGen.begin()),
 				parentGen{std::move(parentGen)},
 				childData{std::forward<ChildArgs>(args)...} {
-					parentIter.mPGen = &this->parentGen;
+					if constexpr(
+						std::is_base_of_v<details::GenRoot, TParentGen>)
+					{
+						parentIter.mPGen = &this->parentGen;
+					}
 				}
 		template<typename Fn>
 			static auto WrapFunctor(Fn functor) {
@@ -384,7 +486,11 @@ namespace binon {
 		ChildGenData(TParentGen parentGen):
 			parentIter{parentGen.begin()},
 			parentGen{std::move(parentGen)} {
-				parentIter.mPGen = &this->parentGen;
+				if constexpr(
+					std::is_base_of_v<details::GenRoot, TParentGen>)
+				{
+					parentIter.mPGen = &this->parentGen;
+				}
 			}
 		template<typename Fn>
 			static auto WrapFunctor(Fn functor) {
