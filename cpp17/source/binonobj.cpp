@@ -15,8 +15,8 @@ namespace binon {
 		-> TSPBinONObj
 	{
 		RequireIO rio{stream, requireIO};
-		auto cb = CodeByte::Read(stream, kSkipRequireIO);
-		auto p = FromCodeByte(cb);
+		CodeByte cb = CodeByte::Read(stream, kSkipRequireIO);
+		TSPBinONObj p = FromCodeByte(cb);
 		if(Subtype(cb) != Subtype::kDefault) {
 			p->decodeData(stream, kSkipRequireIO);
 		}
@@ -74,7 +74,7 @@ namespace binon {
 	}
 	void BinONObj::encode(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
-		auto cb = typeCode();
+		CodeByte cb = typeCode();
 		bool hasDefV = !*this;
 		if(hasDefV) {
 			Subtype{cb} = 0;
@@ -86,7 +86,7 @@ namespace binon {
 	}
 	void BinONObj::decode(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
-		auto cb = CodeByte::Read(stream, kSkipRequireIO);
+		CodeByte cb = CodeByte::Read(stream, kSkipRequireIO);
 		if(cb.typeCode() != typeCode()) {
 			std::ostringstream oss;
 			oss << "expected ";

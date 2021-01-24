@@ -22,9 +22,9 @@ namespace binon {
 		virtual ~Read_mValue() {}
 
 	protected:
-		constexpr auto& subcls() noexcept
+		constexpr auto subcls() noexcept -> Subcls&
 			{ return *static_cast<Subcls*>(this); }
-		constexpr auto& subcls() const noexcept
+		constexpr auto subcls() const noexcept -> const Subcls&
 			{ return *static_cast<const Subcls*>(this); }
 	};
 	template<typename Subcls> struct Read_mValue<Subcls,bool> {
@@ -33,16 +33,16 @@ namespace binon {
 		virtual ~Read_mValue() {}
 
 	protected:
-		constexpr auto& subcls() noexcept
+		constexpr auto subcls() noexcept -> Subcls&
 			{ return *static_cast<Subcls*>(this); }
-		constexpr auto& subcls() const noexcept
+		constexpr auto subcls() const noexcept -> const Subcls&
 			{ return *static_cast<const Subcls*>(this); }
 	};
 
 	template<typename Subcls, typename Value>
 		struct Access_mValue: Read_mValue<Subcls,Value>
 	{
-		constexpr auto& operator = (const Subcls& obj) noexcept
+		constexpr auto operator = (const Subcls& obj) noexcept -> Subcls&
 			{ return subcls().mValue = obj.mValue, subcls(); }
 		constexpr auto hash() const noexcept -> std::size_t {
 				return Hash(
@@ -59,9 +59,9 @@ namespace binon {
 	{
 		constexpr operator Value&&() && noexcept
 			{ return std::move(subcls().mValue); }
-		auto& operator = (const Subcls& obj)
+		auto operator = (const Subcls& obj) -> Subcls&
 			{ return subcls().mValue = obj.mValue, subcls(); }
-		constexpr auto& operator = (Subcls&& obj) noexcept
+		constexpr auto operator = (Subcls&& obj) noexcept -> Subcls&
 			{ return subcls().mValue = std::move(obj.mValue), subcls(); }
 
 	protected:

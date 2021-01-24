@@ -59,9 +59,6 @@ namespace binon {
 		//	true otherwise.
 		explicit virtual operator bool() const noexcept { return false; }
 		
-		//auto operator == (const BinONObj& rhs) const { return equals(rhs); }
-		//auto operator != (const BinONObj& rhs) const { return !equals(rhs); }
-
 		virtual auto typeCode() const noexcept -> CodeByte = 0;
 
 		//	These methods are needed to support BinON objects as dictionary

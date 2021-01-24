@@ -35,11 +35,11 @@ namespace binon {
 	//---- DictBase ------------------------------------------------------------
 
 	auto DictBase::hasKey(const TSPBinONObj& pKey) const -> bool {
-		auto& dct = dict();
+		const TDict& dct = dict();
 		return dct.find(pKey) != dct.end();
 	}
 	auto DictBase::hasValue(const TSPBinONObj& pKey) const -> bool {
-		auto& dct = dict();
+		const TDict& dct = dict();
 		auto iter = dct.find(pKey);
 		return iter != dct.end() && iter->second;
 	}
@@ -75,11 +75,11 @@ namespace binon {
 	auto DictObj::DecodeData(TIStream& stream, bool requireIO) -> TValue {
 		TValue v;
 		RequireIO rio{stream, requireIO};
-		auto keys = ListObj::DecodeData(stream, kSkipRequireIO);
+		TList keys = ListObj::DecodeData(stream, kSkipRequireIO);
 		auto keyIt = keys.begin();
 		auto valsGen = ListObj::DecodedElemsGen(
 			stream, keys.size(), kSkipRequireIO);
-		for(auto val: valsGen) {
+		for(auto&& val: valsGen) {
 			v[*keyIt++] = val;
 		}
 		return std::move(v);

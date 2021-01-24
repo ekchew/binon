@@ -257,8 +257,8 @@ namespace binon {
 			//	and make certain it matches what we are expecting for the
 			//	template data type T.
 			using TWrap = TWrapper<T>;
-			auto expCode = TWrap{}.typeCode();
-			auto actCode = CodeByte::Read(stream, requireIO);
+			CodeByte expCode = TWrap{}.typeCode();
+			CodeByte actCode = CodeByte::Read(stream, requireIO);
 			if(actCode.typeCode() != expCode) {
 				std::ostringstream oss;
 				oss << "expected BinON type code 0x" << AsHex(expCode)
@@ -270,7 +270,7 @@ namespace binon {
 			//	is a special case for when T is either bool or BoolObj. In
 			//	that case, the element data are packed 8 bools to a byte.
 			if constexpr(std::is_same_v<TWrap, BoolObj>) {
-				auto byteCnt = (count + 7u) >> 3;
+				decltype(count) byteCnt = (count + 7u) >> 3;
 				return UnpackedBoolsGen(
 					StreamedBytesGen(stream, byteCnt, requireIO),
 					count);
@@ -300,7 +300,7 @@ namespace binon {
 
 	template<typename Obj, typename... Args>
 	auto ListBase::emplaceBack(Args&&... args) -> TSPBinONObj& {
-		auto& lst = list();
+		TList& lst = list();
 		lst.push_back(
 			std::make_shared<Obj>(std::forward<Args>(args)...));
 		return lst.back();
@@ -313,7 +313,7 @@ namespace binon {
 		TOStream& stream, bool requireIO)
 	{
 		RequireIO rio{stream, requireIO};
-		for(auto&& elem: elemGen) {
+		for(TSPBinONObj& elem: elemGen) {
 			elem->encode(stream, kSkipRequireIO);
 		}
 	}
@@ -399,16 +399,15 @@ namespace binon {
 		auto count = UIntObj::DecodeData(stream, kSkipRequireIO);
 		TCtnr ctnr(count);
 		ctnr.clear();
-		for(auto elem: DecodedElemsGen<TElem>(stream, count, kSkipRequireIO)) {
+		for(T elem: DecodedElemsGen<TElem>(stream, count, kSkipRequireIO)) {
 			ctnr.push_back(std::move(elem));
 		}
 		return std::move(ctnr);
 	}
 	template<typename T, typename Ctnr>
 	SListT<T,Ctnr>::SListT(const SList& sList) {
-		for(auto&& p: sList.mValue.mList) {
-			auto pElem = BinONObj::Cast<TWrap>(p);
-			mValue.push_back(static_cast<T>(pElem->mValue));
+		for(TSPBinONObj& p: sList.mValue.mList) {
+			mValue.push_back(static_cast<T>(BinONObj::Cast<TWrap>(p)->mValue));
 		}
 	}
 	template<typename T, typename Ctnr>
@@ -434,14 +433,14 @@ namespace binon {
 	template<typename T, typename Ctnr>
 	void SListT<T,Ctnr>::printArgsRepr(std::ostream& stream) const {
 		bool first = true;
-		for(auto&& elem: mValue) {
+		for(TElem&& elem: mValue) {
 			if(first) {
 				first = false;
 			}
 			else {
 				stream << ", ";
 			}
-			PrintRepr<TElem>(elem, stream);
+			PrintRepr(elem, stream);
 		}
 	}
 

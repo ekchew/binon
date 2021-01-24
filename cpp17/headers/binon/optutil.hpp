@@ -71,9 +71,9 @@ namespace binon {
 	template<typename T> constexpr
 		auto EqualOpts(
 			const std::optional<T>& optA,
-			const std::optional<T>& optB) noexcept
+			const std::optional<T>& optB) noexcept -> bool
 		{
-			auto hasVal = optA.has_value();
+			bool hasVal = optA.has_value();
 			return hasVal == optB.has_value() && (!hasVal || (
 				static_cast<TUnwrappedRef<const T>>(*optA) ==
 				static_cast<TUnwrappedRef<const T>>(*optB)

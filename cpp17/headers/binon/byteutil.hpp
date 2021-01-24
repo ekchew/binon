@@ -53,7 +53,8 @@ namespace binon {
 	**/
 	template<typename I> constexpr auto ToByte(
 		I i, bool assertRange=BINON_DEBUG
-		) {
+		) -> std::byte
+		{
 			if(	assertRange &&
 				static_cast<std::make_unsigned_t<I>>(i) >= 0x100u)
 			{
@@ -156,7 +157,7 @@ namespace binon {
 			pointing at your serialized word data.
 	**/
 	template<typename Word>
-		auto WriteWord(Word word, std::byte* buffer) noexcept {
+		auto WriteWord(Word word, std::byte* buffer) noexcept -> std::byte* {
 			if constexpr(sizeof word == 1U) {
 				buffer[0] = reinterpret_cast<std::byte&>(word);
 			}

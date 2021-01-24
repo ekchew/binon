@@ -4,32 +4,31 @@
 #include "binonobj.hpp"
 
 namespace binon {
-	
+
 	struct NullDeref: std::out_of_range {
 		using std::out_of_range::out_of_range;
 	}
-	
+
 	template<typename Obj>
 	class BinONPtr {
 		std::shared_ptr<Obj> mSharedPtr;
 	public:
 		using TSharedPtr = decltype(mSharedPtr);
-		
+
 		static auto Cast(const TSPBinONObj& pObj) -> BinONPtr;
 		template<typename... Args>
 			static auto Make(Args&&... args) -> BinONPtr;
-		
+
 		BinONPtr(const TSharedPtr& sharedPtr): noexcept:
 			mSharedPtr{sharedPtr} {}
 		BinONPtr(TSharedPtr&& sharedPtr) noexcept:
 			mSharedPtr{std::move(sharedPtr)} {}
 		BinONPtr() noexcept = default;
-		
-		auto get() const noexcept { return mSharedPtr; }
-		auto get() noexcept { return mSharedPtr; }
-		
-		explicit operator bool() const
-			{ return static_cast<bool>(mSharedPtr); }
+
+		auto get() const noexcept -> const TSharedPtr { return mSharedPtr; }
+		auto get() noexcept -> TSharedPtr { return mSharedPtr; }
+
+		explicit operator bool() const -> bool { return mSharedPtr; }
 		void assertNotNull() const;
 		auto operator * () const -> const Obj&;
 		auto operator * () -> Obj&;
@@ -38,7 +37,7 @@ namespace binon {
 	};
 	
 	//---- IMPLEMENTATION -----------------------------------------------------
-	
+
 	template<typename Obj>
 		auto BinONPtr<Obj>::Cast(const TSPBinONObj& pObj0) -> BinONPtr
 	{

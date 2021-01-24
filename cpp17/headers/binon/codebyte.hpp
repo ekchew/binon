@@ -19,13 +19,13 @@ namespace binon {
 		constexpr CodeByte(std::byte value=0x00_byte) noexcept:
 			mValue{value} {}
 		constexpr operator std::byte() const noexcept {return mValue;}
-		constexpr auto& operator = (std::byte value) noexcept
+		constexpr auto operator = (std::byte value) noexcept -> CodeByte&
 			{ return mValue = value, *this; }
-		template<typename I> constexpr auto toInt() const noexcept
+		template<typename I> constexpr auto toInt() const noexcept -> I
 			{ return std::to_integer<I>(mValue); }
-		constexpr auto baseType() const noexcept
+		constexpr auto baseType() const noexcept -> unsigned int
 			{ return std::to_integer<unsigned int>(mValue >> 4); }
-		constexpr auto subtype() const noexcept
+		constexpr auto subtype() const noexcept -> unsigned int
 			{ return std::to_integer<unsigned int>(mValue & 0x0f_byte); }
 		constexpr auto typeCode() const noexcept -> CodeByte
 			//	A type code uniquely identifies the class of BinON object. It
@@ -62,15 +62,15 @@ namespace binon {
 
 			//	CRTP lets you add extra operators like this without a lot of
 			//	duplication. May add more as the need arises?
-			constexpr auto& operator += (unsigned int i) noexcept
+			constexpr auto operator += (unsigned int i) noexcept -> Subcls&
 				{ auto& sc = subcls(); return sc = sc + i, sc; }
-			constexpr auto& operator -= (unsigned int i) noexcept
+			constexpr auto operator -= (unsigned int i) noexcept -> Subcls&
 				{ auto& sc = subcls(); return sc = sc - i, sc; }
 
 		protected:
 			CodeByte& mCodeByte;
 
-			constexpr auto& subcls() noexcept
+			constexpr auto subcls() noexcept -> Subcls&
 				{ return *static_cast<Subcls*>(this); }
 		};
 
@@ -83,7 +83,7 @@ namespace binon {
 		using details::CodeBaseField<BaseType>::CodeBaseField;
 		constexpr operator unsigned int() const noexcept
 			{ return mCodeByte.toInt<unsigned int>() >> 4; }
-		constexpr auto& operator = (unsigned int value) noexcept
+		constexpr auto operator = (unsigned int value) noexcept -> BaseType&
 			{ return mCodeByte = ToByte(value << 4), *this; }
 	};
 	class Subtype: public details::CodeBaseField<Subtype> {
@@ -97,7 +97,7 @@ namespace binon {
 		using details::CodeBaseField<Subtype>::CodeBaseField;
 		constexpr operator unsigned int() const noexcept
 			{ return mCodeByte.toInt<unsigned int>() & 0x0fu; }
-		constexpr auto& operator = (unsigned int value) noexcept {
+		constexpr auto operator = (unsigned int value) noexcept -> Subtype& {
 				return mCodeByte =
 					mCodeByte     & 0xF0_byte |
 					ToByte(value) & 0x0F_byte, *this;

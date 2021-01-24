@@ -226,9 +226,9 @@ namespace binon {
 				mPGen{&gen} {}
 			explicit operator bool() const noexcept
 				{ return mOptVal.has_value(); }
-			auto operator == (const iterator& rhs) const noexcept
+			auto operator == (const iterator& rhs) const noexcept -> bool
 				{ return EqualOpts(mOptVal, rhs.mOptVal); }
-			auto operator != (const iterator& rhs) const noexcept
+			auto operator != (const iterator& rhs) const noexcept -> bool
 				{ return !EqualOpts(mOptVal, rhs.mOptVal); }
 			auto operator * () & -> reference
 				{ return DerefOpt(mOptVal); }
@@ -300,7 +300,7 @@ namespace binon {
 	template<typename BgnIt, typename EndIt>
 		auto MakeIterGen(BgnIt bgnIt, EndIt endIt) {
 			using T = typename BgnIt::value_type;
-			auto nextT = [](auto& it) {
+			auto nextT = [](decltype(bgnIt)& it) {
 				return *it++;
 			};
 			auto nextOptT = [bgnIt, endIt, nextT]() mutable {
@@ -350,30 +350,25 @@ namespace binon {
 				}
 		template<typename Fn>
 			static auto WrapFunctor(Fn functor) {
-				return [fn = Fn{std::move(functor)}](ChildGenData& cgd) mutable {
+				return [fn = Fn{std::move(functor)}](
+					ChildGenData& cgd) mutable
+				{
 					return fn(
 						cgd.parentGen, cgd.parentIter, cgd.childData);
 				};
 			}
 		template<typename T, typename Fn>
-			static auto IterFunctor(Fn functor) {
-				return [fn = Fn{std::move(functor)}](
-					auto& parGen, auto& parIt, auto& chdData) mutable
-				{
-					return MakeOpt<T>(
-						parIt != parGen.end(), fn, parIt, chdData);
-				};
-			}
-		template<typename T, typename Fn>
 			static auto ValsFunctor(Fn functor) {
 				return [fn = Fn{std::move(functor)}](
-					auto& parGen, auto& parIt, auto& chdData) mutable
-					-> std::optional<T>
+					TParentGen& parGen, TParentIter& parIt, TChildData& chdData
+					) mutable -> std::optional<T>
 				{
 					if(parIt == parGen.end()) {
 						return std::nullopt;
 					}
-					else { return fn(*parIt++, chdData); }
+					else {
+						return std::make_optional<T>(fn(*parIt++, chdData));
+					}
 				};
 			}
 	};
@@ -393,20 +388,22 @@ namespace binon {
 			}
 		template<typename Fn>
 			static auto WrapFunctor(Fn functor) {
-				return [fn = Fn{std::move(functor)}](ChildGenData& cgd) mutable {
+				return [fn = Fn{std::move(functor)}](
+					ChildGenData& cgd) mutable
+				{
 					return fn(cgd.parentGen, cgd.parentIter);
 				};
 			}
 		template<typename T, typename Fn>
 			static auto ValsFunctor(Fn functor) {
 				return [fn = Fn{std::move(functor)}](
-					auto& parGen, auto& parIt) mutable
+					TParentGen& parGen, TParentIter& parIt) mutable
 					-> std::optional<T>
 				{
 					if(parIt == parGen.end()) {
 						return std::nullopt;
 					}
-					else { return fn(*parIt++); }
+					else { return std::make_optional<T>(fn(*parIt++)); }
 				};
 			}
 	};
