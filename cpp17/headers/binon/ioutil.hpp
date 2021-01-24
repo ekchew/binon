@@ -152,17 +152,15 @@ namespace binon {
 	inline auto StreamedBytesGen(TIStream& stream, std::size_t count,
 		bool requireIO=true)
 		{
-			auto nextByte = [&stream](decltype(count)& n) {
+			auto nextByte = [&stream]() {
 				TStreamByte byt;
 				stream.read(&byt, 1u);
-				--n;
 				return reinterpret_cast<std::byte&>(byt);
 			};
-			auto nextOptByte = [count, nextByte](RequireIO&) mutable {
-				return MakeOpt<std::byte>(count > 0u, nextByte, count);
-			};
 			return MakeGen<std::byte, RequireIO>(
-				std::move(nextOptByte), stream, requireIO);
+				[count, sb=std::move(nextByte)](RequireIO&) mutable {
+					return MakeOpt<std::byte>(count-->0u, sb);
+				}, stream, requireIO);
 		}
 }
 

@@ -53,24 +53,16 @@ namespace binon {
 		using TVal = TSPBinONObj;
 		RequireIO rio{stream, requireIO};
 		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
-		auto nextKey = [](auto& it) {
-				auto key = it->first;
-				return ++it, key;
-			};
-		auto nextVal = [](auto& it) {
-				auto val = it->second;
-				return ++it, val;
-			};
-		auto keysGen = MakeGen<TKey>(
-			[it = v.begin(), endIt = v.end(), nextKey]() mutable {
-				return MakeOpt<TKey>(it != endIt, nextKey, it);
-			});
-		auto valsGen = MakeGen<TVal>(
-			[it = v.begin(), endIt = v.end(), nextVal]() mutable {
-				return MakeOpt<TVal>(it != endIt, nextVal, it);
-			});
-		ListObj::EncodeElems(keysGen, stream, kSkipRequireIO);
-		ListObj::EncodeElems(valsGen, stream, kSkipRequireIO);
+		ListObj::EncodeElems(
+			PipeGenRefs<TSPBinONObj>(
+				IterGen{v.begin(), v.end()},
+				[](auto& kv) { return kv.first; }
+			), stream, kSkipRequireIO);
+		ListObj::EncodeElems(
+			PipeGenRefs<TSPBinONObj>(
+				IterGen{v.begin(), v.end()},
+				[](auto& kv) { return kv.second; }
+			), stream, kSkipRequireIO);
 	}
 	auto DictObj::DecodeData(TIStream& stream, bool requireIO) -> TValue {
 		TValue v;
@@ -112,12 +104,11 @@ namespace binon {
 		}
 		keys.encodeData(stream, kSkipRequireIO);
 
-		auto nextVal = [](auto& it) { return (*it++).second; };
-		auto valsGen = MakeGen<TSPBinONObj>(
-			[it=v.mDict.begin(), endIt=v.mDict.end(), nextVal]() mutable {
-				return MakeOpt<TSPBinONObj>(it != endIt, nextVal, it);
-			});
-		ListObj::EncodeElems(valsGen, stream, kSkipRequireIO);
+		ListObj::EncodeElems(
+			PipeGenRefs<TSPBinONObj>(
+				IterGen{v.mDict.begin(), v.mDict.end()},
+				[](auto& kv) { return kv.second; }
+			), stream, kSkipRequireIO);
 	}
 	auto SKDict::DecodeData(TIStream& stream, bool requireIO) -> TValue {
 		RequireIO rio{stream, requireIO};

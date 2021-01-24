@@ -299,21 +299,17 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
 
-		auto nextOptKey = [&v, it=v.begin()]() mutable {
-			return MakeOpt<TKeyRW>(it != v.end(),
-				[&it]() -> TKeyRW {
-					return const_cast<TKey&>((*it++).first);
-				});
-		};
-		EncodeElems<TKey>(MakeGen<TKeyRW>(
-			std::move(nextOptKey)), stream, kSkipRequireIO);
+		EncodeElems<TKey>(
+			PipeGenRefs<TKeyRW>(
+				IterGen{v.begin(), v.end()},
+				[](auto& kv) -> TKeyRW { return const_cast<TKey&>(kv.first); }
+			), stream, kSkipRequireIO);
 
-		auto nextOptVal = [&v, it=v.begin()]() mutable {
-			return MakeOpt<TSPBinONObj>(it != v.end(),
-				[&it]() { return (*it++).second; });
-		};
 		ListObj::EncodeElems(
-			MakeGen<TSPBinONObj>(nextOptVal), stream, kSkipRequireIO);
+			PipeGenRefs<TSPBinONObj>(
+				IterGen{v.begin(), v.end()},
+				[](auto& kv) { return kv.second; }
+			), stream, kSkipRequireIO);
 	}
 	template<typename K, typename Ctnr>
 	auto SKDictT<K,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
@@ -420,23 +416,17 @@ namespace binon {
 		RequireIO rio{stream, requireIO};
 		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
 
-		auto nextOptKey = [&v, it=v.begin()]() mutable {
-			return MakeOpt<TKeyRW>(it != v.end(),
-				[&it]() -> TKeyRW {
-					return const_cast<TKey&>((*it++).first);
-				});
-		};
-		EncodeElems<TKeyRW>(
-			MakeGen<TKeyRW>(nextOptKey), stream, kSkipRequireIO);
+		EncodeElems<TKey>(
+			PipeGenRefs<TKeyRW>(
+				IterGen{v.begin(), v.end()},
+				[](auto& kv) -> TKeyRW { return const_cast<TKey&>(kv.first); }
+			), stream, kSkipRequireIO);
 
-		auto nextOptVal = [&v, it=v.begin()]() mutable {
-			return MakeOpt<TValRW>(it != v.end(),
-				[&it]() -> TValRW {
-					return const_cast<TVal&>((*it++).second);
-				});
-		};
-		EncodeElems<TValRW>(
-			MakeGen<TValRW>(nextOptVal), stream, kSkipRequireIO);
+		EncodeElems<TVal>(
+			PipeGenRefs<TValRW>(
+				IterGen{v.begin(), v.end()},
+				[](auto& kv) -> TValRW { return const_cast<TVal&>(kv.second); }
+			), stream, kSkipRequireIO);
 	}
 	template<typename K, typename V, typename Ctnr>
 	auto SDictT<K,V,Ctnr>::DecodeData(TIStream& stream, bool requireIO)

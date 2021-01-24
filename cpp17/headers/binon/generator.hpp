@@ -23,9 +23,15 @@ namespace binon {
 		Data (type): see Generator
 		Fn (type): see Generator
 	**/
-	namespace details { struct GenRoot{}; }
+	namespace details {
+		//	GenBase is not actually the absolute base class of Generator, as it
+		//	has a trivial parent class GenType. GenType is not a template, which
+		//	makes it easy to check if a given type T is actually a Generator, as
+		//	is done in a few internal "if constexpr" statements here and there.
+		class GenType{};
+	}
 	template<typename T, typename Data, typename Fn>
-	struct GenBase: details::GenRoot {
+	struct GenBase: details::GenType {
 		static_assert(
 			std::is_same_v<
 				std::invoke_result_t<Fn, Data&>, std::optional<T>
@@ -81,7 +87,7 @@ namespace binon {
 		auto callFunctor() -> std::optional<T> { return mFunctor(mData); }
 	};
 	template<typename T, typename Fn>
-	struct GenBase<T, void, Fn>: details::GenRoot {
+	struct GenBase<T, void, Fn>: details::GenType {
 		static_assert(
 			std::is_same_v<
 				std::invoke_result_t<Fn>, std::optional<T>
@@ -104,7 +110,8 @@ namespace binon {
 
 	A Generator is an iterable class built around a functor you supply that
 	returns a series of values over multiple calls. Unless you know what you're
-	doing, you will want to call MakeGen to instantiate this class.
+	doing, you will want to call MakeGen (or another helper function like
+	PipeGen) to instantiate this class.
 
 	In its simpler form, the functor would look like this:
 
@@ -204,6 +211,11 @@ namespace binon {
 		avoid a needless copy with:
 
 			auto myStr = *std::move(myIt);
+
+		(Implementation Note: iterator is smart about std::reference_wrapper.
+		If your TValue is a wrapper, it will unwrap it and give you a plain
+		L-value reference when you dereference the iterator. This should
+		eliminate any drama when you use the -> operator, for example.)
 		**/
 		struct iterator {
 			using iterator_category = std::input_iterator_tag;
@@ -375,7 +387,7 @@ namespace binon {
 				parentGen{std::move(parentGen)},
 				childData{std::forward<ChildArgs>(args)...} {
 					if constexpr(
-						std::is_base_of_v<details::GenRoot, TParentGen>)
+						std::is_base_of_v<details::GenType, TParentGen>)
 					{
 						parentIter.mPGen = &this->parentGen;
 					}
@@ -435,7 +447,7 @@ namespace binon {
 			parentIter{parentGen.begin()},
 			parentGen{std::move(parentGen)} {
 				if constexpr(
-					std::is_base_of_v<details::GenRoot, TParentGen>)
+					std::is_base_of_v<details::GenType, TParentGen>)
 				{
 					parentIter.mPGen = &this->parentGen;
 				}
@@ -451,18 +463,26 @@ namespace binon {
 			}
 		template<typename T, typename Fn>
 			static auto ValsFunctor(Fn&& functor) {
-				using TFn = std::remove_reference_t<Fn>;
-				return [fn = TFn{std::forward<Fn>(functor)}](
-					TParentGen& parGen, TParentIter& parIt) mutable
-					-> std::optional<T>
+				if constexpr(
+					std::is_base_of_v<details::GenType, TParentGen>)
 				{
-					if(parIt == parGen.end()) {
-						return std::nullopt;
-					}
-					else {
-						return std::make_optional<T>(fn(*std::move(parIt)++));
-					}
-				};
+					using TFn = std::remove_reference_t<Fn>;
+					return [fn = TFn{std::forward<Fn>(functor)}](
+						TParentGen& parGen, TParentIter& parIt) mutable
+						-> std::optional<T>
+					{
+						if(parIt == parGen.end()) {
+							return std::nullopt;
+						}
+						else {
+							return std::make_optional<T>(
+								fn(*std::move(parIt)++));
+						}
+					};
+				}
+				else {
+					return RefsFunctor<T,Fn>(std::forward<Fn>(functor));
+				}
 			}
 		template<typename T, typename Fn>
 			static auto RefsFunctor(Fn&& functor) {

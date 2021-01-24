@@ -36,13 +36,10 @@ namespace binon {
 		static auto DecodedElemsGen(
 			TIStream& stream, TValue::size_type count, bool requireIO=true) {
 				return MakeGen<TSPBinONObj,RequireIO>(
-					[&stream, count](RequireIO&) mutable
-						-> std::optional<TSPBinONObj>
-					{
-						return MakeOpt<TSPBinONObj>(count--,
-							[&stream] {
-								return Decode(stream, kSkipRequireIO);
-							});
+					[&stream, count](RequireIO&) mutable {
+						return MakeOpt<TSPBinONObj>(
+							count-->0u,
+							Decode, stream, kSkipRequireIO);
 					},
 					stream, requireIO);
 			}
@@ -279,15 +276,12 @@ namespace binon {
 
 				//	Otherwise, we need a single generator that decodes the
 				//	data for each element one at a time.
-				auto nextOptT = [&stream, count](RequireIO&) mutable {
-					return MakeOpt<T>(
-						count-->0u,
-						[&stream] {
-							return TWrap::DecodeData(stream, kSkipRequireIO);
-						});
-				};
 				return MakeGen<T, RequireIO>(
-					std::move(nextOptT), stream, requireIO);
+					[&stream, count](RequireIO&) mutable {
+						return MakeOpt<T>(
+							count-->0u,
+							TWrap::DecodeData, stream, kSkipRequireIO);
+					}, stream, requireIO);
 			}
 		}
 
