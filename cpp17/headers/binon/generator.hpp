@@ -39,16 +39,17 @@ namespace binon {
 		GenBase's constructor is exposed by Generator.
 
 		Template Args:
-			DataArgs (types): inferred from dataArgs constructor args
+			TFn (inferred)
+			DataArgs (inferred)
 
 		Args:
-			functor (Fn): your functor
+			functor (TFn): your functor
 			dataArgs... (DataArgs...): args to initialize a Data instance
 				Clearly, these only make sense if your Data type is not void.
 		**/
-		template<typename... DataArgs>
-			GenBase(Fn functor, DataArgs&&... dataArgs):
-				mFunctor{std::move(functor)},
+		template<typename TFn, typename... DataArgs>
+			GenBase(TFn&& functor, DataArgs&&... dataArgs):
+				mFunctor{std::forward<TFn>(functor)},
 				mData{std::forward<DataArgs>(dataArgs)...} {}
 
 		/**
@@ -88,7 +89,9 @@ namespace binon {
 			"Generator functor must take the form: std::optional<T> fn()"
 			);
 
-		GenBase(Fn functor) noexcept: mFunctor{std::move(functor)} {}
+		template<typename TFn>
+			GenBase(TFn&& functor) noexcept:
+				mFunctor{std::forward<TFn>(functor)} {}
 
 	protected:
 		Fn mFunctor;
@@ -100,26 +103,26 @@ namespace binon {
 	Generator class template
 
 	A Generator is an iterable class built around a functor you supply that
-	returns a series of values over multiple calls. In its simplest form, the
-	functor would look like this:
+	returns a series of values over multiple calls. Unless you know what you're
+	doing, you will want to call MakeGen to instantiate this class.
+
+	In its simpler form, the functor would look like this:
 
 		std::optional<T> myFunctor();
 
-	It would return values wrapped in std::optional until it runs out. At that
-	point, it would return std::nullopt instead (or a default-constructed
-	std::optional<T>{} if you prefer).
+	It would return optional T values until they are exhausted, at which point
+	it would return the null option.
 
-	The above form applies when the Data template argument is set to void (as it
-	is by default when you call the MakeGen helper function). If you set
-	the Data type to something other than void, Generator will store an internal
-	instance of that type and pass it to your functor by reference.
+	The above form applies when the Data template argument is set to the default
+	void. If you set it to something other than void, Generator will store an
+	internal instance of that type and pass it to your functor by reference.
 
 		std::optional<T> myFunctor(Data& data); // for non-void Data type
 
 	Example 1: Print integers from 1 to 5
 		Functors are typically implemented as lambda functions. This example
-		demonstrates one way that you could have a variable that changes every
-		time your lambda gets called: in this case, the integer counter i. We
+		demonstrates one way you could have a variable that changes every time
+		your lambda gets called: in this case, the integer counter i. We
 		capture i in mutable form into the lambda.
 
 		Source:
@@ -139,17 +142,17 @@ namespace binon {
 			5
 
 	Example 2: Same thing, but use Generator data to hold counter
-		This time, we tell MakeGen to store an int (1st template arg) we
+		This time, we tell MakeGen to store an int (2nd template arg) we
 		initialize to 0 (2nd function arg). Then an int& is supplied to the
 		functor and we can increment it as in the first example.
 
-		At the end, you can see that it is also possible to access your Data
-		value externally by dereferencing your generator as though it were a
-		pointer. (If your Data type were a struct{int i;}, you could also access
-		the i data member with gen->i.)
+		One advantage of having the Generator store your data is that you can
+		access it externally (not just from within your functor) by using the
+		* operator (or -> if your Data type is a struct). Here we see that i
+		climbs all the way to 6 by the time the iteration loop ends.
 
 		Source:
-			auto gen = binon::MakeGen<int>(
+			auto gen = binon::MakeGen<int, int>(
 				[](int& i) {
 					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
 				}, 0);
@@ -202,10 +205,8 @@ namespace binon {
 		std::optional<...>::value method docs for more info on the exception.)
 
 		Note that Generator does not currently supply any const methods and
-		therefore does not define a const_iterator class. Within the binon
-		codebase, generators yield elements by value and there has been no need
-		to protect the source from modification. The class may be expanded to
-		include a const_iterator at some point should the need arise.
+		therefore does not define a const_iterator class. This may eventually
+		be supported.
 
 		The * operator does, however, support move semantics. Let's say your
 		generator was yielding std::string objects. You could write
@@ -255,9 +256,8 @@ namespace binon {
 	/**
 	MakeGen function template
 
-	This helper function is essentially the same as instantiating a Generator by
-	constructor except that it supplies a default value for the Data template
-	argument: void
+	Builds a Generator instance around the type it yields and a functor you
+	supply (plus any extra data for your functor if you request it).
 
 	Template Args:
 		T (type, required): the value type the generator produces
@@ -277,16 +277,41 @@ namespace binon {
 		typename T, typename Data=void,
 		typename Fn, typename... DataArgs
 		>
-		auto MakeGen(Fn functor, DataArgs&&... dataArgs)
-			-> Generator<T,Data,Fn> {
-				return Generator<T,Data,Fn>{
-					std::move(functor), std::forward<DataArgs>(dataArgs)...};
-			}
+		auto MakeGen(Fn&& functor, DataArgs&&... dataArgs) {
+			return Generator<T,Data,std::remove_reference_t<Fn>>{
+				std::forward<Fn>(functor),
+				std::forward<DataArgs>(dataArgs)...};
+		}
 
 	/**
-	MakeIterGen function template
+	IterGen class template
 
-	This function wraps a Generator around a begin/end iterator pair.
+	This class simply builds a Generator-like object around a begin/end iterator
+	pair you supply. You typically used it for the parent class when you want to
+	call PipeGen/PipeGenVals with the parent being some sort of container.
+
+	You could pass the container instance itself into PipeGen, but this may
+	cause PipeGen to copy the entire container into the local storage of the
+	returned Generator (unless you use move semantics). IterGen only contains an
+	iterator pair, so it should be much lighter-weight than a container.
+
+	Example:
+		Say you wanted a Generator that square every element in a
+		std::vector<int>.
+
+		Source:
+			std::vector<int> v = {1, 2, 3};
+			auto squared = binon::PipeGenVals<int>(
+				binon::IterGen{v.begin(), v.end()},
+				[](int i) { return i * i; });
+			for(int i: squared) {
+				std::cout << i << '\n';
+			}
+
+		Output:
+			1
+			4
+			9
 
 	Template Args:
 		BgnIt (type, inferred)
@@ -299,55 +324,12 @@ namespace binon {
 	Returns:
 		Generator of BgnIt::value_type
 	**/
-	template<typename Data, typename BgnIt, typename EndIt>
+	template<typename BgnIt, typename EndIt>
 	struct IterGen {
 		using TBgnIt = BgnIt;
 		using TEndIt = EndIt;
-		using TData = Data;
 		using iterator = TBgnIt;
-		template<typename... DataArgs> constexpr
-			IterGen(const BgnIt& bgnIt, const EndIt& endIt, DataArgs&&... args)
-				noexcept: mBgnIt{bgnIt}, mEndIt{endIt},
-				mData{std::forward<DataArgs>(args)...} {}
-		template<typename... DataArgs> constexpr
-			IterGen(const BgnIt& bgnIt, EndIt&& endIt, DataArgs&&... args)
-				noexcept: mBgnIt{bgnIt}, mEndIt{std::move(endIt)},
-				mData{std::forward<DataArgs>(args)...} {}
-		template<typename... DataArgs> constexpr
-			IterGen(BgnIt&& bgnIt, const EndIt& endIt, DataArgs&&... args)
-				noexcept: mBgnIt{std::move(bgnIt)}, mEndIt{endIt},
-				mData{std::forward<DataArgs>(args)...} {}
-		template<typename... DataArgs> constexpr
-			IterGen(BgnIt&& bgnIt, EndIt&& endIt, DataArgs&&... args)
-				noexcept: mBgnIt{std::move(bgnIt)}, mEndIt{std::move(endIt)},
-				mData{std::forward<DataArgs>(args)...} {}
-		constexpr auto begin() -> TBgnIt& { return mBgnIt; }
-		constexpr auto begin() const -> const TBgnIt& { return mBgnIt; }
-		constexpr auto end() -> TEndIt& { return mEndIt; }
-		constexpr auto end() const -> const TEndIt& { return mEndIt; }
-		constexpr auto operator * () & -> TData& { return mData; }
-		constexpr auto operator * () const& -> const TData& { return mData; }
-		constexpr auto operator * () && -> TData { return std::move(mData); }
-		constexpr auto operator -> () -> TData* { return &mData; }
-		constexpr auto operator -> () const -> const TData* { return &mData; }
-	private:
-		TBgnIt mBgnIt;
-		TEndIt mEndIt;
-		TData mData;
-	};
-	template<typename BgnIt, typename EndIt>
-	struct IterGen<void,BgnIt,EndIt> {
-		using TBgnIt = BgnIt;
-		using TEndIt = EndIt;
-		using TData = void;
-		using iterator = TBgnIt;
-		IterGen(const BgnIt& bgnIt, const EndIt& endIt) noexcept:
-			mBgnIt{bgnIt}, mEndIt{endIt} {}
-		IterGen(const BgnIt& bgnIt, EndIt&& endIt) noexcept:
-			mBgnIt{bgnIt}, mEndIt{std::move(endIt)} {}
-		IterGen(BgnIt&& bgnIt, const EndIt& endIt) noexcept:
-			mBgnIt{std::move(bgnIt)}, mEndIt{endIt} {}
-		IterGen(BgnIt&& bgnIt, EndIt&& endIt) noexcept:
+		IterGen(BgnIt bgnIt, EndIt endIt) noexcept:
 			mBgnIt{std::move(bgnIt)}, mEndIt{std::move(endIt)} {}
 		constexpr auto begin() -> TBgnIt& { return mBgnIt; }
 		constexpr auto begin() const -> const TBgnIt& { return mBgnIt; }
@@ -357,61 +339,12 @@ namespace binon {
 		TBgnIt mBgnIt;
 		TEndIt mEndIt;
 	};
-	template<typename Data=void,
-		typename BgnIt, typename EndIt, typename... DataArgs> constexpr
-		auto MakeIterGen(const BgnIt& bgnIt, const EndIt& endIt,
-			DataArgs&&... args)
-		{
-			using std::remove_reference_t;
-			using TBgnIt = remove_reference_t<BgnIt>;
-			using TEndIt = remove_reference_t<EndIt>;
-			return IterGen<Data,BgnIt,EndIt>{
-				bgnIt, endIt, std::forward<DataArgs>(args)...
-			};
-		}
-	template<typename Data=void,
-		typename BgnIt, typename EndIt, typename... DataArgs> constexpr
-		auto MakeIterGen(const BgnIt& bgnIt, EndIt&& endIt,
-			DataArgs&&... args)
-		{
-			using std::remove_reference_t;
-			using TBgnIt = remove_reference_t<BgnIt>;
-			using TEndIt = remove_reference_t<EndIt>;
-			return IterGen<Data,BgnIt,EndIt>{
-				bgnIt, std::move(endIt), std::forward<DataArgs>(args)...
-			};
-		}
-	template<typename Data=void,
-		typename BgnIt, typename EndIt, typename... DataArgs> constexpr
-		auto MakeIterGen(BgnIt&& bgnIt, const EndIt& endIt,
-			DataArgs&&... args)
-		{
-			using std::remove_reference_t;
-			using TBgnIt = remove_reference_t<BgnIt>;
-			using TEndIt = remove_reference_t<EndIt>;
-			return IterGen<Data,BgnIt,EndIt>{
-				std::move(bgnIt), endIt, std::forward<DataArgs>(args)...
-			};
-		}
-	template<typename Data=void,
-		typename BgnIt, typename EndIt, typename... DataArgs> constexpr
-		auto MakeIterGen(BgnIt&& bgnIt, EndIt&& endIt,
-			DataArgs&&... args)
-		{
-			using std::remove_reference_t;
-			using TBgnIt = remove_reference_t<BgnIt>;
-			using TEndIt = remove_reference_t<EndIt>;
-			return IterGen<Data,BgnIt,EndIt>{
-				std::move(bgnIt), std::move(endIt),
-				std::forward<DataArgs>(args)...
-			};
-		}
 
 	/**
 	ChildGenData struct template
 
-	This is the Generator Data type used in conjunction with the PipeGen
-	function template.
+	This is the child Generator Data type used in conjunction with PipeGen and
+	PipeGenVals.
 
 	Template Args:
 		ParentGen (type, required): parent Generator type
@@ -518,54 +451,17 @@ namespace binon {
 	PipeGen function template
 
 	Often with generators you want to pipe the output of one into the input of
-	another. This function can help you with that.
+	another. This function can help you with that by returning a new "child"
+	Generator that takes its input from a "parent".
 
-	Note that PipeGen incorporates all the data representing the parent
-	Generator into the child, so that the child object can then be passed around
-	without worries about the parent vanishing (e.g. because its declaration
-	goes out of scope). This may be overkill, though, if you are defining and
-	consuming all your Generators in the same function. In any case, it's good
-	form to move (rather than copy) the parent into the child in case the parent
-	has some heavy-weight data structures it uses internally.
+	Note that PipeGen stores a full instance of the parent generator within the
+	child. That way, you shouldn't normally need to worry about the parent being
+	destructed before the child is done with it. But in some cases, this can be
+	a bit of overkill. You may be iterating a container of some sort and do not
+	want all the container data copied into the child generator. In that case,
+	you can use an IterGen instance built from the container is the parent.
 
-	Example:
-		Taking the example from earlier under the Generator class template,
-		let's say we want the int-counting Generator to feed its output to one
-		that yields the square root of anything you hand it. We'll call the
-		former gen1 and the latter gen2.
-
-		gen1 is the parent generator that is piped to gen2 by calling PipeGen.
-		Note that while gen1 can technically stand alone, gen2 needs gen1 in its
-		definition because an instance of gen1 is saved within gen2's data.
-
-		gen2's functor takes a minimum of 2 arguments: a reference to gen1 and a
-		reference to a gen1 iterator marking where you are within the parent
-		generator. You would typically compare this iterator to gen1.end()
-		before dereferencing it.
-
-		Source:
-			auto gen1 = binon::MakeGen<int>(
-				[i = 0]() mutable {
-					return ++i, binon::MakeOpt<int>(i <= 5, [i] { return i; });
-				});
-			auto gen2 = binon::PipeGen<double>(
-				std::move(gen1),
-				[](auto& gen1, auto& gen1_it) {
-					return binon::MakeOpt<double>(
-						gen1_it != gen1.end(),
-						[&gen1_it] { return std::sqrt(*gen1_it++); }
-						);
-				});
-			for(auto x: gen2) {
-				std::cout << x << '\n';
-			}
-
-		Output:
-			1
-			1.41421
-			1.73205
-			2
-			2.23607
+	See also PipeGenVals.
 
 	Template Args:
 		ChildT (type, required): value type child Generator produces
@@ -578,17 +474,9 @@ namespace binon {
 		ChildArgs (type, inferred)
 
 	Args:
-		gen (ParentGen): instance of the parent Generator
-			Since the child generator will store its own instance of the parent
-			Generator (within its ChildGenData structure), and in most cases any
-			parent Generator instance won't be needed anymore once it has been
-			incorporated into the child, you may want to move the parent into
-			the child rather than copy it, as in the above example. (Here, since
-			these trivial example Generators do not carry around any big
-			containers, it doesn't really matter, but it's good form. By the
-			way, if you can think of why it is a good idea to encapsulate the
-			parent into the child rather than say just store a pointer to it,
-			you get a gold star!)
+		gen (ParentGen): instance of the parent generator
+			ParentGen need not necessarily be an instance of Generator. Pretty
+			much any input iterable type should work here.
 		functor (Fn):
 			There are 2 possible forms for this functor:
 				std::optional<ChildT>
@@ -597,8 +485,8 @@ namespace binon {
 					fn(ParentGen&, ParentGen::iterator&, ChildData&)
 			The second form applies if you set the ChildData template argument
 			to something other than the default void. You could also reach this
-			externally with myChildGen->childData. (The parent Generator's data
-			would be at *myChildGen->parentGen.
+			externally with myChildGen->childData. (The parent Generator's data,
+			if available, would be at *myChildGen->parentGen.)
 		args (ChildArgs): extra args to initialize ChildData
 	**/
 	template<
@@ -623,6 +511,8 @@ namespace binon {
 	output is exhausted. It is therefore useful when you simply want to filter
 	the parent's output in some way, since there is a one-to-one correspondence
 	between the values the parent and child yield.
+
+	See IterGen for a simple usage example.
 
 	Template Args:
 		ChildT (type, required): value type child Generator produces

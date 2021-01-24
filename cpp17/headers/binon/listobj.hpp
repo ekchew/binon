@@ -390,7 +390,7 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
-		EncodeElems<T>(MakeIterGen(v.begin(), v.end()), stream, kSkipRequireIO);
+		EncodeElems<T>(IterGen{v.begin(), v.end()}, stream, kSkipRequireIO);
 	}
 	template<typename T, typename Ctnr>
 	auto SListT<T,Ctnr>::DecodeData(TIStream& stream, bool requireIO) -> TCtnr

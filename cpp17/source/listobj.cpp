@@ -45,9 +45,7 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
-		EncodeElems(
-			MakeIterGen(v.begin(), v.end()),
-			stream, kSkipRequireIO);
+		EncodeElems(IterGen{v.begin(), v.end()}, stream, kSkipRequireIO);
 	}
 	auto ListObj::DecodeData(TIStream& stream, bool requireIO) -> TValue {
 		RequireIO rio{stream, requireIO};
@@ -114,7 +112,7 @@ namespace binon {
 		//	them 8 to a byte before writing them to the stream.
 		if(v.mElemCode.baseType() == kBoolObjCode.baseType()) {
 			StreamBytes(
-				PackedBoolsGen(MakeIterGen(v.mList.begin(), v.mList.end())),
+				PackedBoolsGen(IterGen{v.mList.begin(), v.mList.end()}),
 				stream, kSkipRequireIO);
 		}
 		else {
@@ -137,7 +135,7 @@ namespace binon {
 		auto pBaseObj = FromCodeByte(elemCode);
 
 		//	Read data of all elements consecutively.
-		
+
 		TValue v{elemCode, TList(count)};
 		if(v.mElemCode.baseType() == kBoolObjCode.baseType()) {
 

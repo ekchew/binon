@@ -312,7 +312,7 @@ namespace binon {
 		}
 	template<typename BoolIt, typename EndIt>
 		auto PackedBoolsGen(BoolIt boolIt, EndIt endIt) {
-			return PackedBoolsGen(MakeIterGen(boolIt, endIt));
+			return PackedBoolsGen(IterGen{boolIt, endIt});
 		}
 
 	/**
