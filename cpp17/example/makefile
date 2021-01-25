@@ -11,7 +11,7 @@ CPP17_DIR := ${BINON_DIR}/cpp17
 HEADERS_DIR := ${CPP17_DIR}/headers
 
 BASE_FLAGS := -c -I${HEADERS_DIR} ${CMN_FLAGS}
-LD_FLAGS := -L/usr/local/lib #-ltbb
+LD_FLAGS := #-L/usr/local/lib -ltbb
 
 all: debug release
 
@@ -24,6 +24,7 @@ release: ${CPP17_DIR}/makefile
 		REL_FLAGS="${REL_FLAGS}" CMN_FLAGS=${CMN_FLAGS} release
 	${MAKE} DEST_DIR="build/release" FLAGS="${BASE_FLAGS} ${REL_FLAGS}" target
 clean:
+	${MAKE} -C ${CPP17_DIR} clean
 	rm -rfv build
 
 #	If this makefile is modified, trigger binon to rebuild by touching its
@@ -33,12 +34,13 @@ ${CPP17_DIR}/makefile: makefile
 	touch ${CPP17_DIR}/makefile
 
 target:
-	${MAKE} TEST_DIR=${DEST_DIR}/bin ${DEST_DIR}/bin
-	${MAKE} TEST_DIR=${DEST_DIR}/obj ${DEST_DIR}/obj
+	${MAKE} PROD_DIR=${DEST_DIR}/bin ${DEST_DIR}/bin
+	${MAKE} PROD_DIR=${DEST_DIR}/obj ${DEST_DIR}/obj
 	${MAKE} ${DEST_DIR}/bin/example
 
-${TEST_DIR}:
-	mkdir -p ${TEST_DIR}
+#	Make sure build product directory exists.
+${PROD_DIR}:
+	mkdir -p ${PROD_DIR}
 
 SRC_NAMES := example
 OBJ := ${DEST_DIR}/obj/
@@ -46,9 +48,9 @@ OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
 LIBBINON := ${CPP17_DIR}/${DEST_DIR}/lib/libbinon.a
 
-${DEST_DIR}/bin/example: ${OBJS}
-	${CXX} ${OBJS}  ${LIBBINON} ${LD_FLAGS} ${LD_TGT_FLAGS} \
-	-o ${DEST_DIR}/bin/example
+${DEST_DIR}/bin/example: ${OBJS} ${LIBBINON}
+	${CXX} ${OBJS} ${LIBBINON} ${LD_FLAGS} ${LD_TGT_FLAGS} \
+		-o ${DEST_DIR}/bin/example
 
-${OBJ}example.o: example.cpp makefile ${LIBBINON}
+${OBJ}example.o: example.cpp makefile ${HEADERS_DIR}/binon/binon.hpp
 	${CXX} ${FLAGS} example.cpp -o ${OBJ}example.o

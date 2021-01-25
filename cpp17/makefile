@@ -41,7 +41,6 @@ OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
 
 ${DEST_DIR}/lib/libbinon.a: ${OBJS}
-	touch ${HDR}binon.hpp
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
 DEP0 := \
@@ -72,6 +71,8 @@ DEP4 := \
 	${HDR}nullobj.hpp \
 	${HDR}strobj.hpp \
 	${DEP3}
+${HDR}/binon.hpp: ${DEP4}
+	touch ${HDR}/binon.hpp
 
 ${OBJ}binonobj.o: ${SRC}binonobj.cpp ${DEP4}
 	${CXX} ${FLAGS} ${SRC}binonobj.cpp -o ${OBJ}binonobj.o
