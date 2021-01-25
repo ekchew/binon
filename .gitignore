@@ -1,1 +1,3 @@
-test.py
+.envrc
+.direnv/
+__pycache__/

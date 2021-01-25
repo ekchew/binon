@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from docgen_src import context
+
 import argparse, os, re, sys
 from pathlib import Path
 
@@ -74,4 +76,3 @@ if __name__ == "__main__":
 	except Exception as err:
 		print("ERROR:", err, file=sys.stderr)
 		sys.exit(1)
-
