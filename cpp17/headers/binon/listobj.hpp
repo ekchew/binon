@@ -198,13 +198,27 @@ namespace binon {
 			{ return mValue.size() != 0; }
 		auto typeCode() const noexcept -> CodeByte final
 			{ return kSListCode; }
-		auto begin() { return mValue.begin(); }
-		auto end() { return mValue.end(); }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept -> std::string override;
 		void printArgsRepr(std::ostream& stream) const override;
+
+		//---- TCtnr API -------------------------------------------------------
+
+		using value_type = typename TCtnr::value_type;
+		using size_type = typename TCtnr::size_type;
+		auto begin() noexcept { return mValue.begin(); }
+		auto begin() const noexcept { return mValue.begin(); }
+		void clear() noexcept { mValue.clear(); }
+		template<typename... Args>
+			auto& emplace_back(Args&&... args)
+			{ return mValue.emplace_back(std::forward<Args>(args)...); }
+		auto end() noexcept { return mValue.end(); }
+		auto end() const noexcept { return mValue.end(); }
+		void push_back(const value_type& v) { mValue.push_back(v); }
+		void push_back(value_type&& v) { mValue.push_back(std::move(v)); }
+		auto size() const noexcept { return mValue.size(); }
 	};
 
 	//---- Low-Level Support Functions -----------------------------------------

@@ -190,14 +190,36 @@ namespace binon {
 		operator TCtnr&() noexcept;
 		operator const TCtnr&() const noexcept;
 		explicit operator bool() const noexcept override;
-		auto begin() { return mValue.begin(); }
-		auto end() { return mValue.end(); }
 		auto typeCode() const noexcept -> CodeByte final;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept -> std::string override;
 		void printArgsRepr(std::ostream& stream) const override;
+
+		//---- TCtnr API -------------------------------------------------------
+
+		using key_type = typename TCtnr::key_type;
+		using mapped_type = typename TCtnr::mapped_type;
+		using value_type = typename TCtnr::value_type;
+		using size_type = typename TCtnr::size_type;
+		template<typename Obj=BinONObj>
+			auto at(const key_type& key) -> Obj& {
+				return *BinONObj::Cast<TWrapper<Obj>>(mValue.at(key));
+			}
+		template<typename Obj=BinONObj>
+			auto at(const key_type& key) const -> const Obj& {
+				return const_cast<SKDictT*>(this)->at<Obj>(key);
+			}
+		const auto& at(const key_type& key) const { return mValue.at(key); }
+		auto begin() noexcept { return mValue.begin(); }
+		auto begin() const noexcept { return mValue.begin(); }
+		void clear() noexcept { mValue.clear(); }
+		auto contains(const key_type& key) const
+			{ return mValue.find(key) != end(); }
+		auto end() noexcept { return mValue.end(); }
+		auto end() const noexcept { return mValue.end(); }
+		auto size() const noexcept { return mValue.size(); }
 	};
 
 	template<
@@ -229,14 +251,28 @@ namespace binon {
 		operator TCtnr&() noexcept;
 		operator const TCtnr&() const noexcept;
 		explicit operator bool() const noexcept override;
-		auto begin() { return mValue.begin(); }
-		auto end() { return mValue.end(); }
 		auto typeCode() const noexcept -> CodeByte final;
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
 		auto clsName() const noexcept -> std::string override;
 		void printArgsRepr(std::ostream& stream) const override;
+
+		//---- TCtnr API -------------------------------------------------------
+
+		using key_type = typename TCtnr::key_type;
+		using mapped_type = typename TCtnr::mapped_type;
+		using value_type = typename TCtnr::value_type;
+		using size_type = typename TCtnr::size_type;
+		auto& at(const key_type& key) { return mValue.at(key); }
+		const auto& at(const key_type& key) const { return mValue.at(key); }
+		auto begin() noexcept { return mValue.begin(); }
+		auto begin() const noexcept { return mValue.begin(); }
+		void clear() noexcept { mValue.clear(); }
+		auto contains(const key_type& key) const { return find(key) != end(); }
+		auto end() noexcept { return mValue.end(); }
+		auto end() const noexcept { return mValue.end(); }
+		auto size() const noexcept { return mValue.size(); }
 	};
 
 	//==== Template Implementation =============================================
