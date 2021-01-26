@@ -178,10 +178,13 @@ namespace binon {
 
 	Template Args:
 		T (type, required): value type emitted by Generator
+			Type-defined to TValue and value_type.
 		Data (type, required): optional extra data for functor
+			Type-defined to TData.
 			Set to void if your functor needs no extra data. (See also
 			MakeGen function template.)
 		Fn (type, inferred):
+			Type-defined to TFunctor.
 			Takes one of 2 forms:
 				std::optional<T> fn()
 				std::optional<T> fn(Data&)
@@ -251,7 +254,19 @@ namespace binon {
 
 		using GenBase<T,Data,Fn>::GenBase;
 
+		/**
+		begin method
+
+		Returns:
+			iterator
+		**/
 		auto begin() -> iterator { return ++iterator{*this}; }
+		/**
+		end method
+
+		Returns:
+			iterator: stores std::null_opt internally
+		**/
 		auto end() -> iterator { return iterator{*this}; }
 	};
 
@@ -323,8 +338,8 @@ namespace binon {
 			9
 
 	Template Args:
-		BgnIt (type, inferred)
-		EndIt (type, inferred)
+		BgnIt (type, inferred): type-defined to TBgnIt
+		EndIt (type, inferred): type-defined to TEndIt
 
 	Args:
 		bgnIt (BgnIt): begin iterator
@@ -361,8 +376,11 @@ namespace binon {
 
 	Type Definitions:
 		TParentGen: ParentGen
+			Type-defined to TParentGen.
 		TChildData: ChildData
+			Type-defined to TChildData.
 		TParentIter: ParentGen::iterator
+			Type-defined to TParentIter.
 
 	Data Members:
 		parentGen (TParentGen): instance of the parent generator
@@ -381,6 +399,19 @@ namespace binon {
 		TParentGen parentGen;
 		TChildData childData;
 
+		/**
+		constructor
+
+		Template Args:
+			ChildArgs (types, inferred)
+
+		Args:
+			parentGen (TParentGen): parent generator
+				Technically, this can be any input iterable type, but if it's
+				not a Generator, read up on IterGen as it may be a suitable
+				alternative.
+			args (ChildArgs): init args for ChildData type if not void
+		**/
 		template<typename... ChildArgs>
 			ChildGenData(TParentGen parentGen, ChildArgs&&... args):
 				parentIter(parentGen.begin()),
@@ -392,6 +423,23 @@ namespace binon {
 						parentIter.mPGen = &this->parentGen;
 					}
 				}
+
+		/**
+		WrapFunctor class method template
+
+		What PipeGen's functor expects and what the Generator it returns tries
+		to give it are not quite the same thing. WrapFunctor returns a functor
+		that smooths over these differences.
+
+		Template Args:
+			Fn (type, inferred)
+
+		Args:
+			functor (Fn): the functor given to PipeGen
+
+		Returns:
+			functor: the functor PipeGen assigns to the Generator it returns
+		**/
 		template<typename Fn>
 			static auto WrapFunctor(Fn&& functor) {
 				using TFn = std::remove_reference_t<Fn>;
@@ -402,6 +450,7 @@ namespace binon {
 						cgd.parentGen, cgd.parentIter, cgd.childData);
 				};
 			}
+
 		template<typename T, typename Fn>
 			static auto ValsFunctor(Fn&& functor) {
 				using TFn = std::remove_reference_t<Fn>;
