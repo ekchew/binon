@@ -45,10 +45,10 @@ namespace binon {
 		//	By default, Assert is true only in debug builds.
 		//
 		template<typename Subcls, bool Assert=BINON_DEBUG>
-			auto Cast(TSPBinONObj& p)
+			static auto Cast(TSPBinONObj& p)
 				-> std::shared_ptr<Subcls>;
 		template<typename Subcls, bool Assert=BINON_DEBUG>
-			auto Cast(const TSPBinONObj& p)
+			static auto Cast(const TSPBinONObj& p)
 				-> const std::shared_ptr<Subcls>;
 
 		static auto Decode(TIStream& stream, bool requireIO=true)
