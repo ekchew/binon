@@ -15,7 +15,7 @@ namespace binon {
 		TValue mValue;
 
 		StrObj(const char* cStr): mValue{cStr} {}
-		StrObj(const std::string_view& sv): mValue{sv} {}
+		StrObj(const std::string_view& sv): mValue(sv.begin(), sv.end()) {}
 		StrObj(const TValue& v): mValue{v} {}
 		StrObj(TValue&& v) noexcept: mValue{std::move(v)} {}
 		StrObj() noexcept = default;
