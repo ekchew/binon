@@ -15,9 +15,11 @@ namespace binon {
 	template<typename Subcls, typename Value> struct Read_mValue {
 		using TValue = Value;
 
-		constexpr operator const Value&() const noexcept
+		constexpr operator Value&() & noexcept
 			{ return subcls().mValue; }
-		constexpr operator Value&() noexcept
+		constexpr operator Value&&() && noexcept
+			{ return std::move(subcls().mValue); }
+		constexpr operator const Value&() const& noexcept
 			{ return subcls().mValue; }
 		virtual ~Read_mValue() {}
 
@@ -57,8 +59,6 @@ namespace binon {
 	template<typename Subcls, typename Value>
 		struct AccessContainer_mValue: Read_mValue<Subcls,Value>
 	{
-		constexpr operator Value&&() && noexcept
-			{ return std::move(subcls().mValue); }
 		auto operator = (const Subcls& obj) -> Subcls&
 			{ return subcls().mValue = obj.mValue, subcls(); }
 		constexpr auto operator = (Subcls&& obj) noexcept -> Subcls&

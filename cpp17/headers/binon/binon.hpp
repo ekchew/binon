@@ -21,6 +21,7 @@
 #include "macros.hpp"
 #include "nullobj.hpp"
 #include "optutil.hpp"
+#include "pbinonobjt.hpp"
 #include "refutil.hpp"
 #include "strobj.hpp"
 

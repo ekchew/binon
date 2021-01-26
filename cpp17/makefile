@@ -4,6 +4,7 @@ REL_FLAGS ?= -O2
 CMN_FLAGS ?= -std=c++17
 
 BASE_FLAGS := -c -Iheaders ${CMN_FLAGS}
+HDR := headers/binon/
 
 all: debug release
 
@@ -19,10 +20,9 @@ target:
 	${MAKE} TEST_DIR=${DEST_DIR}/lib ${DEST_DIR}/lib
 	${MAKE} ${DEST_DIR}/lib/libbinon.a
 
-${TEST_DIR}:
+${TEST_DIR}: ${HDR}/binon.hpp
 	mkdir -p ${TEST_DIR}
 
-HDR := headers/binon/
 SRC := source/
 SRC_NAMES := \
 	boolobj \
@@ -71,7 +71,10 @@ DEP4 := \
 	${HDR}nullobj.hpp \
 	${HDR}strobj.hpp \
 	${DEP3}
-${HDR}/binon.hpp: ${DEP4}
+DEP5 := \
+	${HDR}pbinonobjt.hpp \
+	${DEP4}
+${HDR}/binon.hpp: ${DEP5}
 	touch ${HDR}/binon.hpp
 
 ${OBJ}binonobj.o: ${SRC}binonobj.cpp ${DEP4}

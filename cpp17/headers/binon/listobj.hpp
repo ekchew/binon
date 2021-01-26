@@ -53,6 +53,7 @@ namespace binon {
 			{ return mValue.size() != 0; }
 		auto list() noexcept -> TList& final { return mValue; }
 		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
+		void pushBack(TSPBinONObj& pObj) { mValue.push_back(pObj); }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
