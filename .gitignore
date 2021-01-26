@@ -1,3 +1,5 @@
 .envrc
 .direnv/
 __pycache__/
+test*.*
+test/
