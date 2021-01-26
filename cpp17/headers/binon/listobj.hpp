@@ -416,7 +416,7 @@ namespace binon {
 	}
 	template<typename T, typename Ctnr>
 	SListT<T,Ctnr>::SListT(const SList& sList) {
-		for(TSPBinONObj& p: sList.mValue.mList) {
+		for(auto& p: sList.mValue.mList) {
 			mValue.push_back(static_cast<T>(BinONObj::Cast<TWrap>(p)->mValue));
 		}
 	}
