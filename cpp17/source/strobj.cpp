@@ -2,6 +2,12 @@
 #include "binon/intobj.hpp"
 
 namespace binon {
+	void StrObjVal::makeString() {
+		if(!isString()) {
+			auto& sv = std::get<1>(mVariant);
+			mVariant = std::string(sv.begin(), sv.end());
+		}
+	}
 
 	void StrObj::EncodeData(
 		const TValue& v, TOStream& stream, bool requireIO)
