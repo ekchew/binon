@@ -15,6 +15,7 @@
 #include "floatobj.hpp"
 #include "floattypes.hpp"
 #include "generator.hpp"
+#include "hystr.hpp"
 #include "intobj.hpp"
 #include "listobj.hpp"
 #include "literals.hpp"

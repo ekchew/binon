@@ -65,6 +65,7 @@ DEP4 := \
 	${HDR}boolobj.hpp \
 	${HDR}bufferobj.hpp \
 	${HDR}dictobj.hpp \
+	${HDR}hystr.hpp \
 	${HDR}intobj.hpp \
 	${HDR}floatobj.hpp \
 	${HDR}listobj.hpp \
@@ -98,5 +99,6 @@ ${OBJ}ioutil.o: ${SRC}ioutil.cpp ${HDR}ioutil.hpp ${DEP0}
 	${CXX} ${FLAGS} ${SRC}ioutil.cpp -o ${OBJ}ioutil.o
 ${OBJ}listobj.o: ${SRC}listobj.cpp ${DEP4}
 	${CXX} ${FLAGS} ${SRC}listobj.cpp -o ${OBJ}listobj.o
-${OBJ}strobj.o: ${SRC}strobj.cpp ${HDR}strobj.hpp ${HDR}intobj.hpp ${DEP3}
+${OBJ}strobj.o: ${SRC}strobj.cpp ${HDR}strobj.hpp \
+	${HDR}hystr.hpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}strobj.cpp -o ${OBJ}strobj.o
