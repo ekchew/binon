@@ -45,11 +45,8 @@ namespace binon {
 		//	By default, Assert is true only in debug builds.
 		//
 		template<typename Subcls, bool Assert=BINON_DEBUG>
-			static auto Cast(TSPBinONObj& p)
-				-> std::shared_ptr<Subcls>;
-		template<typename Subcls, bool Assert=BINON_DEBUG>
 			static auto Cast(const TSPBinONObj& p)
-				-> const std::shared_ptr<Subcls>;
+				-> std::shared_ptr<Subcls>;
 
 		static auto Decode(TIStream& stream, bool requireIO=true)
 			-> TSPBinONObj;
@@ -93,7 +90,7 @@ namespace binon {
 	//---- Template Implementation ---------------------------------------------
 
 	template<typename Subcls, bool Assert>
-	auto BinONObj::Cast(TSPBinONObj& p)
+	auto BinONObj::Cast(const TSPBinONObj& p)
 		-> std::shared_ptr<Subcls>
 	{
 		std::shared_ptr<Subcls> pSubcls;
@@ -111,12 +108,6 @@ namespace binon {
 			pSubcls = std::static_pointer_cast<Subcls>(p);
 		}
 		return pSubcls;
-	}
-	template<typename Subcls, bool Assert>
-	auto BinONObj::Cast(const TSPBinONObj& p)
-		-> const std::shared_ptr<Subcls>
-	{
-		return Cast<Subcls,Assert>(const_cast<TSPBinONObj&>(p));
 	}
 }
 

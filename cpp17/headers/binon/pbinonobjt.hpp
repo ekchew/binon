@@ -121,8 +121,7 @@ namespace binon {
 				PBinONObjT<TVal> or const PBinONObjT<TVal>:
 					Returns the const form if pObj was const.
 			**/
-			static auto FromPObj(TSPBinONObj& pObj) -> PBinONObjT;
-			static auto FromPObj(const TSPBinONObj& pObj) -> const PBinONObjT;
+			static auto FromPObj(const TSPBinONObj& pObj) -> PBinONObjT;
 
 			//---- Public Instance Methods -------------------------------------
 
@@ -230,14 +229,8 @@ namespace binon {
 			return {std::make_shared<TObj>(std::forward<Args>(args)...)};
 		}
 	template<typename T>
-		auto PBinONObjT<T>::FromPObj(TSPBinONObj& pObj) -> PBinONObjT {
+		auto PBinONObjT<T>::FromPObj(const TSPBinONObj& pObj) -> PBinONObjT {
 			return {BinONObj::Cast<TObj>(pObj)};
-		}
-	template<typename T>
-		auto PBinONObjT<T>::FromPObj(const TSPBinONObj& pObj)
-			-> const PBinONObjT
-		{
-			return FromPObj(const_cast<TSPBinONObj&>(pObj));
 		}
 	template<typename T>
 		PBinONObjT<T>::operator bool() const {
