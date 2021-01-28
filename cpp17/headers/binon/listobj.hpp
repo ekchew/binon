@@ -388,6 +388,14 @@ namespace binon {
 		using Wrapper = StrObj;
 		static auto TypeName() -> std::string { return "string"; }
 	};
+	template<> struct TypeInfo<std::string_view> {
+		using Wrapper = StrObj;
+		static auto TypeName() -> std::string { return "string"; }
+	};
+	template<> struct TypeInfo<StrObj::TValue> {
+		using Wrapper = StrObj;
+		static auto TypeName() -> std::string { return "string"; }
+	};
 	template<> struct TypeInfo<TBuffer> {
 		using Wrapper = BufferObj;
 		static auto TypeName() -> std::string { return "TBuffer"; }
