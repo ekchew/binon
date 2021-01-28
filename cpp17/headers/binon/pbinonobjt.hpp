@@ -6,6 +6,28 @@
 namespace binon {
 
 	/**
+	PBinONObj class
+
+	This is the abstract base class of PBinONObjT. It lets you access the
+	latter's shared pointer as a generic TSPBinONObj to any type of BinONObj.
+	**/
+	struct PBinONObj {
+
+		/**
+		getBasePtr method
+
+		Returns:
+			TSPBinONObj: the pointer from the PBinONObjT subclass
+		**/
+		virtual auto getBasePtr() noexcept -> TSPBinONObj = 0;
+		auto getBasePtr() const noexcept -> const TSPBinONObj {
+				return const_cast<PBinONObj*>(this)->getBasePtr();
+			}
+
+		virtual ~PBinONObj() = default;
+	};
+
+	/**
 	PBinONObjT class template
 
 	When you are dealing with a container of variable element types (e.g.
@@ -57,7 +79,7 @@ namespace binon {
 		mPObj (TPObj): dynamically allocated BinON object
 	**/
 	template<typename T>
-		struct PBinONObjT {
+		struct PBinONObjT: PBinONObj {
 
 			//---- Type Definitions --------------------------------------------
 
@@ -101,10 +123,6 @@ namespace binon {
 			**/
 			static auto FromPObj(TSPBinONObj& pObj) -> PBinONObjT;
 			static auto FromPObj(const TSPBinONObj& pObj) -> const PBinONObjT;
-
-			//---- Data Members ------------------------------------------------
-
-			TPObj mPObj;
 
 			//---- Public Instance Methods -------------------------------------
 
@@ -190,8 +208,14 @@ namespace binon {
 			**/
 			template<typename... Args>
 				void emplaceVal(Args&&... args);
+			
+			auto getBasePtr() noexcept -> TSPBinONObj final { return mPObj; }
 
 		private:
+
+			//---- Data Members ------------------------------------------------
+
+			TPObj mPObj;
 
 			//---- Private Instance Methods ------------------------------------
 
