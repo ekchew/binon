@@ -125,6 +125,8 @@ namespace binon {
 
 			//---- Public Instance Methods -------------------------------------
 
+			PBinONObjT(const TPObj& pObj) noexcept;
+
 			/**
 			operator bool method
 
@@ -231,6 +233,11 @@ namespace binon {
 	template<typename T>
 		auto PBinONObjT<T>::FromPObj(const TSPBinONObj& pObj) -> PBinONObjT {
 			return {BinONObj::Cast<TObj>(pObj)};
+		}
+	template<typename T>
+		PBinONObjT<T>::PBinONObjT(const TPObj& pObj) noexcept:
+			mPObj{pObj}
+		{
 		}
 	template<typename T>
 		PBinONObjT<T>::operator bool() const {
