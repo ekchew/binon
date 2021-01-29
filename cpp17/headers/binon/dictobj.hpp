@@ -204,15 +204,13 @@ namespace binon {
 		using mapped_type = typename TCtnr::mapped_type;
 		using value_type = typename TCtnr::value_type;
 		using size_type = typename TCtnr::size_type;
-		template<typename Obj=BinONObj>
-			auto at(const key_type& key) -> Obj& {
-				return *BinONObj::Cast<TWrapper<Obj>>(mValue.at(key));
-			}
-		template<typename Obj=BinONObj>
-			auto at(const key_type& key) const -> const Obj& {
-				return const_cast<SKDictT*>(this)->at<Obj>(key);
-			}
+		auto& operator [] (const key_type& key) { return mValue[key]; }
+		auto operator [] (const key_type& key) const -> const mapped_type&;
 		const auto& at(const key_type& key) const { return mValue.at(key); }
+		template<typename TVal>
+			auto at(const key_type& key) -> TVal&;
+		template<typename TVal>
+			auto at(const key_type& key) const -> const TVal&;
 		auto begin() noexcept { return mValue.begin(); }
 		auto begin() const noexcept { return mValue.begin(); }
 		void clear() noexcept { mValue.clear(); }
@@ -266,9 +264,7 @@ namespace binon {
 		using value_type = typename TCtnr::value_type;
 		using size_type = typename TCtnr::size_type;
 		auto& operator [] (const key_type& key) { return mValue[key]; }
-		const auto& operator [] (const key_type& key) const {
-				return mValue[key];
-			}
+		auto operator [] (const key_type& key) const -> const mapped_type&;
 		auto& at(const key_type& key) { return mValue.at(key); }
 		const auto& at(const key_type& key) const { return mValue.at(key); }
 		auto begin() noexcept { return mValue.begin(); }
@@ -451,6 +447,22 @@ namespace binon {
 			stream << '}';
 		}
 	}
+	template<typename K, typename Ctnr>
+		auto SKDictT<K,Ctnr>::operator [] (const key_type& key) const
+			-> const mapped_type&
+		{
+			return BINON_IF_DBG_REL(mValue.at(key), mValue[key]);
+		}
+	template<typename K, typename Ctnr>
+	template<typename TVal>
+		auto SKDictT<K,Ctnr>::at(const key_type& key) -> TVal& {
+			return *BinONObj::Cast<TWrapper<TVal>>(mValue.at(key));
+		}
+	template<typename K, typename Ctnr>
+	template<typename TVal>
+		auto SKDictT<K,Ctnr>::at(const key_type& key) const -> const TVal& {
+			return const_cast<SKDictT*>(this)->at<TVal>(key);
+		}
 
 	//---- SDictT --------------------------------------------------------------
 
@@ -561,6 +573,12 @@ namespace binon {
 			stream << '}';
 		}
 	}
+	template<typename K, typename V, typename Ctnr>
+		auto SDictT<K,V,Ctnr>::operator [] (const key_type& key) const
+			-> const mapped_type&
+		{
+			return BINON_IF_DBG_REL(mValue.at(key), mValue[key]);
+		}
 }
 
 #endif
