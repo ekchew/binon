@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <sstream>
+#include <type_traits>
 
 namespace binon {
 
@@ -191,14 +192,6 @@ namespace binon {
 		operator const TCtnr&() const noexcept;
 		explicit operator bool() const noexcept override;
 		auto typeCode() const noexcept -> CodeByte final;
-		template<typename Obj=BinONObj>
-			auto val(const typename TCtnr::key_type& key) -> Obj& {
-				return *BinONObj::Cast<TWrapper<Obj>>(mValue[key]);
-			}
-		template<typename Obj=BinONObj>
-			auto val(const typename TCtnr::key_type& key) const -> const Obj& {
-				return *BinONObj::Cast<TWrapper<Obj>>(mValue[key]);
-			}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
