@@ -192,11 +192,11 @@ namespace binon {
 		explicit operator bool() const noexcept override;
 		auto typeCode() const noexcept -> CodeByte final;
 		template<typename Obj=BinONObj>
-			auto val(const key_type& key) -> Obj& {
+			auto val(const typename TCtnr::key_type& key) -> Obj& {
 				return *BinONObj::Cast<TWrapper<Obj>>(mValue[key]);
 			}
 		template<typename Obj=BinONObj>
-			auto val(const key_type& key) const -> const Obj& {
+			auto val(const typename TCtnr::key_type& key) const -> const Obj& {
 				return *BinONObj::Cast<TWrapper<Obj>>(mValue[key]);
 			}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
