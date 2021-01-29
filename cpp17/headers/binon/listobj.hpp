@@ -53,7 +53,6 @@ namespace binon {
 			{ return mValue.size() != 0; }
 		auto list() noexcept -> TList& final { return mValue; }
 		auto typeCode() const noexcept -> CodeByte final {return kListObjCode;}
-		void pushBack(TSPBinONObj& pObj) { mValue.push_back(pObj); }
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
@@ -61,6 +60,25 @@ namespace binon {
 			{ return "ListObj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ PrintTListRepr(mValue, stream); }
+
+		using value_type = TValue::value_type;
+		using size_type = TValue::size_type;
+		auto& operator [] (size_type i)
+			{ return BINON_IF_DBG_REL(mValue.at(i), mValue[i]); }
+		const auto& operator [] (size_type i) const
+			{ return const_cast<ListObj&>(*this)[i]; }
+		template<typename TObj> auto obj(size_type i) -> TObj&;
+		auto begin() noexcept { return mValue.begin(); }
+		auto begin() const noexcept { return mValue.begin(); }
+		void clear() noexcept { mValue.clear(); }
+		template<typename... Args>
+			auto& emplace_back(Args&&... args)
+			{ return mValue.emplace_back(std::forward<Args>(args)...); }
+		auto end() noexcept { return mValue.end(); }
+		auto end() const noexcept { return mValue.end(); }
+		void push_back(const value_type& v) { mValue.push_back(v); }
+		void push_back(value_type&& v) { mValue.push_back(std::move(v)); }
+		auto size() const noexcept { return mValue.size(); }
 	};
 
 	struct SListVal {
@@ -209,6 +227,10 @@ namespace binon {
 
 		using value_type = typename TCtnr::value_type;
 		using size_type = typename TCtnr::size_type;
+		auto& operator [] (size_type i)
+			{ return BINON_IF_DBG_REL(mValue.at(i), mValue[i]); }
+		const auto& operator [] (size_type i) const
+			{ return const_cast<SListT&>(*this)[i]; }
 		auto begin() noexcept { return mValue.begin(); }
 		auto begin() const noexcept { return mValue.begin(); }
 		void clear() noexcept { mValue.clear(); }
@@ -320,14 +342,24 @@ namespace binon {
 	//---- ListObj ------------------------------------------------------------
 
 	template<typename ElemGen>
-	void ListObj::EncodeElems(ElemGen elemGen,
-		TOStream& stream, bool requireIO)
-	{
-		RequireIO rio{stream, requireIO};
-		for(auto& elem: elemGen) {
-			elem->encode(stream, kSkipRequireIO);
+		void ListObj::EncodeElems(ElemGen elemGen,
+			TOStream& stream, bool requireIO)
+		{
+			RequireIO rio{stream, requireIO};
+			for(auto& elem: elemGen) {
+				elem->encode(stream, kSkipRequireIO);
+			}
 		}
-	}
+	template<typename TObj>
+		auto ListObj::obj(size_type i) -> TObj& {
+			std::shared_ptr<TObj> pObj;
+			auto& pBaseObj = (*this)[i];
+			pObj = std::dynamic_pointer_cast<TObj>(pBaseObj);
+			if(!pObj) {
+				pBaseObj = pObj = std::make_shared<TObj>();
+			}
+			return *pObj;
+		}
 
 	//---- TypeInfo specializations -------------------------------------------
 

@@ -108,6 +108,21 @@ namespace binon {
 				static auto Make(Args&&... args) -> PBinONObjT;
 
 			/**
+			IsType class method
+
+			Args:
+				pObj (const TSPBinONObj): shared pointer to BinONObj
+
+			Returns:
+				bool: true if pObj is of the right type for PBinONObjT
+					If IsType() returns true, you should be able to call
+					FromPObj() safely without an exception. IsType() will return
+					false either if pObj is unallocated or is of a different
+					type from the one appropriate to PBinONObjT's template arg.
+			**/
+			static auto IsType(const TSPBinONObj& pObj) noexcept -> bool;
+
+			/**
 			FromPObj class method
 
 			Calling FromPObj is the easiest way to wrap a PBinONObjT around a
@@ -229,6 +244,10 @@ namespace binon {
 	template<typename... Args>
 		auto PBinONObjT<T>::Make(Args&&... args) -> PBinONObjT {
 			return {std::make_shared<TObj>(std::forward<Args>(args)...)};
+		}
+	template<typename T>
+		auto PBinONObjT<T>::IsType(const TSPBinONObj& pObj) noexcept -> bool {
+			return std::dynamic_pointer_cast<TObj>(pObj) != nullptr;
 		}
 	template<typename T>
 		auto PBinONObjT<T>::FromPObj(const TSPBinONObj& pObj) -> PBinONObjT {

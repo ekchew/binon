@@ -166,6 +166,9 @@ namespace binon {
 		void printArgsRepr(std::ostream& stream) const override;
 	};
 
+	/**
+	
+	**/
 	template<
 		typename K,
 		typename Ctnr = std::unordered_map<K,TSPBinONObj>
@@ -206,11 +209,13 @@ namespace binon {
 		using size_type = typename TCtnr::size_type;
 		auto& operator [] (const key_type& key) { return mValue[key]; }
 		auto operator [] (const key_type& key) const -> const mapped_type&;
+		template<typename TObj>
+			auto obj(const key_type& key) -> TObj&;
 		const auto& at(const key_type& key) const { return mValue.at(key); }
-		template<typename TVal>
-			auto at(const key_type& key) -> TVal&;
-		template<typename TVal>
-			auto at(const key_type& key) const -> const TVal&;
+		template<typename TObj>
+			auto objAt(const key_type& key) -> TObj&;
+		template<typename TObj>
+			auto objAt(const key_type& key) const -> const TObj&;
 		auto begin() noexcept { return mValue.begin(); }
 		auto begin() const noexcept { return mValue.begin(); }
 		void clear() noexcept { mValue.clear(); }
@@ -454,14 +459,31 @@ namespace binon {
 			return BINON_IF_DBG_REL(mValue.at(key), mValue[key]);
 		}
 	template<typename K, typename Ctnr>
-	template<typename TVal>
-		auto SKDictT<K,Ctnr>::at(const key_type& key) -> TVal& {
-			return *BinONObj::Cast<TWrapper<TVal>>(mValue.at(key));
+	template<typename TObj>
+		auto SKDictT<K,Ctnr>::obj(const key_type& key) -> TObj& {
+			std::shared_ptr<TObj> pObj;
+			auto it = mValue.find(key);
+			if(it == mValue.end()) {
+				pObj = std::make_shared<TObj>();
+				mValue.insert(it, std::make_pair(key, pObj));
+			}
+			else {
+				pObj = std::dynamic_pointer_cast<TObj>(it->second);
+				if(!pObj) {
+					it->second = pObj = std::make_shared<TObj>();
+				}
+			}
+			return *pObj;
 		}
 	template<typename K, typename Ctnr>
-	template<typename TVal>
-		auto SKDictT<K,Ctnr>::at(const key_type& key) const -> const TVal& {
-			return const_cast<SKDictT*>(this)->at<TVal>(key);
+	template<typename TObj>
+		auto SKDictT<K,Ctnr>::objAt(const key_type& key) -> TObj& {
+			return *BinONObj::Cast<TObj>(mValue.at(key));
+		}
+	template<typename K, typename Ctnr>
+	template<typename TObj>
+		auto SKDictT<K,Ctnr>::objAt(const key_type& key) const -> const TObj& {
+			return const_cast<SKDictT*>(this)->objAt<TObj>(key);
 		}
 
 	//---- SDictT --------------------------------------------------------------
