@@ -191,6 +191,14 @@ namespace binon {
 		operator const TCtnr&() const noexcept;
 		explicit operator bool() const noexcept override;
 		auto typeCode() const noexcept -> CodeByte final;
+		template<typename Obj=BinONObj>
+			auto val(const key_type& key) -> Obj& {
+				return *BinONObj::Cast<TWrapper<Obj>>(mValue[key]);
+			}
+		template<typename Obj=BinONObj>
+			auto val(const key_type& key) const -> const Obj& {
+				return *BinONObj::Cast<TWrapper<Obj>>(mValue[key]);
+			}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
 		void decodeData(TIStream& stream, bool requireIO=true) final;
 		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
@@ -264,6 +272,10 @@ namespace binon {
 		using mapped_type = typename TCtnr::mapped_type;
 		using value_type = typename TCtnr::value_type;
 		using size_type = typename TCtnr::size_type;
+		auto& operator [] (const key_type& key) { return mValue[key]; }
+		const auto& operator [] (const key_type& key) const {
+				return mValue[key];
+			}
 		auto& at(const key_type& key) { return mValue.at(key); }
 		const auto& at(const key_type& key) const { return mValue.at(key); }
 		auto begin() noexcept { return mValue.begin(); }
