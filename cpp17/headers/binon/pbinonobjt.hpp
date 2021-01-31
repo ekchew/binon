@@ -159,7 +159,7 @@ namespace binon {
 				Args (types, inferred)
 
 			Args:
-				pObj (TSPBinONObj&): an L-value std::shared_ptr<BinONObj>
+				pObj (TSPBinONObj&): a std::shared_ptr<BinONObj> L-value
 				args (Args, optional): args to initialize a new TObj
 
 			Returns:
@@ -168,6 +168,24 @@ namespace binon {
 			template<typename... Args>
 				static auto Emplace(TSPBinONObj& pObj, Args&&... args)
 					-> PBinONObjT;
+
+			/**
+			Assign class method
+
+			This method works like Emplace() except you give it a fully-formed
+			TObj instance.
+
+			Args:
+				pObj (TSPBinONObj&): an std::shared_ptr<BinONObj> L-value
+				obj (TObj): a TObj instance
+
+			Returns:
+				PBinONObjT<TVal>: a new PBinONObjT wrapping pObj
+			**/
+			static auto Assign(TSPBinONObj& pObj, const TObj& obj)
+				-> PBinONObjT;
+			static auto Assign(TSPBinONObj& pObj, TObj&& obj)
+				-> PBinONObjT;
 
 			//---- Public Instance Methods -------------------------------------
 
@@ -289,13 +307,45 @@ namespace binon {
 		auto PBinONObjT<T>::Emplace(TSPBinONObj& pObj, Args&&... args)
 			-> PBinONObjT
 		{
+			using std::forward;
 			auto p = std::dynamic_pointer_cast<TObj>(pObj);
 			if(p) {
-				*p = TObj(std::forward<Args>(args)...);
+				*p = TObj(forward<Args>(args)...);
 				return PBinONObjT{p};
 			}
 			else {
-				auto pObjT = Make(std::forward<Args>(args)...);
+				auto pObjT = Make(forward<Args>(args)...);
+				pObj = pObjT;
+				return pObjT;
+			}
+		}
+	template<typename T>
+		auto PBinONObjT<T>::Assign(TSPBinONObj& pObj, const TObj& obj)
+			-> PBinONObjT
+		{
+			auto p = std::dynamic_pointer_cast<TObj>(pObj);
+			if(p) {
+				*p = obj;
+				return PBinONObjT{p};
+			}
+			else {
+				auto pObjT = Make(obj);
+				pObj = pObjT;
+				return pObjT;
+			}
+		}
+	template<typename T>
+		auto PBinONObjT<T>::Assign(TSPBinONObj& pObj, TObj&& obj)
+			-> PBinONObjT
+		{
+			using std::move;
+			auto p = std::dynamic_pointer_cast<TObj>(pObj);
+			if(p) {
+				*p = move(obj);
+				return PBinONObjT{p};
+			}
+			else {
+				auto pObjT = Make(move(obj));
 				pObj = pObjT;
 				return pObjT;
 			}
