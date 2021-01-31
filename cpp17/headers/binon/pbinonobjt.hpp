@@ -99,7 +99,7 @@ namespace binon {
 				Args (types, inferred)
 
 			Args:
-				args (Args, optional): args used to initialize a new TVal
+				args (Args, optional): args used to initialize a new TObj
 
 			Returns:
 				PBinONObjT<TVal>
@@ -125,8 +125,10 @@ namespace binon {
 			/**
 			FromPObj class method
 
-			Calling FromPObj is the easiest way to wrap a PBinONObjT around a
-			TSPBinONObj you have decoded.
+			Calling FromPObj wraps a PBinONObjT around a TSPBinONObj you have
+			decoded. You must have chosen the correct data type for your
+			PBinONObjT to avoid a TypeErr exception. You can call IsType() to
+			check first if you like.
 
 			Args:
 				pObj (TSPBinONObj or const TSPBinONObj):
@@ -135,8 +137,37 @@ namespace binon {
 			Returns:
 				PBinONObjT<TVal> or const PBinONObjT<TVal>:
 					Returns the const form if pObj was const.
+			
+			Throws:
+				binon::NullDeref: if pObj is a null pointer
+				binon::TypeErr: if pObj points to a different object type
 			**/
 			static auto FromPObj(const TSPBinONObj& pObj) -> PBinONObjT;
+
+			/**
+			Emplace class method template
+
+			This method is sort of a hybrid between Make and FromPObj. It takes
+			a reference to a shared BinONObj pointer along with args to
+			initialize a new TObj. If the pointer already points to a TObj,
+			Emplace() will assign a new TObj to replace the existing object. If
+			the pointer does not point to a TObj (ie. it is either unallocated
+			or points to a different object type), a brand new pointer will be
+			allocated by Make() to replace the existing pointer itself.
+
+			Template Args:
+				Args (types, inferred)
+
+			Args:
+				pObj (TSPBinONObj&): an L-value std::shared_ptr<BinONObj>
+				args (Args, optional): args to initialize a new TObj
+
+			Returns:
+				PBinONObjT<TVal>: a new PBinONObjT wrapping pObj 
+  			**/
+			template<typename... Args>
+				static auto Emplace(TSPBinONObj& pObj, Args&&... args)
+					-> PBinONObjT;
 
 			//---- Public Instance Methods -------------------------------------
 
@@ -252,6 +283,22 @@ namespace binon {
 	template<typename T>
 		auto PBinONObjT<T>::FromPObj(const TSPBinONObj& pObj) -> PBinONObjT {
 			return {BinONObj::Cast<TObj>(pObj)};
+		}
+	template<typename T>
+	template<typename... Args>
+		auto PBinONObjT<T>::Emplace(TSPBinONObj& pObj, Args&&... args)
+			-> PBinONObjT
+		{
+			auto p = std::dynamic_pointer_cast<TObj>(pObj);
+			if(p) {
+				*p = TObj(std::forward<Args>(args)...);
+				return PBinONObjT{p};
+			}
+			else {
+				auto pObjT = Make(std::forward<Args>(args)...);
+				pObj = pObjT;
+				return pObjT;
+			}
 		}
 	template<typename T>
 		PBinONObjT<T>::PBinONObjT(const TPObj& pObj) noexcept:
