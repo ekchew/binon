@@ -73,6 +73,7 @@ DEP4 := \
 	${HDR}strobj.hpp \
 	${DEP3}
 DEP5 := \
+	${HDR}idgen.hpp \
 	${HDR}pbinonobjt.hpp \
 	${DEP4}
 ${HDR}/binon.hpp: ${DEP5}
