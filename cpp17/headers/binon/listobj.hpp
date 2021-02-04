@@ -129,22 +129,24 @@ namespace binon {
 	//
 	//	As it stands, TypeInfo makes the following mappings of basic types:
 	//
-	//		Type Arg    Wrapper   Type Name
-	//		________    _______    _________
+	//		Type Arg         Wrapper   Type Name
+	//		________         _______    _________
 	//
-	//		bool        BoolObj    "bool"
-	//		int8_t      IntObj     "int8_t"
-	//		int16_t     IntObj     "int16_t"
-	//		int32_t     IntObj     "int32_t"
-	//		int64_t     IntObj     "int64_t"
-	//		uint8_t     UIntObj    "uint8_t"
-	//		uint16_t    UIntObj    "uint16_t"
-	//		uint32_t    UIntObj    "uint32_t"
-	//		uint64_t    UIntObj    "uint64_t"
-	//		TFloat32    Float32Obj "TFloat32"
-	//		TFloat64    FloatObj   "TFloat64"
-	//		TBuffer     BufferObj  "TBuffer"
-	//		std::string StrObj     "string"
+	//		bool             BoolObj    "bool"
+	//		int8_t           IntObj     "int8_t"
+	//		int16_t          IntObj     "int16_t"
+	//		int32_t          IntObj     "int32_t"
+	//		int64_t          IntObj     "int64_t"
+	//		uint8_t          UIntObj    "uint8_t"
+	//		uint16_t         UIntObj    "uint16_t"
+	//		uint32_t         UIntObj    "uint32_t"
+	//		uint64_t         UIntObj    "uint64_t"
+	//		TFloat32         Float32Obj "TFloat32"
+	//		TFloat64         FloatObj   "TFloat64"
+	//		TBuffer          BufferObj  "TBuffer"
+	//		std::string      StrObj     "string"
+	//		std::string_view StrObj     "string"
+	//		HyStr            StrObj     "string"
 	//
 	//	Also, if you feed it a type is already a wrapper class, you will simply
 	//	get the wrapper. In other words, TypeInfo<<BoolObj>::Wrapper is BoolObj
