@@ -105,6 +105,15 @@ namespace binon {
 				});
 		}
 
+	/**
+	Type definition:
+		IDGen<type>: ID Generator built around an unigned integral ID type
+	**/
+	template<typename ID=std::uint64_t>
+		using IDGen = Generator<
+			ID, IDGenData<ID>, std::optional<ID>(*)(IDGenData<ID>&)
+			>;
+
 	//==== Template Implementation =============================================
 
 	//---- IDGenData -----------------------------------------------------------
