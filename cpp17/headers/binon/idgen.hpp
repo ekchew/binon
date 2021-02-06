@@ -60,6 +60,15 @@ namespace binon {
 			std::mutex mMutex;
 		};
 
+	namespace details {
+		template<typename ID>
+			auto IDGenFn(IDGenData<ID>& data) -> std::optional<ID> {
+				return std::make_optional<ID>(data.acquire());
+			}
+		template<typename ID>
+			using TIDGenFn = decltype(&IDGenFn<ID>);
+	}
+
 	/**
 	MakeIDGen function template:
 
@@ -99,10 +108,8 @@ namespace binon {
 	**/
 	template<typename ID=std::uint64_t>
 		auto MakeIDGen() {
-			return MakeGen<ID,IDGenData<ID>>(
-				[](IDGenData<ID>& data) {
-					return std::make_optional<ID>(data.acquire());
-				});
+			return MakeGen<ID,IDGenData<ID>,details::TIDGenFn<ID>>(
+				details::IDGenFn);
 		}
 
 	/**
@@ -110,9 +117,7 @@ namespace binon {
 		IDGen<type>: ID Generator built around an unigned integral ID type
 	**/
 	template<typename ID=std::uint64_t>
-		using IDGen = Generator<
-			ID, IDGenData<ID>, std::optional<ID>(*)(IDGenData<ID>&)
-			>;
+		using IDGen = Generator<ID, IDGenData<ID>, details::TIDGenFn<ID>>;
 
 	//==== Template Implementation =============================================
 
