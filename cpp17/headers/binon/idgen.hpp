@@ -105,6 +105,7 @@ namespace binon {
 
 			NewID(const NewID&) = delete;
 			NewID(NewID&& newID) noexcept;
+			NewID() noexcept = default;
 			auto operator = (const NewID&) -> NewID& = delete;
 			auto operator = (NewID&& newID) noexcept -> NewID&;
 
@@ -120,8 +121,8 @@ namespace binon {
 			~NewID();
 
 		private:
-			IDGen<ID>* mPIDGen;
-			ID mID;
+			IDGen<ID>* mPIDGen = nullptr;
+			ID mID = kNoID<ID>;
 		};
 
 	//==== Template Implementation =============================================
