@@ -1,39 +1,42 @@
-import threading
+import contextlib, threading
 
 class IDGen:
 	"""
-	This is a thread-safe iterable class which generates ID numbers you can use
-	for various purposes. You may be thinking why not use a simple counter which
-	can generate as many unique IDs as you need? In the context of BinON,
-	smaller numbers encode more tightly than larger ones, so IDGen tries to keep
-	them small by recycling IDs that are no longer in use.
+	This is a thread-safe class that generates unsigned integer IDs you can use
+	for any purpose. In the context of BinON, the advantage of IDGen over a
+	simple counter for generating unique IDs comes from the fact that BinON has
+	a tighter encoding for smaller integers that larger ones, and IDGen tries to
+	keep them small by recycling IDs that are no longer in use.
 
-	An ID is an unsigned integer suitable for encoding as a UInt. IDGen tries to
-	keep IDs in the range [1,127] since UInts require only a single data byte to
-	encode such values. (The value 0 is typically kept off limits to leave room
-	for a no-ID value should you need it.)
+	Notably, IDGen tries to keep IDs in the range [1,127] as much as possible.
+	That's because the UInt data format can encode numbers < 128 in only a
+	single byte. (The value 0 is kept off limits to leave room for a special
+	kNoID code should you need it.)
 
-	If more than 127 IDs are in play simultaneously, extra "overflow" IDs will
-	be generated beginning at 128. (Overflow IDs are not tracked for re-use as
-	thoroughly as regular ones, though you should nevertheless discard them when
-	you are done with them.)
+	If more than 127 IDs are needed simulataneously, extra "overflow" IDs will
+	be generated beginning at 128. These IDs are not tracked for re-use as
+	rigorously as the regular ones, though they should nevertheless still be
+	released when you are done.
+
+	IDGen is not implemented as a classic Python generator. It is not an
+	iterable class. Rather, you can call its acquire() and release() methods
+	manually to access IDs or use the NewID() context manager, which ensures
+	automatic release of your ID as you leave the context.
 
 	Example:
 
 		>>> gen = binon.IDGen()
-		>>> it = iter(gen)
-		>>> idA = next(it)
-		>>> idB = next(it)
-		>>> idC = next(it)
-		>>> gen.discard(idA)
-		>>> idD = next(it)
-		>>> print(idB, idC, idD)
-		2 3 1
+		>>> with binon.NewID(gen) as idA:
+				with binon.NewID(gen) as idB:
+					print(idA, idB, end=" ")
+				with binon.NewID(gen) as idC:
+					print(idC)
+			1 2 2
+
+	You can see here that idC reuses 2 since idB no longer needs it.
 
 	Class Attributes:
-		kNoID (int): the value 0 IDGen never generates by default
-			(If you really want 0 to be an eligible ID, you can call discard(0)
-			on an IDGen instance.)
+		kNoID (int): the value 0 IDGen avoids generating
 	"""
 
 	kNoID = 0
@@ -70,13 +73,6 @@ class IDGen:
 		sMutex = f"mutex={self.__mutex}"
 		sArgs = ", ".join((sFreeIDs, sOflwID, sOflwCnt, sMutex))
 		return f"IDGen({sArgs})"
-	def __iter__(self):
-		"""
-		Returns:
-			iterator of int: produces an infinite supply of unused IDs
-		"""
-		while True:
-			yield self.acquire()
 	def acquire(self):
 		"""
 		If you prefer not to use an iterator, you can acquire new IDs by calling
@@ -108,14 +104,17 @@ class IDGen:
 				self.__oflwCnt += 1
 
 		return theID
-	def discard(self, theID):
+	def release(self, theID):
 		"""
-		Once you are done with an ID, call discard() to recycle it.
+		Once you are done with an ID, call release() to recycle it.
 
 		WARNING:
-			IDGen makes no assertions that an ID has not been discarded already.
+			IDGen makes no assertions that an ID has not been released already.
 			It is up to you to track your ID life cycles lest the uniqueness
 			logic break down.
+
+		You can use the NewID() context manager instead if you'd rather avoid
+		having to call release() manually.
 
 		Args:
 			int: the ID to discard
@@ -133,3 +132,21 @@ class IDGen:
 			#	a lazy-evaluation sort of way.)
 			else:
 				self.__oflwCnt -= 1
+
+@contextlib.contextmanager
+def NewID(idGen):
+	"""
+	This is a context manager which acquires a new ID for you and then releases
+	it automatically as you leave the context.
+
+	Args:
+		idGen (IDGen): an ID generator
+
+	Enters with:
+		int: a new ID
+	"""
+	theID = idGen.acquire()
+	try:
+		yield theID
+	finally:
+		idGen.release(theID)
