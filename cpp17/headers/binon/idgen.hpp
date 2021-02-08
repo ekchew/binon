@@ -80,16 +80,19 @@ namespace binon {
 	This class is roughly analogous to its Python counterpart. You declare an
 	instance of it as a local variable and it will retain ownership of a new ID
 	until the instance goes out of scope and its destructor releases the ID.
-	
+
 	To access the ID itself, you can either call getValue() or let implicit
 	conversion to the ID type do the work.
+
+	(Note that the NewID class is moveable but not copyable or
+	default-constructible.)
 
 	Type Definitions:
 		ID (type, inferred)
 	**/
 	template<typename ID>
 		struct NewID {
-			
+
 			/**
 			constructor
 
@@ -99,6 +102,11 @@ namespace binon {
 					as the NewID instance does.
 			**/
 			NewID(IDGen<ID>& idGen);
+
+			NewID(const NewID&) = delete;
+			NewID(NewID&& newID) noexcept;
+			auto operator = (const NewID&) -> NewID& = delete;
+			auto operator = (NewID&& newID) noexcept -> NewID&;
 
 			/**
 			operator ID, getValue method:
@@ -167,10 +175,26 @@ namespace binon {
 		{
 		}
 	template<typename ID>
+		NewID<ID>::NewID(NewID&& newID) noexcept:
+			mPIDGen{newID.mPIDGen},
+			mID{newID.mID}
+		{
+			newID.mID = kNoID<ID>;
+		}
+	template<typename ID>
+		auto NewID<ID>::operator = (NewID&& newID) noexcept -> NewID& {
+			mPIDGen = newID.mPIDGen;
+			mID = newID.mID;
+			newID.mID = kNoID<ID>;
+			return *this;
+		}
+	template<typename ID>
 		NewID<ID>::~NewID()
 		{
-			mPIDGen->release(mID);
-			mID = kNoID<ID>;
+			if(mID != kNoID<ID>) {
+				mPIDGen->release(mID);
+				mID = kNoID<ID>;
+			}
 		}
 }
 
