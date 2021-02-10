@@ -393,14 +393,17 @@ namespace binon {
 		}
 	template<typename K, typename Ctnr>
 		SKDictT<K,Ctnr>::SKDictT(SKDict&& dict) {
-			if constexpr(kIsWrapper<K>) {
-				for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
-					auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+			using TObjKey = typename TKeyWrap::TValue;
+			constexpr bool kKeyMoves =
+				kIsWrapper<K> || std::is_same_v<K,TObjKey>;
+			for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
+				auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+				if constexpr(kKeyMoves) {
 					mValue[std::move(pKey->mValue)] = pVal0;
 				}
-			}
-			else {
-				SKDictT(static_cast<const SKDict&>(dict));
+				else {
+					mValue[static_cast<TKey>(pKey->mValue)] = pVal0;
+				}
 			}
 		}
 	template<typename K, typename Ctnr>
@@ -566,20 +569,28 @@ namespace binon {
 	template<typename K, typename V, typename Ctnr>
 		SDictT<K,V,Ctnr>::SDictT(SDict&& dict) {
 			using std::move;
+			using TObjKey = typename TKeyWrap::TValue;
+			using TObjVal = typename TValWrap::TValue;
+			constexpr bool kKeyMoves =
+				kIsWrapper<K> || std::is_same_v<K,TObjKey>;
+			constexpr bool kValMoves =
+				kIsWrapper<V> || std::is_same_v<V,TObjVal>;
 			for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
 				auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
 				auto pVal = BinONObj::Cast<TValWrap>(pVal0);
-				if constexpr(kIsWrapper<K>) {
-					if constexpr(kIsWrapper<V>) {
-						mValue[move(*pKey)] = move(*pVal);
+				if constexpr(kKeyMoves) {
+					if constexpr(kValMoves) {
+						mValue[move(pKey->mValue)] = move(pVal->mValue);
 					}
 					else {
-						mValue[move(*pKey)] = static_cast<V>(pVal->mValue);
+						mValue[move(pKey->mValue)] =
+							static_cast<V>(pVal->mValue);
 					}
 				}
 				else {
-					if constexpr(kIsWrapper<V>) {
-						mValue[static_cast<TKey>(pKey->mValue)] = move(*pVal);
+					if constexpr(kValMoves) {
+						mValue[static_cast<TKey>(pKey->mValue)] =
+							move(pVal->mValue);
 					}
 					else {
 						mValue[static_cast<TKey>(pKey->mValue)]

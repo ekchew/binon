@@ -340,20 +340,24 @@ namespace binon {
 		}
 	template<typename T, typename Ctnr>
 		SListT<T,Ctnr>::SListT(const SList& sList) {
-			for(auto&& p: sList.mValue.mList) {
-				mValue.push_back(
-					static_cast<T>(BinONObj::Cast<TWrap>(p)->mValue));
+			for(auto&& p0: sList.mValue.mList) {
+				auto p = BinONObj::Cast<TWrap>(p0);
+				mValue.push_back(static_cast<T>(p->mValue));
 			}
 		}
 	template<typename T, typename Ctnr>
 		SListT<T,Ctnr>::SListT(SList&& sList) {
-			if constexpr(kIsWrapper<T>) {
-				for(auto&& p: sList.mValue.mList) {
-					mValue.push_back(std::move(*BinONObj::Cast<T>(p)));
+			using TObjVal = typename TWrap::TValue;
+			constexpr bool kValMoves =
+				kIsWrapper<T> || std::is_same_v<T,TObjVal>;
+			for(auto&& p0: sList.mValue.mList) {
+				auto p = BinONObj::Cast<TWrap>(p0);
+				if constexpr(kValMoves) {
+					mValue.push_back(std::move(p->mValue));
 				}
-			}
-			else {
-				SListT(static_cast<const SList&>(sList));
+				else {
+					mValue.push_back(static_cast<T>(p->mValue));
+				}
 			}
 		}
 	template<typename T, typename Ctnr>
