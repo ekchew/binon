@@ -48,7 +48,7 @@ namespace binon {
 		void write(TOStream& stream, bool requireIO=true) const;
 		void printRepr(std::ostream& stream) const;
 
-	private:
+	 private:
 		std::byte mValue;
 	};
 
@@ -67,7 +67,7 @@ namespace binon {
 			constexpr auto operator -= (unsigned int i) noexcept -> Subcls&
 				{ auto& sc = subcls(); return sc = sc - i, sc; }
 
-		protected:
+		 protected:
 			CodeByte& mCodeByte;
 
 			constexpr auto subcls() noexcept -> Subcls&
@@ -79,7 +79,7 @@ namespace binon {
 	//	BaseType and Subtype are CodeByte accessor classes that let you work
 	//	directly with the two fields of a code byte as unsigned int values.
 	class BaseType: public details::CodeBaseField<BaseType> {
-	public:
+	 public:
 		using details::CodeBaseField<BaseType>::CodeBaseField;
 		constexpr operator unsigned int() const noexcept
 			{ return mCodeByte.toInt<unsigned int>() >> 4; }
@@ -87,7 +87,7 @@ namespace binon {
 			{ return mCodeByte = ToByte(value << 4), *this; }
 	};
 	class Subtype: public details::CodeBaseField<Subtype> {
-	public:
+	 public:
 
 		//	Constants defining default and base subtypes.
 		static constexpr unsigned int
@@ -122,10 +122,10 @@ namespace binon {
 		kSDictCode{0x93_byte};
 
 	class BadCodeByte: public std::range_error {
-	public:
+	 public:
 		BadCodeByte(CodeByte cb): std::range_error{WhatStr(cb)} {}
 
-	private:
+	 private:
 		static auto WhatStr(CodeByte cb) -> std::string;
 	};
 }

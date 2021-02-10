@@ -23,7 +23,7 @@ namespace binon {
 			{ return subcls().mValue; }
 		virtual ~Read_mValue() {}
 
-	protected:
+	 protected:
 		constexpr auto subcls() noexcept -> Subcls&
 			{ return *static_cast<Subcls*>(this); }
 		constexpr auto subcls() const noexcept -> const Subcls&
@@ -34,7 +34,7 @@ namespace binon {
 
 		virtual ~Read_mValue() {}
 
-	protected:
+	 protected:
 		constexpr auto subcls() noexcept -> Subcls&
 			{ return *static_cast<Subcls*>(this); }
 		constexpr auto subcls() const noexcept -> const Subcls&
@@ -52,7 +52,7 @@ namespace binon {
 					std::hash<Value>{}(subcls().mValue));
 			}
 
-	protected:
+	 protected:
 		using Read_mValue<Subcls,Value>::subcls;
 	};
 
@@ -64,7 +64,7 @@ namespace binon {
 		constexpr auto operator = (Subcls&& obj) noexcept -> Subcls&
 			{ return subcls().mValue = std::move(obj.mValue), subcls(); }
 
-	protected:
+	 protected:
 		using Read_mValue<Subcls,Value>::subcls;
 	};
 

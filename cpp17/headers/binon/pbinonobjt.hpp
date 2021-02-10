@@ -276,7 +276,7 @@ namespace binon {
 			
 			auto getBasePtr() noexcept -> TSPBinONObj final { return mPObj; }
 
-		private:
+		 private:
 
 			//---- Data Members ------------------------------------------------
 

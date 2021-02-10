@@ -90,25 +90,25 @@ namespace binon {
 	//---- Template Implementation ---------------------------------------------
 
 	template<typename Subcls, bool Assert>
-	auto BinONObj::Cast(const TSPBinONObj& p)
-		-> std::shared_ptr<Subcls>
-	{
-		std::shared_ptr<Subcls> pSubcls;
-		if constexpr(Assert) {
-			if(!p) {
-				throw NullDeref{"BinONObj shared pointer unallocated"};
+		auto BinONObj::Cast(const TSPBinONObj& p)
+			-> std::shared_ptr<Subcls>
+		{
+			std::shared_ptr<Subcls> pSubcls;
+			if constexpr(Assert) {
+				if(!p) {
+					throw NullDeref{"BinONObj shared pointer unallocated"};
+				}
+				pSubcls = std::dynamic_pointer_cast<Subcls>(p);
+				if(!pSubcls) {
+					throw TypeErr{
+						"BinONObj shared pointer will not cast to subclass"};
+				}
 			}
-			pSubcls = std::dynamic_pointer_cast<Subcls>(p);
-			if(!pSubcls) {
-				throw TypeErr{
-					"BinONObj shared pointer will not cast to subclass"};
+			else {
+				pSubcls = std::static_pointer_cast<Subcls>(p);
 			}
+			return pSubcls;
 		}
-		else {
-			pSubcls = std::static_pointer_cast<Subcls>(p);
-		}
-		return pSubcls;
-	}
 }
 
 namespace std {

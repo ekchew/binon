@@ -10,7 +10,7 @@
 namespace binon {
 	inline namespace literals {
 		class BadLiteral: public std::out_of_range {
-		public:
+		 public:
 			using std::out_of_range::out_of_range;
 		};
 

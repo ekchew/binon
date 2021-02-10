@@ -167,305 +167,314 @@ namespace binon {
 	};
 
 	/**
-	
+
 	**/
 	template<
 		typename K,
 		typename Ctnr = std::unordered_map<K,TSPBinONObj>
 		>
-	struct SKDictT: BinONObj {
-		using TKey = K;
-		using TCtnr = Ctnr;
-		using TKeyWrap = TWrapper<TKey>;
-		using TKeyRW = std::reference_wrapper<TKey>;
-		using TKeyVal = typename TCtnr::value_type;
+		struct SKDictT: BinONObj {
+			using TKey = K;
+			using TCtnr = Ctnr;
+			using TKeyWrap = TWrapper<TKey>;
+			using TKeyRW = std::reference_wrapper<TKey>;
+			using TKeyVal = typename TCtnr::value_type;
 
-		static void EncodeData(
-			const TCtnr& v, TOStream& stream, bool requireIO=true);
-		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
+			static void EncodeData(
+				const TCtnr& v, TOStream& stream, bool requireIO=true);
+			static auto DecodeData(TIStream& stream, bool requireIO=true)
+				-> TCtnr;
 
-		Ctnr mValue;
+			Ctnr mValue;
 
-		SKDictT(std::initializer_list<TKeyVal> lst);
-		SKDictT(const SKDict& dict);
-		SKDictT(SKDict&& dict);
-		SKDictT(const TCtnr& ctnr);
-		SKDictT(TCtnr&& ctnr) noexcept;
-		SKDictT() noexcept = default;
-		operator TCtnr&() noexcept;
-		operator const TCtnr&() const noexcept;
-		explicit operator bool() const noexcept override;
-		auto typeCode() const noexcept -> CodeByte final;
-		void encodeData(TOStream& stream, bool requireIO=true) const final;
-		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto clsName() const noexcept -> std::string override;
-		void printArgsRepr(std::ostream& stream) const override;
+			SKDictT(std::initializer_list<TKeyVal> lst);
+			SKDictT(const SKDict& dict);
+			SKDictT(SKDict&& dict);
+			SKDictT(const TCtnr& ctnr);
+			SKDictT(TCtnr&& ctnr) noexcept;
+			SKDictT() noexcept = default;
+			operator TCtnr&() noexcept;
+			operator const TCtnr&() const noexcept;
+			explicit operator bool() const noexcept override;
+			auto typeCode() const noexcept -> CodeByte final;
+			void encodeData(TOStream& stream, bool requireIO=true) const final;
+			void decodeData(TIStream& stream, bool requireIO=true) final;
+			auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+			auto clsName() const noexcept -> std::string override;
+			void printArgsRepr(std::ostream& stream) const override;
 
-		//---- TCtnr API -------------------------------------------------------
+			//---- TCtnr API ---------------------------------------------------
 
-		using key_type = typename TCtnr::key_type;
-		using mapped_type = typename TCtnr::mapped_type;
-		using value_type = typename TCtnr::value_type;
-		using size_type = typename TCtnr::size_type;
-		auto& operator [] (const key_type& key) { return mValue[key]; }
-		auto operator [] (const key_type& key) const -> const mapped_type&;
-		template<typename TObj>
-			auto obj(const key_type& key) -> TObj&;
-		const auto& at(const key_type& key) const { return mValue.at(key); }
-		template<typename TObj>
-			auto objAt(const key_type& key) -> TObj&;
-		template<typename TObj>
-			auto objAt(const key_type& key) const -> const TObj&;
-		auto begin() noexcept { return mValue.begin(); }
-		auto begin() const noexcept { return mValue.begin(); }
-		void clear() noexcept { mValue.clear(); }
-		auto contains(const key_type& key) const
-			{ return mValue.find(key) != end(); }
-		auto end() noexcept { return mValue.end(); }
-		auto end() const noexcept { return mValue.end(); }
-		auto size() const noexcept { return mValue.size(); }
-	};
+			using key_type = typename TCtnr::key_type;
+			using mapped_type = typename TCtnr::mapped_type;
+			using value_type = typename TCtnr::value_type;
+			using size_type = typename TCtnr::size_type;
+			auto& operator [] (const key_type& key) { return mValue[key]; }
+			auto operator [] (const key_type& key) const -> const mapped_type&;
+			template<typename TObj>
+				auto obj(const key_type& key) -> TObj&;
+			const auto& at(const key_type& key) const { return mValue.at(key); }
+			template<typename TObj>
+				auto objAt(const key_type& key) -> TObj&;
+			template<typename TObj>
+				auto objAt(const key_type& key) const -> const TObj&;
+			auto begin() noexcept { return mValue.begin(); }
+			auto begin() const noexcept { return mValue.begin(); }
+			void clear() noexcept { mValue.clear(); }
+			auto contains(const key_type& key) const
+				{ return mValue.find(key) != end(); }
+			auto end() noexcept { return mValue.end(); }
+			auto end() const noexcept { return mValue.end(); }
+			auto size() const noexcept { return mValue.size(); }
+		};
 
 	template<
 		typename K,
 		typename V,
 		typename Ctnr = std::unordered_map<K,V>
 		>
-	struct SDictT: BinONObj {
-		using TKey = K;
-		using TVal = V;
-		using TCtnr = Ctnr;
-		using TKeyWrap = TWrapper<TKey>;
-		using TKeyRW = std::reference_wrapper<TKey>;
-		using TValWrap = TWrapper<TVal>;
-		using TValRW = std::reference_wrapper<TVal>;
-		using TKeyVal = typename TCtnr::value_type;
+		struct SDictT: BinONObj {
+			using TKey = K;
+			using TVal = V;
+			using TCtnr = Ctnr;
+			using TKeyWrap = TWrapper<TKey>;
+			using TKeyRW = std::reference_wrapper<TKey>;
+			using TValWrap = TWrapper<TVal>;
+			using TValRW = std::reference_wrapper<TVal>;
+			using TKeyVal = typename TCtnr::value_type;
 
-		static void EncodeData(
-			const TCtnr& v, TOStream& stream, bool requireIO=true);
-		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
+			static void EncodeData(
+				const TCtnr& v, TOStream& stream, bool requireIO=true);
+			static auto DecodeData(TIStream& stream, bool requireIO=true)
+				-> TCtnr;
 
-		Ctnr mValue;
+			Ctnr mValue;
 
-		SDictT(std::initializer_list<TKeyVal> lst);
-		SDictT(const SDict& dict);
-		SDictT(SDict&& dict);
-		SDictT(const TCtnr& ctnr);
-		SDictT(TCtnr&& ctnr) noexcept;
-		SDictT() noexcept = default;
-		operator TCtnr&() noexcept;
-		operator const TCtnr&() const noexcept;
-		explicit operator bool() const noexcept override;
-		auto typeCode() const noexcept -> CodeByte final;
-		void encodeData(TOStream& stream, bool requireIO=true) const final;
-		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto clsName() const noexcept -> std::string override;
-		void printArgsRepr(std::ostream& stream) const override;
+			SDictT(std::initializer_list<TKeyVal> lst);
+			SDictT(const SDict& dict);
+			SDictT(SDict&& dict);
+			SDictT(const TCtnr& ctnr);
+			SDictT(TCtnr&& ctnr) noexcept;
+			SDictT() noexcept = default;
+			operator TCtnr&() noexcept;
+			operator const TCtnr&() const noexcept;
+			explicit operator bool() const noexcept override;
+			auto typeCode() const noexcept -> CodeByte final;
+			void encodeData(TOStream& stream, bool requireIO=true) const final;
+			void decodeData(TIStream& stream, bool requireIO=true) final;
+			auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+			auto clsName() const noexcept -> std::string override;
+			void printArgsRepr(std::ostream& stream) const override;
 
-		//---- TCtnr API -------------------------------------------------------
+			//---- TCtnr API ---------------------------------------------------
 
-		using key_type = typename TCtnr::key_type;
-		using mapped_type = typename TCtnr::mapped_type;
-		using value_type = typename TCtnr::value_type;
-		using size_type = typename TCtnr::size_type;
-		auto& operator [] (const key_type& key) { return mValue[key]; }
-		auto operator [] (const key_type& key) const -> const mapped_type&;
-		auto& at(const key_type& key) { return mValue.at(key); }
-		const auto& at(const key_type& key) const { return mValue.at(key); }
-		auto begin() noexcept { return mValue.begin(); }
-		auto begin() const noexcept { return mValue.begin(); }
-		void clear() noexcept { mValue.clear(); }
-		auto contains(const key_type& key) const { return find(key) != end(); }
-		auto end() noexcept { return mValue.end(); }
-		auto end() const noexcept { return mValue.end(); }
-		auto size() const noexcept { return mValue.size(); }
-	};
+			using key_type = typename TCtnr::key_type;
+			using mapped_type = typename TCtnr::mapped_type;
+			using value_type = typename TCtnr::value_type;
+			using size_type = typename TCtnr::size_type;
+			auto& operator [] (const key_type& key) { return mValue[key]; }
+			auto operator [] (const key_type& key) const -> const mapped_type&;
+			auto& at(const key_type& key) { return mValue.at(key); }
+			const auto& at(const key_type& key) const { return mValue.at(key); }
+			auto begin() noexcept { return mValue.begin(); }
+			auto begin() const noexcept { return mValue.begin(); }
+			void clear() noexcept { mValue.clear(); }
+			auto contains(const key_type& key) const
+				{ return find(key) != end(); }
+			auto end() noexcept { return mValue.end(); }
+			auto end() const noexcept { return mValue.end(); }
+			auto size() const noexcept { return mValue.size(); }
+		};
 
 	//==== Template Implementation =============================================
 
 	//---- DictBase ------------------------------------------------------------
 
 	template<typename Key, typename... Args>
-	auto DictBase::hasKey(Args&&... args) const -> bool {
-		auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
-		return hasKey(std::move(pKey));
-	}
+		auto DictBase::hasKey(Args&&... args) const -> bool {
+			auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
+			return hasKey(std::move(pKey));
+		}
 	template<typename Key, typename... Args>
-	auto DictBase::hasValue(Args&&... args) const -> bool {
-		auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
-		return hasValue(std::move(pKey));
-	}
-	template<typename Val>
-	auto DictBase::valueAt(const TSPBinONObj& pKey) -> Val& {
-		return *BinONObj::Cast<Val>(dict().at(pKey));
-	}
-	template<typename Val>
-	auto DictBase::valueAt(const TSPBinONObj& pKey) const -> const Val& {
-		return const_cast<DictBase*>(this)->valueAt<Val>(pKey);
-	}
-	template<typename Key, typename Val, typename... Args>
-	auto DictBase::valueAt(Args&&... args) -> Val& {
-		auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
-		return valueAt<Val>(std::move(pKey));
-	}
-	template<typename Key, typename Val, typename... Args>
-	auto DictBase::valueAt(Args&&... args) const -> const Val& {
-		auto mutThis = const_cast<DictBase*>(this);
-		return mutThis->valueAt<Key,Val>(std::forward<Args>(args)...);
-	}
-	template<typename Val>
-	auto DictBase::value(const TSPBinONObj& pKey) -> Val& {
-		auto& dct = dict();
-		auto iter = dct.find(pKey);
-		std::shared_ptr<Val> pVal;
-		if(iter == dct.end()) {
-			pVal = std::make_shared<Val>();
-			dct.insert(iter, std::make_pair(pKey, pVal));
+		auto DictBase::hasValue(Args&&... args) const -> bool {
+			auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
+			return hasValue(std::move(pKey));
 		}
-		else if(!iter->second) {
-			iter->second = pVal = std::make_shared<Val>();
+	template<typename Val>
+		auto DictBase::valueAt(const TSPBinONObj& pKey) -> Val& {
+			return *BinONObj::Cast<Val>(dict().at(pKey));
 		}
-		else {
-			pVal = BinONObj::Cast<Val>(iter->second);
+	template<typename Val>
+		auto DictBase::valueAt(const TSPBinONObj& pKey) const -> const Val& {
+			return const_cast<DictBase*>(this)->valueAt<Val>(pKey);
 		}
-		return *pVal;
-	}
 	template<typename Key, typename Val, typename... Args>
-	auto DictBase::value(Args&&... args) -> Val& {
-		auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
-		return value<Val>(pKey);
-	}
+		auto DictBase::valueAt(Args&&... args) -> Val& {
+			auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
+			return valueAt<Val>(std::move(pKey));
+		}
+	template<typename Key, typename Val, typename... Args>
+		auto DictBase::valueAt(Args&&... args) const -> const Val& {
+			auto mutThis = const_cast<DictBase*>(this);
+			return mutThis->valueAt<Key,Val>(std::forward<Args>(args)...);
+		}
+	template<typename Val>
+		auto DictBase::value(const TSPBinONObj& pKey) -> Val& {
+			auto& dct = dict();
+			auto iter = dct.find(pKey);
+			std::shared_ptr<Val> pVal;
+			if(iter == dct.end()) {
+				pVal = std::make_shared<Val>();
+				dct.insert(iter, std::make_pair(pKey, pVal));
+			}
+			else if(!iter->second) {
+				iter->second = pVal = std::make_shared<Val>();
+			}
+			else {
+				pVal = BinONObj::Cast<Val>(iter->second);
+			}
+			return *pVal;
+		}
+	template<typename Key, typename Val, typename... Args>
+		auto DictBase::value(Args&&... args) -> Val& {
+			auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
+			return value<Val>(pKey);
+		}
 
 	//---- SKDictT -------------------------------------------------------------
 
 	template<typename K, typename Ctnr>
-	void SKDictT<K,Ctnr>::EncodeData(
-		const TCtnr& v, TOStream& stream, bool requireIO)
-	{
-		RequireIO rio{stream, requireIO};
-		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
+		void SKDictT<K,Ctnr>::EncodeData(
+			const TCtnr& v, TOStream& stream, bool requireIO)
+		{
+			RequireIO rio{stream, requireIO};
+			UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
 
-		EncodeElems<TKey>(
-			PipeGenRefs<TKeyRW>(
-				IterGen{v.begin(), v.end()},
-				[](auto& kv) -> TKeyRW { return const_cast<TKey&>(kv.first); }
-			), stream, kSkipRequireIO);
+			EncodeElems<TKey>(
+				PipeGenRefs<TKeyRW>(
+					IterGen{v.begin(), v.end()},
+					[](auto& kv) -> TKeyRW {
+						return const_cast<TKey&>(kv.first);
+					}
+				), stream, kSkipRequireIO);
 
-		ListObj::EncodeElems(
-			PipeGenRefs<TSPBinONObj>(
-				IterGen{v.begin(), v.end()},
-				[](auto& kv) { return kv.second; }
-			), stream, kSkipRequireIO);
-	}
-	template<typename K, typename Ctnr>
-	auto SKDictT<K,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
-		-> TCtnr
-	{
-		RequireIO rio{stream, requireIO};
-		auto keys = SListT<TKey>::DecodeData(stream, kSkipRequireIO);
-		auto valGen = ListObj::DecodedElemsGen(
-			stream, keys.size(), kSkipRequireIO);
-		auto keyIt = keys.begin();
-		TCtnr ctnr;
-		for(auto val: valGen) {
-			ctnr[*keyIt++] = val;
+			ListObj::EncodeElems(
+				PipeGenRefs<TSPBinONObj>(
+					IterGen{v.begin(), v.end()},
+					[](auto& kv) { return kv.second; }
+				), stream, kSkipRequireIO);
 		}
-		return std::move(ctnr);
-	}
 	template<typename K, typename Ctnr>
-	SKDictT<K,Ctnr>::SKDictT(std::initializer_list<TKeyVal> lst):
-		mValue{lst}
-	{
-	}
-	template<typename K, typename Ctnr>
-	SKDictT<K,Ctnr>::SKDictT(const SKDict& dict) {
-		for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
-			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
-			mValue[static_cast<TKey>(pKey->mValue)] = pVal0;
+		auto SKDictT<K,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
+			-> TCtnr
+		{
+			RequireIO rio{stream, requireIO};
+			auto keys = SListT<TKey>::DecodeData(stream, kSkipRequireIO);
+			auto valGen = ListObj::DecodedElemsGen(
+				stream, keys.size(), kSkipRequireIO);
+			auto keyIt = keys.begin();
+			TCtnr ctnr;
+			for(auto val: valGen) {
+				ctnr[*keyIt++] = val;
+			}
+			return std::move(ctnr);
 		}
-	}
 	template<typename K, typename Ctnr>
-	SKDictT<K,Ctnr>::SKDictT(SKDict&& dict) {
-		if constexpr(kIsWrapper<K>) {
+		SKDictT<K,Ctnr>::SKDictT(std::initializer_list<TKeyVal> lst):
+			mValue{lst}
+		{
+		}
+	template<typename K, typename Ctnr>
+		SKDictT<K,Ctnr>::SKDictT(const SKDict& dict) {
 			for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
 				auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
-				mValue[std::move(pKey->mValue)] = pVal0;
+				mValue[static_cast<TKey>(pKey->mValue)] = pVal0;
 			}
 		}
-		else {
-			SKDictT(static_cast<const SKDict&>(dict));
+	template<typename K, typename Ctnr>
+		SKDictT<K,Ctnr>::SKDictT(SKDict&& dict) {
+			if constexpr(kIsWrapper<K>) {
+				for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
+					auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+					mValue[std::move(pKey->mValue)] = pVal0;
+				}
+			}
+			else {
+				SKDictT(static_cast<const SKDict&>(dict));
+			}
 		}
-	}
 	template<typename K, typename Ctnr>
-	SKDictT<K,Ctnr>::SKDictT(const TCtnr& ctnr): mValue{ctnr} {
-	}
+		SKDictT<K,Ctnr>::SKDictT(const TCtnr& ctnr): mValue{ctnr} {
+		}
 	template<typename K, typename Ctnr>
-	SKDictT<K,Ctnr>::SKDictT(TCtnr&& ctnr) noexcept: mValue{std::move(ctnr)} {
-	}
+		SKDictT<K,Ctnr>::SKDictT(TCtnr&& ctnr) noexcept:
+			mValue{std::move(ctnr)}
+		{
+		}
 	template<typename K, typename Ctnr>
-	SKDictT<K,Ctnr>::operator TCtnr&() noexcept {
-		return mValue;
-	}
+		SKDictT<K,Ctnr>::operator TCtnr&() noexcept {
+			return mValue;
+		}
 	template<typename K, typename Ctnr>
-	SKDictT<K,Ctnr>::operator const TCtnr&() const noexcept {
-		return mValue;
-	}
+		SKDictT<K,Ctnr>::operator const TCtnr&() const noexcept {
+			return mValue;
+		}
 	template<typename K, typename Ctnr>
-	SKDictT<K,Ctnr>::operator bool() const noexcept {
-		return mValue.size() > 0u;
-	}
+		SKDictT<K,Ctnr>::operator bool() const noexcept {
+			return mValue.size() > 0u;
+		}
 	template<typename K, typename Ctnr>
-	auto SKDictT<K,Ctnr>::typeCode() const noexcept -> CodeByte {
-		return kSKDictCode;
-	}
+		auto SKDictT<K,Ctnr>::typeCode() const noexcept -> CodeByte {
+			return kSKDictCode;
+		}
 	template<typename K, typename Ctnr>
-	void SKDictT<K,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
-		EncodeData(mValue, stream, requireIO);
-	}
+		void SKDictT<K,Ctnr>::encodeData(
+			TOStream& stream, bool requireIO) const
+		{
+			EncodeData(mValue, stream, requireIO);
+		}
 	template<typename K, typename Ctnr>
-	void SKDictT<K,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
-		mValue = DecodeData(stream, requireIO);
-	}
+		void SKDictT<K,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
+			mValue = DecodeData(stream, requireIO);
+		}
 	template<typename K, typename Ctnr>
-	auto SKDictT<K,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
-		if(deep) {
-			auto pCopy = std::make_shared<SKDictT<K,Ctnr>>();
-			auto& dict = pCopy->mValue;
+		auto SKDictT<K,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
+			if(deep) {
+				auto pCopy = std::make_shared<SKDictT<K,Ctnr>>();
+				auto& dict = pCopy->mValue;
+				for(auto&& [key, val]: mValue) {
+					dict[key] = val->makeCopy(deep);
+				}
+				return std::move(pCopy);
+			}
+			else {
+				return std::make_shared<SKDictT<K,Ctnr>>(*this);
+			}
+		}
+	template<typename K, typename Ctnr>
+		auto SKDictT<K,Ctnr>::clsName() const noexcept -> std::string {
+			constexpr bool kCtnrIsUMap
+				= std::is_same_v<Ctnr, std::unordered_map<K,TSPBinONObj>>;
+			std::ostringstream oss;
+			oss << "SKDictT<" << (kCtnrIsUMap ? "unordered_map" : "DICT")
+				<< '<' << TypeInfo<K>::TypeName() << ">>";
+			return std::move(oss).str();
+		}
+	template<typename K, typename Ctnr>
+		void SKDictT<K,Ctnr>::printArgsRepr(std::ostream& stream) const {
+			bool first = true;
 			for(auto&& [key, val]: mValue) {
-				dict[key] = val->makeCopy(deep);
+				if(first) {
+					first = false;
+				}
+				else { stream << ", "; }
+				stream << '{';
+				PrintRepr(key, stream);
+				stream << ", ";
+				val->printRepr(stream);
+				stream << '}';
 			}
-			return std::move(pCopy);
 		}
-		else {
-			return std::make_shared<SKDictT<K,Ctnr>>(*this);
-		}
-	}
-	template<typename K, typename Ctnr>
-	auto SKDictT<K,Ctnr>::clsName() const noexcept -> std::string {
-		constexpr bool kCtnrIsUMap
-			= std::is_same_v<Ctnr, std::unordered_map<K,TSPBinONObj>>;
-		std::ostringstream oss;
-		oss << "SKDictT<" << (kCtnrIsUMap ? "unordered_map" : "DICT")
-			<< '<' << TypeInfo<K>::TypeName() << ">>";
-		return std::move(oss).str();
-	}
-	template<typename K, typename Ctnr>
-	void SKDictT<K,Ctnr>::printArgsRepr(std::ostream& stream) const {
-		bool first = true;
-		for(auto&& [key, val]: mValue) {
-			if(first) {
-				first = false;
-			}
-			else { stream << ", "; }
-			stream << '{';
-			PrintRepr(key, stream);
-			stream << ", ";
-			val->printRepr(stream);
-			stream << '}';
-		}
-	}
 	template<typename K, typename Ctnr>
 		auto SKDictT<K,Ctnr>::operator [] (const key_type& key) const
 			-> const mapped_type&
@@ -503,137 +512,145 @@ namespace binon {
 	//---- SDictT --------------------------------------------------------------
 
 	template<typename K, typename V, typename Ctnr>
-	void SDictT<K,V,Ctnr>::EncodeData(
-		const TCtnr& v, TOStream& stream, bool requireIO)
-	{
-		RequireIO rio{stream, requireIO};
-		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
+		void SDictT<K,V,Ctnr>::EncodeData(
+			const TCtnr& v, TOStream& stream, bool requireIO)
+		{
+			RequireIO rio{stream, requireIO};
+			UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
 
-		EncodeElems<TKey>(
-			PipeGenRefs<TKeyRW>(
-				IterGen{v.begin(), v.end()},
-				[](auto& kv) -> TKeyRW { return const_cast<TKey&>(kv.first); }
-			), stream, kSkipRequireIO);
+			EncodeElems<TKey>(
+				PipeGenRefs<TKeyRW>(
+					IterGen{v.begin(), v.end()},
+					[](auto& kv) -> TKeyRW {
+						return const_cast<TKey&>(kv.first);
+					}
+				), stream, kSkipRequireIO);
 
-		EncodeElems<TVal>(
-			PipeGenRefs<TValRW>(
-				IterGen{v.begin(), v.end()},
-				[](auto& kv) -> TValRW { return const_cast<TVal&>(kv.second); }
-			), stream, kSkipRequireIO);
-	}
-	template<typename K, typename V, typename Ctnr>
-	auto SDictT<K,V,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
-		-> TCtnr
-	{
-		RequireIO rio{stream, requireIO};
-		auto keys = SListT<TKey>::DecodeData(stream, kSkipRequireIO);
-		auto valGen = DecodedElemsGen<TVal>(
-			stream, keys.size(), kSkipRequireIO);
-		auto keyIt = keys.begin();
-		TCtnr ctnr;
-		for(auto val: valGen) {
-			ctnr[*keyIt++] = std::move(val);
+			EncodeElems<TVal>(
+				PipeGenRefs<TValRW>(
+					IterGen{v.begin(), v.end()},
+					[](auto& kv) -> TValRW {
+						return const_cast<TVal&>(kv.second);
+					}
+				), stream, kSkipRequireIO);
 		}
-		return std::move(ctnr);
-	}
 	template<typename K, typename V, typename Ctnr>
-	SDictT<K,V,Ctnr>::SDictT(std::initializer_list<TKeyVal> lst):
-		mValue{lst}
-	{
-	}
-	template<typename K, typename V, typename Ctnr>
-	SDictT<K,V,Ctnr>::SDictT(const SDict& dict) {
-		for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
-			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
-			auto pVal = BinONObj::Cast<TValWrap>(pVal0);
-			mValue[static_cast<TKey>(pKey->mValue)]
-				= static_cast<TVal>(pVal->mValue);
+		auto SDictT<K,V,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
+			-> TCtnr
+		{
+			RequireIO rio{stream, requireIO};
+			auto keys = SListT<TKey>::DecodeData(stream, kSkipRequireIO);
+			auto valGen = DecodedElemsGen<TVal>(
+				stream, keys.size(), kSkipRequireIO);
+			auto keyIt = keys.begin();
+			TCtnr ctnr;
+			for(auto val: valGen) {
+				ctnr[*keyIt++] = std::move(val);
+			}
+			return std::move(ctnr);
 		}
-	}
 	template<typename K, typename V, typename Ctnr>
-	SDictT<K,V,Ctnr>::SDictT(SDict&& dict) {
-		using std::move;
-		for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
-			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
-			auto pVal = BinONObj::Cast<TValWrap>(pVal0);
-			if constexpr(kIsWrapper<K>) {
-				if constexpr(kIsWrapper<V>) {
-					mValue[move(*pKey)] = move(*pVal);
+		SDictT<K,V,Ctnr>::SDictT(std::initializer_list<TKeyVal> lst):
+			mValue{lst}
+		{
+		}
+	template<typename K, typename V, typename Ctnr>
+		SDictT<K,V,Ctnr>::SDictT(const SDict& dict) {
+			for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
+				auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+				auto pVal = BinONObj::Cast<TValWrap>(pVal0);
+				mValue[static_cast<TKey>(pKey->mValue)]
+					= static_cast<TVal>(pVal->mValue);
+			}
+		}
+	template<typename K, typename V, typename Ctnr>
+		SDictT<K,V,Ctnr>::SDictT(SDict&& dict) {
+			using std::move;
+			for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
+				auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+				auto pVal = BinONObj::Cast<TValWrap>(pVal0);
+				if constexpr(kIsWrapper<K>) {
+					if constexpr(kIsWrapper<V>) {
+						mValue[move(*pKey)] = move(*pVal);
+					}
+					else {
+						mValue[move(*pKey)] = static_cast<V>(pVal->mValue);
+					}
 				}
 				else {
-					mValue[move(*pKey)] = static_cast<V>(pVal->mValue);
-				}
-			}
-			else {
-				if constexpr(kIsWrapper<V>) {
-					mValue[static_cast<TKey>(pKey->mValue)] = move(*pVal);
-				}
-				else {
-					mValue[static_cast<TKey>(pKey->mValue)]
-						= static_cast<TVal>(pVal->mValue);
+					if constexpr(kIsWrapper<V>) {
+						mValue[static_cast<TKey>(pKey->mValue)] = move(*pVal);
+					}
+					else {
+						mValue[static_cast<TKey>(pKey->mValue)]
+							= static_cast<TVal>(pVal->mValue);
+					}
 				}
 			}
 		}
-	}
 	template<typename K, typename V, typename Ctnr>
-	SDictT<K,V,Ctnr>::SDictT(const TCtnr& ctnr): mValue{ctnr} {
-	}
-	template<typename K, typename V, typename Ctnr>
-	SDictT<K,V,Ctnr>::SDictT(TCtnr&& ctnr) noexcept: mValue{std::move(ctnr)} {
-	}
-	template<typename K, typename V, typename Ctnr>
-	SDictT<K,V,Ctnr>::operator TCtnr&() noexcept {
-		return mValue;
-	}
-	template<typename K, typename V, typename Ctnr>
-	SDictT<K,V,Ctnr>::operator const TCtnr&() const noexcept {
-		return mValue;
-	}
-	template<typename K, typename V, typename Ctnr>
-	SDictT<K,V,Ctnr>::operator bool() const noexcept {
-		return mValue.size() > 0u;
-	}
-	template<typename K, typename V, typename Ctnr>
-	auto SDictT<K,V,Ctnr>::typeCode() const noexcept -> CodeByte {
-		return kSDictCode;
-	}
-	template<typename K, typename V, typename Ctnr>
-	void SDictT<K,V,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
-		EncodeData(mValue, stream, requireIO);
-	}
-	template<typename K, typename V, typename Ctnr>
-	void SDictT<K,V,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
-		mValue = DecodeData(stream, requireIO);
-	}
-	template<typename K, typename V, typename Ctnr>
-	auto SDictT<K,V,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
-		return std::make_shared<SDictT<K,V,Ctnr>>(*this);
-	}
-	template<typename K, typename V, typename Ctnr>
-	auto SDictT<K,V,Ctnr>::clsName() const noexcept -> std::string {
-		constexpr bool kCtnrIsUMap
-			= std::is_same_v<Ctnr, std::unordered_map<K,V>>;
-		std::ostringstream oss;
-		oss << "SDictT<" << (kCtnrIsUMap ? "unordered_map" : "DICT")
-			<< '<' << TypeInfo<K>::TypeName()
-			<< ',' << TypeInfo<V>::TypeName() << ">>";
-		return std::move(oss).str();
-	}
-	template<typename K, typename V, typename Ctnr>
-	void SDictT<K,V,Ctnr>::printArgsRepr(std::ostream& stream) const {
-		bool first = true;
-		for(auto&& [key, val]: mValue) {
-			if(first) {
-				first = false;
-			}
-			else { stream << ", "; }
-			stream << '{';
-			PrintRepr(key, stream);
-			stream << ", ";
-			PrintRepr(val, stream);
-			stream << '}';
+		SDictT<K,V,Ctnr>::SDictT(const TCtnr& ctnr): mValue{ctnr} {
 		}
-	}
+	template<typename K, typename V, typename Ctnr>
+		SDictT<K,V,Ctnr>::SDictT(TCtnr&& ctnr) noexcept:
+			mValue{std::move(ctnr)}
+		{
+		}
+	template<typename K, typename V, typename Ctnr>
+		SDictT<K,V,Ctnr>::operator TCtnr&() noexcept {
+			return mValue;
+		}
+	template<typename K, typename V, typename Ctnr>
+		SDictT<K,V,Ctnr>::operator const TCtnr&() const noexcept {
+			return mValue;
+		}
+	template<typename K, typename V, typename Ctnr>
+		SDictT<K,V,Ctnr>::operator bool() const noexcept {
+			return mValue.size() > 0u;
+		}
+	template<typename K, typename V, typename Ctnr>
+		auto SDictT<K,V,Ctnr>::typeCode() const noexcept -> CodeByte {
+			return kSDictCode;
+		}
+	template<typename K, typename V, typename Ctnr>
+		void SDictT<K,V,Ctnr>::encodeData(
+			TOStream& stream, bool requireIO) const
+		{
+			EncodeData(mValue, stream, requireIO);
+		}
+	template<typename K, typename V, typename Ctnr>
+		void SDictT<K,V,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
+			mValue = DecodeData(stream, requireIO);
+		}
+	template<typename K, typename V, typename Ctnr>
+		auto SDictT<K,V,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
+			return std::make_shared<SDictT<K,V,Ctnr>>(*this);
+		}
+	template<typename K, typename V, typename Ctnr>
+		auto SDictT<K,V,Ctnr>::clsName() const noexcept -> std::string {
+			constexpr bool kCtnrIsUMap
+				= std::is_same_v<Ctnr, std::unordered_map<K,V>>;
+			std::ostringstream oss;
+			oss << "SDictT<" << (kCtnrIsUMap ? "unordered_map" : "DICT")
+				<< '<' << TypeInfo<K>::TypeName()
+				<< ',' << TypeInfo<V>::TypeName() << ">>";
+			return std::move(oss).str();
+		}
+	template<typename K, typename V, typename Ctnr>
+		void SDictT<K,V,Ctnr>::printArgsRepr(std::ostream& stream) const {
+			bool first = true;
+			for(auto&& [key, val]: mValue) {
+				if(first) {
+					first = false;
+				}
+				else { stream << ", "; }
+				stream << '{';
+				PrintRepr(key, stream);
+				stream << ", ";
+				PrintRepr(val, stream);
+				stream << '}';
+			}
+		}
 	template<typename K, typename V, typename Ctnr>
 		auto SDictT<K,V,Ctnr>::operator [] (const key_type& key) const
 			-> const mapped_type&

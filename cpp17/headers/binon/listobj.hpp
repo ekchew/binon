@@ -153,13 +153,13 @@ namespace binon {
 	//	and TypeInfo<BoolObj>::Name() is "BoolObj".
 	//
 	template<typename T, typename Enable=void>
-	struct TypeInfo {
-		static_assert(true, "BinON could not determine object type");
+		struct TypeInfo {
+			static_assert(true, "BinON could not determine object type");
 
-		//	Specializations provide:
-		//		using Wrapper = ...;
-		//		static auto TypeName() -> std::string;
-	};
+			//	Specializations provide:
+			//		using Wrapper = ...;
+			//		static auto TypeName() -> std::string;
+		};
 	template<typename T> using TWrapper = typename TypeInfo<T>::Wrapper;
 
 	//	kIsWrapper<BoolObj> evaluates to true to indicate that you are already
@@ -196,56 +196,57 @@ namespace binon {
 	//		intList.emplaceBack(3);
 	//
 	template<typename T, typename Ctnr=std::vector<T>>
-	struct SListT: BinONObj {
-		using TElem = T;
-		using TWrap = TWrapper<T>;
-		using TCtnr = Ctnr;
-		using TSize = typename Ctnr::size_type;
+		struct SListT: BinONObj {
+			using TElem = T;
+			using TWrap = TWrapper<T>;
+			using TCtnr = Ctnr;
+			using TSize = typename Ctnr::size_type;
 
-		static void EncodeData(
-			const TCtnr& v, TOStream& stream, bool requireIO=true);
-		static auto DecodeData(TIStream& stream, bool requireIO=true) -> TCtnr;
+			static void EncodeData(
+				const TCtnr& v, TOStream& stream, bool requireIO=true);
+			static auto DecodeData(TIStream& stream, bool requireIO=true)
+				-> TCtnr;
 
-		TCtnr mValue;
+			TCtnr mValue;
 
-		SListT(std::initializer_list<TElem> lst): mValue{lst} {}
-		SListT(const SList& sList);
-		SListT(SList&& sList);
-		SListT(const Ctnr& ctnr): mValue(ctnr) {}
-		SListT(Ctnr&& ctnr) noexcept: mValue(std::move(ctnr)) {}
-		SListT() noexcept = default;
-		operator Ctnr&() noexcept { return mValue; }
-		operator const Ctnr&() const noexcept { return mValue; }
-		explicit operator bool() const noexcept override
-			{ return mValue.size() != 0; }
-		auto typeCode() const noexcept -> CodeByte final
-			{ return kSListCode; }
-		void encodeData(TOStream& stream, bool requireIO=true) const final;
-		void decodeData(TIStream& stream, bool requireIO=true) final;
-		auto makeCopy(bool deep=false) const -> TSPBinONObj override;
-		auto clsName() const noexcept -> std::string override;
-		void printArgsRepr(std::ostream& stream) const override;
+			SListT(std::initializer_list<TElem> lst): mValue{lst} {}
+			SListT(const SList& sList);
+			SListT(SList&& sList);
+			SListT(const Ctnr& ctnr): mValue(ctnr) {}
+			SListT(Ctnr&& ctnr) noexcept: mValue(std::move(ctnr)) {}
+			SListT() noexcept = default;
+			operator Ctnr&() noexcept { return mValue; }
+			operator const Ctnr&() const noexcept { return mValue; }
+			explicit operator bool() const noexcept override
+				{ return mValue.size() != 0; }
+			auto typeCode() const noexcept -> CodeByte final
+				{ return kSListCode; }
+			void encodeData(TOStream& stream, bool requireIO=true) const final;
+			void decodeData(TIStream& stream, bool requireIO=true) final;
+			auto makeCopy(bool deep=false) const -> TSPBinONObj override;
+			auto clsName() const noexcept -> std::string override;
+			void printArgsRepr(std::ostream& stream) const override;
 
-		//---- TCtnr API -------------------------------------------------------
+			//---- TCtnr API -------------------------------------------------------
 
-		using value_type = typename TCtnr::value_type;
-		using size_type = typename TCtnr::size_type;
-		auto& operator [] (size_type i)
-			{ return BINON_IF_DBG_REL(mValue.at(i), mValue[i]); }
-		const auto& operator [] (size_type i) const
-			{ return const_cast<SListT&>(*this)[i]; }
-		auto begin() noexcept { return mValue.begin(); }
-		auto begin() const noexcept { return mValue.begin(); }
-		void clear() noexcept { mValue.clear(); }
-		template<typename... Args>
-			auto& emplace_back(Args&&... args)
-			{ return mValue.emplace_back(std::forward<Args>(args)...); }
-		auto end() noexcept { return mValue.end(); }
-		auto end() const noexcept { return mValue.end(); }
-		void push_back(const value_type& v) { mValue.push_back(v); }
-		void push_back(value_type&& v) { mValue.push_back(std::move(v)); }
-		auto size() const noexcept { return mValue.size(); }
-	};
+			using value_type = typename TCtnr::value_type;
+			using size_type = typename TCtnr::size_type;
+			auto& operator [] (size_type i)
+				{ return BINON_IF_DBG_REL(mValue.at(i), mValue[i]); }
+			const auto& operator [] (size_type i) const
+				{ return const_cast<SListT&>(*this)[i]; }
+			auto begin() noexcept { return mValue.begin(); }
+			auto begin() const noexcept { return mValue.begin(); }
+			void clear() noexcept { mValue.clear(); }
+			template<typename... Args>
+				auto& emplace_back(Args&&... args)
+				{ return mValue.emplace_back(std::forward<Args>(args)...); }
+			auto end() noexcept { return mValue.end(); }
+			auto end() const noexcept { return mValue.end(); }
+			void push_back(const value_type& v) { mValue.push_back(v); }
+			void push_back(value_type&& v) { mValue.push_back(std::move(v)); }
+			auto size() const noexcept { return mValue.size(); }
+		};
 
 	//---- Low-Level Support Functions -----------------------------------------
 
@@ -335,12 +336,12 @@ namespace binon {
 	//---- ListBase -----------------------------------------------------------
 
 	template<typename Obj, typename... Args>
-	auto ListBase::emplaceBack(Args&&... args) -> TSPBinONObj& {
-		TList& lst = list();
-		lst.push_back(
-			std::make_shared<Obj>(std::forward<Args>(args)...));
-		return lst.back();
-	}
+		auto ListBase::emplaceBack(Args&&... args) -> TSPBinONObj& {
+			TList& lst = list();
+			lst.push_back(
+				std::make_shared<Obj>(std::forward<Args>(args)...));
+			return lst.back();
+		}
 
 	//---- ListObj ------------------------------------------------------------
 
@@ -367,192 +368,203 @@ namespace binon {
 	//---- TypeInfo specializations -------------------------------------------
 
 	template<typename T>
-	struct TypeInfo<std::reference_wrapper<T>> {
-		using Wrapper = typename TypeInfo<T>::Wrapper;
-		static auto TypeName() -> std::string
-			{ return TypeInfo<T>::TypeName(); }
-	};
+		struct TypeInfo<std::reference_wrapper<T>> {
+			using Wrapper = typename TypeInfo<T>::Wrapper;
+			static auto TypeName() -> std::string
+				{ return TypeInfo<T>::TypeName(); }
+		};
 	template<typename T>
-	struct TypeInfo<T, std::enable_if_t<kIsWrapper<T>>>
-	{
-		using Wrapper = T;
-		static auto TypeName() -> std::string { return T{}.clsName(); }
-	};
+		struct TypeInfo<T, std::enable_if_t<kIsWrapper<T>>>
+		{
+			using Wrapper = T;
+			static auto TypeName() -> std::string { return T{}.clsName(); }
+		};
 	template<typename T>
-	struct TypeInfo<
-		T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>>
-		>
-	{
-		using Wrapper = IntObj;
-		static auto TypeName() -> std::string {
-			switch(sizeof(T)) {
-					case 1: return "int8_t";
-					case 2: return "int16_t";
-					case 4: return "int32_t";
-					case 8: return "int64_t";
-					default: return "SIGNED_INTEGER";
+		struct TypeInfo<
+			T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>>
+			>
+		{
+			using Wrapper = IntObj;
+			static auto TypeName() -> std::string {
+				switch(sizeof(T)) {
+						case 1: return "int8_t";
+						case 2: return "int16_t";
+						case 4: return "int32_t";
+						case 8: return "int64_t";
+						default: return "SIGNED_INTEGER";
+					}
 				}
-			}
-	};
+		};
 	template<typename T>
-	struct TypeInfo<T, std::enable_if_t<std::is_unsigned_v<T>>> {
-		using Wrapper = UIntObj;
-		static auto TypeName() -> std::string {
-			switch(sizeof(T)) {
-					case 1: return "uint8_t";
-					case 2: return "uint16_t";
-					case 4: return "uint32_t";
-					case 8: return "uint64_t";
-					default: return "UNSIGNED_INTEGER";
+		struct TypeInfo<T, std::enable_if_t<std::is_unsigned_v<T>>> {
+			using Wrapper = UIntObj;
+			static auto TypeName() -> std::string {
+				switch(sizeof(T)) {
+						case 1: return "uint8_t";
+						case 2: return "uint16_t";
+						case 4: return "uint32_t";
+						case 8: return "uint64_t";
+						default: return "UNSIGNED_INTEGER";
+					}
 				}
-			}
-	};
-	template<> struct TypeInfo<bool> {
-		using Wrapper = BoolObj;
-		static auto TypeName() -> std::string { return "bool"; }
-	};
-	template<> struct TypeInfo<types::TFloat32> {
-		using Wrapper = Float32Obj;
-		static auto TypeName() -> std::string { return "TFloat32"; }
-	};
-	template<> struct TypeInfo<types::TFloat64> {
-		using Wrapper = FloatObj;
-		static auto TypeName() -> std::string { return "TFloat64"; }
-	};
-	template<> struct TypeInfo<std::string> {
-		using Wrapper = StrObj;
-		static auto TypeName() -> std::string { return "string"; }
-	};
-	template<> struct TypeInfo<std::string_view> {
-		using Wrapper = StrObj;
-		static auto TypeName() -> std::string { return "string"; }
-	};
-	template<> struct TypeInfo<StrObj::TValue> {
-		using Wrapper = StrObj;
-		static auto TypeName() -> std::string { return "string"; }
-	};
-	template<> struct TypeInfo<TBuffer> {
-		using Wrapper = BufferObj;
-		static auto TypeName() -> std::string { return "TBuffer"; }
-	};
+		};
+	template<>
+		struct TypeInfo<bool> {
+			using Wrapper = BoolObj;
+			static auto TypeName() -> std::string { return "bool"; }
+		};
+	template<>
+		struct TypeInfo<types::TFloat32> {
+			using Wrapper = Float32Obj;
+			static auto TypeName() -> std::string { return "TFloat32"; }
+		};
+	template<>
+		struct TypeInfo<types::TFloat64> {
+			using Wrapper = FloatObj;
+			static auto TypeName() -> std::string { return "TFloat64"; }
+		};
+	template<>
+		struct TypeInfo<std::string> {
+			using Wrapper = StrObj;
+			static auto TypeName() -> std::string { return "string"; }
+		};
+	template<>
+		struct TypeInfo<std::string_view> {
+			using Wrapper = StrObj;
+			static auto TypeName() -> std::string { return "string"; }
+		};
+	template<>
+		struct TypeInfo<StrObj::TValue> {
+			using Wrapper = StrObj;
+			static auto TypeName() -> std::string { return "string"; }
+		};
+	template<>
+		struct TypeInfo<TBuffer> {
+			using Wrapper = BufferObj;
+			static auto TypeName() -> std::string { return "TBuffer"; }
+		};
 
 	//---- SListT -------------------------------------------------------------
 
 	template<typename T, typename Ctnr>
-	void SListT<T,Ctnr>::EncodeData(
-		const TCtnr& v, TOStream& stream, bool requireIO)
-	{
-		RequireIO rio{stream, requireIO};
-		UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
-		EncodeElems<T>(IterGen{v.begin(), v.end()}, stream, kSkipRequireIO);
-	}
-	template<typename T, typename Ctnr>
-	auto SListT<T,Ctnr>::DecodeData(TIStream& stream, bool requireIO) -> TCtnr
-	{
-		RequireIO rio{stream, requireIO};
-		auto count = UIntObj::DecodeData(stream, kSkipRequireIO);
-		TCtnr ctnr(count);
-		ctnr.clear();
-		for(T elem: DecodedElemsGen<TElem>(stream, count, kSkipRequireIO)) {
-			ctnr.push_back(std::move(elem));
+		void SListT<T,Ctnr>::EncodeData(
+			const TCtnr& v, TOStream& stream, bool requireIO)
+		{
+			RequireIO rio{stream, requireIO};
+			UIntObj::EncodeData(v.size(), stream, kSkipRequireIO);
+			EncodeElems<T>(IterGen{v.begin(), v.end()}, stream, kSkipRequireIO);
 		}
-		return std::move(ctnr);
-	}
 	template<typename T, typename Ctnr>
-	SListT<T,Ctnr>::SListT(const SList& sList) {
-		for(auto&& p: sList.mValue.mList) {
-			mValue.push_back(static_cast<T>(BinONObj::Cast<TWrap>(p)->mValue));
+		auto SListT<T,Ctnr>::DecodeData(TIStream& stream, bool requireIO)
+			-> TCtnr
+		{
+			RequireIO rio{stream, requireIO};
+			auto count = UIntObj::DecodeData(stream, kSkipRequireIO);
+			TCtnr ctnr(count);
+			ctnr.clear();
+			for(T elem: DecodedElemsGen<TElem>(stream, count, kSkipRequireIO)) {
+				ctnr.push_back(std::move(elem));
+			}
+			return std::move(ctnr);
 		}
-	}
 	template<typename T, typename Ctnr>
-	SListT<T,Ctnr>::SListT(SList&& sList) {
-		if constexpr(kIsWrapper<T>) {
+		SListT<T,Ctnr>::SListT(const SList& sList) {
 			for(auto&& p: sList.mValue.mList) {
-				mValue.push_back(std::move(*BinONObj::Cast<T>(p)));
+				mValue.push_back(
+					static_cast<T>(BinONObj::Cast<TWrap>(p)->mValue));
 			}
 		}
-		else {
-			SListT(static_cast<const SList&>(sList));
-		}
-	}
 	template<typename T, typename Ctnr>
-	void SListT<T,Ctnr>::encodeData(TOStream& stream, bool requireIO) const {
-		EncodeData(mValue, stream, requireIO);
-	}
-	template<typename T, typename Ctnr>
-	void SListT<T,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
-		mValue = DecodeData(stream, requireIO);
-	}
-	template<typename T, typename Ctnr>
-	auto SListT<T,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
-		return std::make_shared<SListT<T,Ctnr>>(*this);
-	}
-	template<typename T, typename Ctnr>
-	auto SListT<T,Ctnr>::clsName() const noexcept -> std::string {
-		constexpr bool kCtnrIsVector = std::is_same_v<Ctnr, std::vector<T>>;
-		std::ostringstream oss;
-		oss << "SListT<" << (kCtnrIsVector ? "vector" : "SEQUENCE")
-			<< '<' << TypeInfo<T>::TypeName() << ">>";
-		return std::move(oss).str();
-	}
-	template<typename T, typename Ctnr>
-	void SListT<T,Ctnr>::printArgsRepr(std::ostream& stream) const {
-		bool first = true;
-		for(auto&& elem: mValue) {
-			if(first) {
-				first = false;
+		SListT<T,Ctnr>::SListT(SList&& sList) {
+			if constexpr(kIsWrapper<T>) {
+				for(auto&& p: sList.mValue.mList) {
+					mValue.push_back(std::move(*BinONObj::Cast<T>(p)));
+				}
 			}
 			else {
-				stream << ", ";
+				SListT(static_cast<const SList&>(sList));
 			}
-			PrintRepr<TElem>(elem, stream);
 		}
-	}
+	template<typename T, typename Ctnr>
+		void SListT<T,Ctnr>::encodeData(
+			TOStream& stream, bool requireIO) const
+		{
+			EncodeData(mValue, stream, requireIO);
+		}
+	template<typename T, typename Ctnr>
+		void SListT<T,Ctnr>::decodeData(TIStream& stream, bool requireIO) {
+			mValue = DecodeData(stream, requireIO);
+		}
+	template<typename T, typename Ctnr>
+		auto SListT<T,Ctnr>::makeCopy(bool deep) const -> TSPBinONObj {
+			return std::make_shared<SListT<T,Ctnr>>(*this);
+		}
+	template<typename T, typename Ctnr>
+		auto SListT<T,Ctnr>::clsName() const noexcept -> std::string {
+			constexpr bool kCtnrIsVector = std::is_same_v<Ctnr, std::vector<T>>;
+			std::ostringstream oss;
+			oss << "SListT<" << (kCtnrIsVector ? "vector" : "SEQUENCE")
+				<< '<' << TypeInfo<T>::TypeName() << ">>";
+			return std::move(oss).str();
+		}
+	template<typename T, typename Ctnr>
+		void SListT<T,Ctnr>::printArgsRepr(std::ostream& stream) const {
+			bool first = true;
+			for(auto&& elem: mValue) {
+				if(first) {
+					first = false;
+				}
+				else {
+					stream << ", ";
+				}
+				PrintRepr<TElem>(elem, stream);
+			}
+		}
 
 	//---- Functions ----------------------------------------------------------
 
 	template<typename T, typename Gen>
-	void EncodeElems(Gen gen, TOStream& stream, bool requireIO) {
-		using TWrap = TWrapper<T>;
-		RequireIO rio{stream, requireIO};
-		TWrap{}.typeCode().write(stream, kSkipRequireIO);
-		if constexpr(std::is_same_v<TWrap, BoolObj>) {
-			auto boolGen = PipeGenVals<T>(
-				std::move(gen),
-				[](const auto& v) { return static_cast<const T&>(v); }
-				);
-			StreamBytes(PackedBoolsGen(boolGen), stream, kSkipRequireIO);
-		}
-		else {
-			for(auto&& elem: gen) {
-				TWrap::EncodeData(elem, stream, kSkipRequireIO);
+		void EncodeElems(Gen gen, TOStream& stream, bool requireIO) {
+			using TWrap = TWrapper<T>;
+			RequireIO rio{stream, requireIO};
+			TWrap{}.typeCode().write(stream, kSkipRequireIO);
+			if constexpr(std::is_same_v<TWrap, BoolObj>) {
+				auto boolGen = PipeGenVals<T>(
+					std::move(gen),
+					[](const auto& v) { return static_cast<const T&>(v); }
+					);
+				StreamBytes(PackedBoolsGen(boolGen), stream, kSkipRequireIO);
+			}
+			else {
+				for(auto&& elem: gen) {
+					TWrap::EncodeData(elem, stream, kSkipRequireIO);
+				}
 			}
 		}
-	}
 	template<typename T>
-	void PrintRepr(const T& value, std::ostream& stream) {
+		void PrintRepr(const T& value, std::ostream& stream) {
 
-		//	If the value is already a BinON type, we can simply call its
-		//	printRepr() method.
-		if constexpr(kIsWrapper<T>) {
-			value.printRepr(stream);
+			//	If the value is already a BinON type, we can simply call its
+			//	printRepr() method.
+			if constexpr(kIsWrapper<T>) {
+				value.printRepr(stream);
+			}
+
+			//	Otherwise, it is hopefully a primitive type we can wrap in a
+			//	BinON object of some sort.
+			else {
+				std::ostringstream oss;
+				TWrapper<T>{value}.printRepr(oss);
+				auto s{std::move(oss).str()};
+
+				//	Assuming we have made it this far, we should have a string
+				//	s that reads something like "IntObj{42}", for example. But
+				//	what we actually want to print is "42" in this case.
+				auto i = s.find('{') + 1u;
+				auto n = s.rfind('}') - i;
+				stream << std::string_view{s}.substr(i, n);
+			}
 		}
-
-		//	Otherwise, it is hopefully a primitive type we can wrap in a BinON
-		//	object of some sort.
-		else {
-			std::ostringstream oss;
-			TWrapper<T>{value}.printRepr(oss);
-			auto s{std::move(oss).str()};
-
-			//	Assuming we have made it this far, we should have a string s
-			//	that reads something like "IntObj{42}", for example. But what
-			//	we actually want to print is "42" in this case.
-			auto i = s.find('{') + 1u;
-			auto n = s.rfind('}') - i;
-			stream << std::string_view{s}.substr(i, n);
-		}
-	}
 }
 
 #endif

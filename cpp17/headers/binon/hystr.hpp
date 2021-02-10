@@ -206,7 +206,7 @@ namespace binon {
 			**/
 			constexpr auto hash() const noexcept -> std::size_t;
 
-		private:
+		 private:
 			std::variant<TView,TStr> mV;
 		};
 

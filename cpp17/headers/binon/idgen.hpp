@@ -120,7 +120,7 @@ namespace binon {
 
 			~NewID();
 
-		private:
+		 private:
 			IDGen<ID>* mPIDGen = nullptr;
 			ID mID = kNoID<ID>;
 		};

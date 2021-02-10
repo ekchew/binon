@@ -88,7 +88,7 @@ namespace binon {
 		auto operator = (RequireIO&& rio) noexcept -> RequireIO&;
 		~RequireIO();
 
-	private:
+	 private:
 		TIOS* mPStream;
 		TIOS::iostate mEx0;
 	};

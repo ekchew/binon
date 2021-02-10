@@ -31,79 +31,74 @@ namespace binon {
 		class GenType{};
 	}
 	template<typename T, typename Data, typename Fn>
-	struct GenBase: details::GenType {
-		static_assert(
-			std::is_same_v<
-				std::invoke_result_t<Fn, Data&>, std::optional<T>
-				>,
-			"Generator functor must take the form: std::optional<T> fn(Data&)"
-			);
+		struct GenBase: details::GenType {
+			/**
+			constructor
 
-		/**
-		constructor
+			GenBase's constructor is exposed by Generator.
 
-		GenBase's constructor is exposed by Generator.
+			Template Args:
+				TFn (inferred)
+				DataArgs (inferred)
 
-		Template Args:
-			TFn (inferred)
-			DataArgs (inferred)
+			Args:
+				functor (TFn): your functor
+				dataArgs... (DataArgs...): args to initialize a Data instance
+					Clearly, these only make sense if your Data type is not
+					void.
+			**/
+			template<typename TFn, typename... DataArgs>
+				GenBase(TFn&& functor, DataArgs&&... dataArgs):
+					mFunctor{std::forward<TFn>(functor)},
+					mData{std::forward<DataArgs>(dataArgs)...} {}
 
-		Args:
-			functor (TFn): your functor
-			dataArgs... (DataArgs...): args to initialize a Data instance
-				Clearly, these only make sense if your Data type is not void.
-		**/
-		template<typename TFn, typename... DataArgs>
-			GenBase(TFn&& functor, DataArgs&&... dataArgs):
-				mFunctor{std::forward<TFn>(functor)},
-				mData{std::forward<DataArgs>(dataArgs)...} {}
+			/**
+			operator overloads: *
 
-		/**
-		operator overloads: *
+			This operator gives you access to the internal Data instance (the
+			same one that is passed to your functor by reference). It is only
+			defined when your Data type is something other than void.
+			
+			There are 2 overloads: one gives you an L-value reference and the
+			other an R-value reference. You can go *std::move(gen) to get the
+			latter. (You probably wouldn't want to do so before you're done
+			iterating though.)
+			**/
+			auto operator * () & noexcept -> Data& { return mData; }
+			auto operator * () && noexcept -> Data&& { return std::move(mData); }
 
-		This operator gives you access to the internal Data instance (the same
-		one that is passed to your functor by reference). It is only defined
-		when your Data type is something other than void.
+			/**
+			operator overload: ->
 
-		There are 2 overloads: one gives you an L-value reference and the other
-		an R-value reference. You can go *std::move(gen) to get the latter. (You
-		probably wouldn't want to do so before you're done iterating though.)
-		**/
-		auto operator * () & noexcept -> Data& { return mData; }
-		auto operator * () && noexcept -> Data&& { return std::move(mData); }
+			If your Data type is a class/struct, you can access members with ->.
+			It is only defined when your Data type is something other than void.
+			**/
+			auto operator -> () noexcept -> Data* { return &mData; }
 
-		/**
-		operator overload: ->
+		 protected:
+			Fn mFunctor;
+			Data mData;
 
-		If your Data type is a class/struct, you can access members with ->. It
-		is only defined when your Data type is something other than void.
-		**/
-		auto operator -> () noexcept -> Data* { return &mData; }
-
-	protected:
-		Fn mFunctor;
-		Data mData;
-
-		auto callFunctor() -> std::optional<T> { return mFunctor(mData); }
+			auto callFunctor() -> std::optional<T> { return mFunctor(mData); }
 	};
 	template<typename T, typename Fn>
-	struct GenBase<T, void, Fn>: details::GenType {
-		static_assert(
-			std::is_same_v<
-				std::invoke_result_t<Fn>, std::optional<T>
-				>,
-			"Generator functor must take the form: std::optional<T> fn()"
-			);
+		struct GenBase<T, void, Fn>: details::GenType {
+			static_assert(
+				std::is_same_v<
+					std::invoke_result_t<Fn>, std::optional<T>
+					>,
+				"Generator functor must take the form: std::optional<T> fn()"
+				);
 
-		template<typename TFn>
-			GenBase(TFn&& functor) noexcept:
-				mFunctor{std::forward<TFn>(functor)} {}
+			template<typename TFn>
+				GenBase(TFn&& functor) noexcept:
+					mFunctor{std::forward<TFn>(functor)} {}
 
-	protected:
-		Fn mFunctor;
+		 protected:
+			Fn mFunctor;
 
-		auto callFunctor() -> std::optional<T> { return mFunctor(); }
-	};
+			auto callFunctor() -> std::optional<T> { return mFunctor(); }
+		};
 
 	/**
 	Generator class template
@@ -191,84 +186,85 @@ namespace binon {
 			The 1st form applies if the Data type is void.
 	**/
 	template<typename T, typename Data, typename Fn>
-	struct Generator: GenBase<T,Data,Fn> {
-		using TValue = T;
-		using TData = Data;
-		using TFunctor = Fn;
-		using value_type = TValue;
+		struct Generator: GenBase<T,Data,Fn> {
+			using TValue = T;
+			using TData = Data;
+			using TFunctor = Fn;
+			using value_type = TValue;
 
-		/**
-		iterator class
+			/**
+			iterator class
 
-		This is an input iterator instantiated by Generator's begin and end
-		methods. It stores an instance of the last std::optional<T>
-		returned by your functor, which is updated by the ++ operator. You
-		can reach the T value by dereferencing the iterator with * or ->.
-		In debug mode, this may throw std::bad_optional_access if there is no
-		value. (In release mode, this check is suppressed for performance.)
+			This is an input iterator instantiated by Generator's begin and end
+			methods. It stores an instance of the last std::optional<T> returned
+			by your functor, which is updated by the ++ operator. You can reach
+			the T value by dereferencing the iterator with * or ->. In debug
+			mode, this may throw std::bad_optional_access if there is no value.
+			(In release mode, this check is suppressed for performance.)
+			
+			There is no const_iterator class. That means you could mess around
+			with the iterator's value, but what's the point when it's going to
+			get overwritten by ++ anyway? The * operator does, however, support
+			move semantics. If you were generating std::string, for example, you
+			could avoid a needless copy with:
 
-		There is no const_iterator class. That means you could mess around with
-		the iterator's value, but what's the point when it's going to get
-		overwritten by ++ anyway? The * operator does, however, support move
-		semantics. If you were generating std::string, for example, you could
-		avoid a needless copy with:
+				auto myStr = *std::move(myIt);
 
-			auto myStr = *std::move(myIt);
+			(Implementation Note: iterator is smart about
+			std::reference_wrapper. If your TValue is a wrapper, it will unwrap
+			it and give you a plain L-value reference when you dereference the
+			iterator. This should eliminate any drama when you use the ->
+			operator, for example.)
+			**/
+			struct iterator {
+				using iterator_category = std::input_iterator_tag;
+				using value_type = Generator::value_type;
+				using difference_type = std::ptrdiff_t;
+				using reference = TUnwrappedRef<value_type>;
+				using pointer = value_type*;
 
-		(Implementation Note: iterator is smart about std::reference_wrapper.
-		If your TValue is a wrapper, it will unwrap it and give you a plain
-		L-value reference when you dereference the iterator. This should
-		eliminate any drama when you use the -> operator, for example.)
-		**/
-		struct iterator {
-			using iterator_category = std::input_iterator_tag;
-			using value_type = Generator::value_type;
-			using difference_type = std::ptrdiff_t;
-			using reference = TUnwrappedRef<value_type>;
-			using pointer = value_type*;
+				Generator* mPGen;
+				std::optional<value_type> mOptVal;
 
-			Generator* mPGen;
-			std::optional<value_type> mOptVal;
+				explicit iterator(Generator& gen) noexcept:
+					mPGen{&gen} {}
+				explicit operator bool() const noexcept
+					{ return mOptVal.has_value(); }
+				auto operator == (const iterator& rhs) const noexcept -> bool
+					{ return EqualOpts(mOptVal, rhs.mOptVal); }
+				auto operator != (const iterator& rhs) const noexcept -> bool
+					{ return !EqualOpts(mOptVal, rhs.mOptVal); }
+				auto operator * () & -> reference
+					{ return DerefOpt(mOptVal); }
+				auto operator * () && -> TRefBase<value_type>&&
+					{ return DerefOpt(std::move(mOptVal)); }
+				auto operator -> () -> pointer
+					{ return &BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
+				auto operator ++ () -> iterator&
+					{ return mOptVal = mPGen->callFunctor(), *this; }
+				auto operator ++ (int) -> iterator {
+						iterator copy{*this};
+						return ++*this, copy;
+					}
+			};
 
-			explicit iterator(Generator& gen) noexcept:
-				mPGen{&gen} {}
-			explicit operator bool() const noexcept
-				{ return mOptVal.has_value(); }
-			auto operator == (const iterator& rhs) const noexcept -> bool
-				{ return EqualOpts(mOptVal, rhs.mOptVal); }
-			auto operator != (const iterator& rhs) const noexcept -> bool
-				{ return !EqualOpts(mOptVal, rhs.mOptVal); }
-			auto operator * () & -> reference
-				{ return DerefOpt(mOptVal); }
-			auto operator * () && -> TRefBase<value_type>&&
-				{ return DerefOpt(std::move(mOptVal)); }
-			auto operator -> () -> pointer
-				{ return &BINON_IF_DBG_REL(mOptVal.value(), *mOptVal); }
-			auto operator ++ () -> iterator&
-				{ return mOptVal = mPGen->callFunctor(), *this; }
-			auto operator ++ (int) -> iterator {
-					iterator copy{*this};
-					return ++*this, copy;
-				}
+			using GenBase<T,Data,Fn>::GenBase;
+
+			/**
+			begin method
+
+			Returns:
+				iterator
+			**/
+			auto begin() -> iterator { return ++iterator{*this}; }
+			/**
+			end method
+
+			Returns:
+				iterator: stores std::null_opt internally
+			**/
+			auto end() -> iterator { return iterator{*this}; }
 		};
-
-		using GenBase<T,Data,Fn>::GenBase;
-
-		/**
-		begin method
-
-		Returns:
-			iterator
-		**/
-		auto begin() -> iterator { return ++iterator{*this}; }
-		/**
-		end method
-
-		Returns:
-			iterator: stores std::null_opt internally
-		**/
-		auto end() -> iterator { return iterator{*this}; }
-	};
 
 	/**
 	MakeGen function template
@@ -349,20 +345,20 @@ namespace binon {
 		Generator of BgnIt::value_type
 	**/
 	template<typename BgnIt, typename EndIt>
-	struct IterGen {
-		using TBgnIt = BgnIt;
-		using TEndIt = EndIt;
-		using iterator = TBgnIt;
-		IterGen(BgnIt bgnIt, EndIt endIt) noexcept:
-			mBgnIt{std::move(bgnIt)}, mEndIt{std::move(endIt)} {}
-		constexpr auto begin() -> TBgnIt& { return mBgnIt; }
-		constexpr auto begin() const -> const TBgnIt& { return mBgnIt; }
-		constexpr auto end() -> TEndIt& { return mEndIt; }
-		constexpr auto end() const -> const TEndIt& { return mEndIt; }
-	private:
-		TBgnIt mBgnIt;
-		TEndIt mEndIt;
-	};
+		struct IterGen {
+			using TBgnIt = BgnIt;
+			using TEndIt = EndIt;
+			using iterator = TBgnIt;
+			IterGen(BgnIt bgnIt, EndIt endIt) noexcept:
+				mBgnIt{std::move(bgnIt)}, mEndIt{std::move(endIt)} {}
+			constexpr auto begin() -> TBgnIt& { return mBgnIt; }
+			constexpr auto begin() const -> const TBgnIt& { return mBgnIt; }
+			constexpr auto end() -> TEndIt& { return mEndIt; }
+			constexpr auto end() const -> const TEndIt& { return mEndIt; }
+		 private:
+			TBgnIt mBgnIt;
+			TEndIt mEndIt;
+		};
 
 	/**
 	ChildGenData struct template
@@ -390,131 +386,152 @@ namespace binon {
 			You can access it externally with myChildGen->childData.
 	**/
 	template<typename ParentGen, typename ChildData>
-	struct ChildGenData {
-		using TParentGen = ParentGen;
-		using TChildData = ChildData;
-		using TParentIter = typename ParentGen::iterator;
+		struct ChildGenData {
+			using TParentGen = ParentGen;
+			using TChildData = ChildData;
+			using TParentIter = typename ParentGen::iterator;
 
-		TParentIter parentIter;
-		TParentGen parentGen;
-		TChildData childData;
+			TParentIter parentIter;
+			TParentGen parentGen;
+			TChildData childData;
 
-		/**
-		constructor
+			/**
+			constructor
 
-		Template Args:
-			ChildArgs (types, inferred)
+			Template Args:
+				ChildArgs (types, inferred)
 
-		Args:
-			parentGen (TParentGen): parent generator
-				Technically, this can be any input iterable type, but if it's
-				not a Generator, read up on IterGen as it may be a suitable
-				alternative.
-			args (ChildArgs): init args for ChildData type if not void
-		**/
-		template<typename... ChildArgs>
-			ChildGenData(TParentGen parentGen, ChildArgs&&... args):
-				parentIter(parentGen.begin()),
-				parentGen{std::move(parentGen)},
-				childData{std::forward<ChildArgs>(args)...} {
+			Args:
+				parentGen (TParentGen): parent generator
+					Technically, this can be any input iterable type, but if
+					it's not a Generator, read up on IterGen as it may be a
+					suitable alternative.
+				args (ChildArgs): init args for ChildData type if not void
+			**/
+			template<typename... ChildArgs>
+				ChildGenData(TParentGen parentGen, ChildArgs&&... args):
+					parentIter(parentGen.begin()),
+					parentGen{std::move(parentGen)},
+					childData{std::forward<ChildArgs>(args)...} {
+						if constexpr(
+							std::is_base_of_v<details::GenType, TParentGen>)
+						{
+							parentIter.mPGen = &this->parentGen;
+						}
+					}
+
+			/**
+			WrapFunctor class method template
+
+			What PipeGen's functor expects and what the Generator it returns
+			tries to give it are not quite the same thing. WrapFunctor returns a
+			functor that smooths over these differences.
+
+			Template Args:
+				Fn (type, inferred)
+
+			Args:
+				functor (Fn): the functor given to PipeGen
+
+			Returns:
+				functor: the functor PipeGen assigns to the Generator it returns
+			**/
+			template<typename Fn>
+				static auto WrapFunctor(Fn&& functor) {
+					using TFn = std::remove_reference_t<Fn>;
+					return [fn = TFn{std::forward<Fn>(functor)}](
+						ChildGenData& cgd) mutable
+					{
+						return fn(
+							cgd.parentGen, cgd.parentIter, cgd.childData);
+					};
+				}
+
+			template<typename T, typename Fn>
+				static auto ValsFunctor(Fn&& functor) {
+					using TFn = std::remove_reference_t<Fn>;
+					return [fn = TFn{std::forward<Fn>(functor)}](
+						TParentGen& parGen, TParentIter& parIt,
+						TChildData& chdData
+						) mutable -> std::optional<T>
+					{
+						if(parIt == parGen.end()) {
+							return std::nullopt;
+						}
+						else {
+							return std::make_optional<T>(
+								fn(*std::move(parIt)++, chdData));
+						}
+					};
+				}
+			template<typename T, typename Fn>
+				static auto RefsFunctor(Fn&& functor) {
+					using TFn = std::remove_reference_t<Fn>;
+					return [fn = TFn{std::forward<Fn>(functor)}](
+						TParentGen& parGen, TParentIter& parIt,
+						TChildData& chdData) mutable -> std::optional<T>
+					{
+						if(parIt == parGen.end()) {
+							return std::nullopt;
+						}
+						else {
+							return std::make_optional<T>(fn(*parIt++, chdData));
+						}
+					};
+				}
+		};
+	template<typename ParentGen>
+		struct ChildGenData<ParentGen,void> {
+			using TParentGen = ParentGen;
+			using TChildData = void;
+			using TParentIter = typename ParentGen::iterator;
+
+			TParentIter parentIter;
+			TParentGen parentGen;
+
+			ChildGenData(TParentGen parentGen):
+				parentIter{parentGen.begin()},
+				parentGen{std::move(parentGen)} {
 					if constexpr(
 						std::is_base_of_v<details::GenType, TParentGen>)
 					{
 						parentIter.mPGen = &this->parentGen;
 					}
 				}
-
-		/**
-		WrapFunctor class method template
-
-		What PipeGen's functor expects and what the Generator it returns tries
-		to give it are not quite the same thing. WrapFunctor returns a functor
-		that smooths over these differences.
-
-		Template Args:
-			Fn (type, inferred)
-
-		Args:
-			functor (Fn): the functor given to PipeGen
-
-		Returns:
-			functor: the functor PipeGen assigns to the Generator it returns
-		**/
-		template<typename Fn>
-			static auto WrapFunctor(Fn&& functor) {
-				using TFn = std::remove_reference_t<Fn>;
-				return [fn = TFn{std::forward<Fn>(functor)}](
-					ChildGenData& cgd) mutable
-				{
-					return fn(
-						cgd.parentGen, cgd.parentIter, cgd.childData);
-				};
-			}
-
-		template<typename T, typename Fn>
-			static auto ValsFunctor(Fn&& functor) {
-				using TFn = std::remove_reference_t<Fn>;
-				return [fn = TFn{std::forward<Fn>(functor)}](
-					TParentGen& parGen, TParentIter& parIt, TChildData& chdData
-					) mutable -> std::optional<T>
-				{
-					if(parIt == parGen.end()) {
-						return std::nullopt;
-					}
-					else {
-						return std::make_optional<T>(
-							fn(*std::move(parIt)++, chdData));
-					}
-				};
-			}
-		template<typename T, typename Fn>
-			static auto RefsFunctor(Fn&& functor) {
-				using TFn = std::remove_reference_t<Fn>;
-				return [fn = TFn{std::forward<Fn>(functor)}](
-					TParentGen& parGen, TParentIter& parIt,
-					TChildData& chdData) mutable -> std::optional<T>
-				{
-					if(parIt == parGen.end()) {
-						return std::nullopt;
-					}
-					else {
-						return std::make_optional<T>(fn(*parIt++, chdData));
-					}
-				};
-			}
-	};
-	template<typename ParentGen>
-	struct ChildGenData<ParentGen,void> {
-		using TParentGen = ParentGen;
-		using TChildData = void;
-		using TParentIter = typename ParentGen::iterator;
-
-		TParentIter parentIter;
-		TParentGen parentGen;
-
-		ChildGenData(TParentGen parentGen):
-			parentIter{parentGen.begin()},
-			parentGen{std::move(parentGen)} {
-				if constexpr(
-					std::is_base_of_v<details::GenType, TParentGen>)
-				{
-					parentIter.mPGen = &this->parentGen;
+			template<typename Fn>
+				static auto WrapFunctor(Fn&& functor) {
+					using TFn = std::remove_reference_t<Fn>;
+					return [fn = TFn{std::forward<Fn>(functor)}](
+						ChildGenData& cgd) mutable
+					{
+						return fn(cgd.parentGen, cgd.parentIter);
+					};
 				}
-			}
-		template<typename Fn>
-			static auto WrapFunctor(Fn&& functor) {
-				using TFn = std::remove_reference_t<Fn>;
-				return [fn = TFn{std::forward<Fn>(functor)}](
-					ChildGenData& cgd) mutable
-				{
-					return fn(cgd.parentGen, cgd.parentIter);
-				};
-			}
-		template<typename T, typename Fn>
-			static auto ValsFunctor(Fn&& functor) {
-				if constexpr(
-					std::is_base_of_v<details::GenType, TParentGen>)
-				{
+			template<typename T, typename Fn>
+				static auto ValsFunctor(Fn&& functor) {
+					if constexpr(
+						std::is_base_of_v<details::GenType, TParentGen>)
+					{
+						using TFn = std::remove_reference_t<Fn>;
+						return [fn = TFn{std::forward<Fn>(functor)}](
+							TParentGen& parGen, TParentIter& parIt) mutable
+							-> std::optional<T>
+						{
+							if(parIt == parGen.end()) {
+								return std::nullopt;
+							}
+							else {
+								return std::make_optional<T>(
+									fn(*std::move(parIt)++));
+							}
+						};
+					}
+					else {
+						return RefsFunctor<T,Fn>(std::forward<Fn>(functor));
+					}
+				}
+			template<typename T, typename Fn>
+				static auto RefsFunctor(Fn&& functor) {
 					using TFn = std::remove_reference_t<Fn>;
 					return [fn = TFn{std::forward<Fn>(functor)}](
 						TParentGen& parGen, TParentIter& parIt) mutable
@@ -524,31 +541,11 @@ namespace binon {
 							return std::nullopt;
 						}
 						else {
-							return std::make_optional<T>(
-								fn(*std::move(parIt)++));
+							return std::make_optional<T>(fn(*parIt++));
 						}
 					};
 				}
-				else {
-					return RefsFunctor<T,Fn>(std::forward<Fn>(functor));
-				}
-			}
-		template<typename T, typename Fn>
-			static auto RefsFunctor(Fn&& functor) {
-				using TFn = std::remove_reference_t<Fn>;
-				return [fn = TFn{std::forward<Fn>(functor)}](
-					TParentGen& parGen, TParentIter& parIt) mutable
-					-> std::optional<T>
-				{
-					if(parIt == parGen.end()) {
-						return std::nullopt;
-					}
-					else {
-						return std::make_optional<T>(fn(*parIt++));
-					}
-				};
-			}
-	};
+		};
 
 	/**
 	PipeGen function template
