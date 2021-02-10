@@ -188,6 +188,7 @@ namespace binon {
 
 		SKDictT(std::initializer_list<TKeyVal> lst);
 		SKDictT(const SKDict& dict);
+		SKDictT(SKDict&& dict);
 		SKDictT(const TCtnr& ctnr);
 		SKDictT(TCtnr&& ctnr) noexcept;
 		SKDictT() noexcept = default;
@@ -249,6 +250,7 @@ namespace binon {
 
 		SDictT(std::initializer_list<TKeyVal> lst);
 		SDictT(const SDict& dict);
+		SDictT(SDict&& dict);
 		SDictT(const TCtnr& ctnr);
 		SDictT(TCtnr&& ctnr) noexcept;
 		SDictT() noexcept = default;
@@ -382,6 +384,18 @@ namespace binon {
 		for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
 			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
 			mValue[static_cast<TKey>(pKey->mValue)] = pVal0;
+		}
+	}
+	template<typename K, typename Ctnr>
+	SKDictT<K,Ctnr>::SKDictT(SKDict&& dict) {
+		if constexpr(kIsWrapper<K>) {
+			for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
+				auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+				mValue[std::move(pKey->mValue)] = pVal0;
+			}
+		}
+		else {
+			SKDictT(static_cast<const SKDict&>(dict));
 		}
 	}
 	template<typename K, typename Ctnr>
@@ -534,6 +548,31 @@ namespace binon {
 			auto pVal = BinONObj::Cast<TValWrap>(pVal0);
 			mValue[static_cast<TKey>(pKey->mValue)]
 				= static_cast<TVal>(pVal->mValue);
+		}
+	}
+	template<typename K, typename V, typename Ctnr>
+	SDictT<K,V,Ctnr>::SDictT(SDict&& dict) {
+		using std::move;
+		for(auto&& [pKey0, pVal0]: dict.mValue.mDict) {
+			auto pKey = BinONObj::Cast<TKeyWrap>(pKey0);
+			auto pVal = BinONObj::Cast<TValWrap>(pVal0);
+			if constexpr(kIsWrapper<K>) {
+				if constexpr(kIsWrapper<V>) {
+					mValue[move(*pKey)] = move(*pVal);
+				}
+				else {
+					mValue[move(*pKey)] = static_cast<V>(pVal->mValue);
+				}
+			}
+			else {
+				if constexpr(kIsWrapper<V>) {
+					mValue[static_cast<TKey>(pKey->mValue)] = move(*pVal);
+				}
+				else {
+					mValue[static_cast<TKey>(pKey->mValue)]
+						= static_cast<TVal>(pVal->mValue);
+				}
+			}
 		}
 	}
 	template<typename K, typename V, typename Ctnr>

@@ -210,6 +210,7 @@ namespace binon {
 
 		SListT(std::initializer_list<TElem> lst): mValue{lst} {}
 		SListT(const SList& sList);
+		SListT(SList&& sList);
 		SListT(const Ctnr& ctnr): mValue(ctnr) {}
 		SListT(Ctnr&& ctnr) noexcept: mValue(std::move(ctnr)) {}
 		SListT() noexcept = default;
@@ -459,8 +460,19 @@ namespace binon {
 	}
 	template<typename T, typename Ctnr>
 	SListT<T,Ctnr>::SListT(const SList& sList) {
-		for(auto& p: sList.mValue.mList) {
+		for(auto&& p: sList.mValue.mList) {
 			mValue.push_back(static_cast<T>(BinONObj::Cast<TWrap>(p)->mValue));
+		}
+	}
+	template<typename T, typename Ctnr>
+	SListT<T,Ctnr>::SListT(SList&& sList) {
+		if constexpr(kIsWrapper<T>) {
+			for(auto&& p: sList.mValue.mList) {
+				mValue.push_back(std::move(*BinONObj::Cast<T>(p)));
+			}
+		}
+		else {
+			SListT(static_cast<const SList&>(sList));
 		}
 	}
 	template<typename T, typename Ctnr>
