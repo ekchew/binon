@@ -71,6 +71,7 @@ DEP4 := \
 	${HDR}listobj.hpp \
 	${HDR}nullobj.hpp \
 	${HDR}strobj.hpp \
+	${HDR}typeinfo.hpp \
 	${DEP3}
 DEP5 := \
 	${HDR}idgen.hpp \
