@@ -16,6 +16,7 @@ Attributes:
 
 from .codebyte import CodeByte
 from contextlib import contextmanager
+from typing import *
 import traceback, sys
 
 class BinONObj:
@@ -40,14 +41,14 @@ class BinONObj:
 		pass
 	
 	#	BinON uses a big-endian byte order
-	_kEndian = "big"
+	_kEndian: ClassVar[str] = "big"
 	
 	#	Maps CodeByte values onto their corresponding object classes.
-	_gCodeObjCls = {}
+	_gCodeObjCls: ClassVar[Dict[CodeByte,Any]] = {}
 	
 	#	Maps data types onto their object basic classes. The data types include
 	#	object classes as well as built-in types such as int or list.
-	_gTypeCls = {}
+	_gTypeCls: ClassVar[Dict[Any,Any]] = {}
 	
 	#	Class methods to call directly on BinONObj.
 	@classmethod
