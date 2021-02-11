@@ -320,6 +320,10 @@ class BinONObj:
 		return f"{type(self).__name__}({self.value!r})"
 	def __bool__(self):
 		return bool(self.value)
+	def __hash__(self):
+		return hash(self.value)
+	def __eq__(self, rhs):
+		return self.value == rhs.value
 	
 	def asValue(self):
 		"""
