@@ -40,6 +40,23 @@ namespace binon {
 					},
 					stream, requireIO);
 			}
+
+		/**
+			MakeShared template class method:
+				Allocates a new ListObj built around the arguments you supply.
+				These should be simple data types of the kind typeinfo.hpp can
+				handle. Internally, it calls append() to populate the new list.
+
+				Args:
+					vs: values to go in a new list
+				Returns:
+					shared pointer to the new ListObj
+				Example:
+					You can quickly allocate a list containing an integer, a
+					floating-point value, and a string with:
+
+						auto pList = ListObj::MakeShared(42, 3.14, "foo");
+		**/
 		template<typename... Ts>
 			static auto MakeShared(Ts&&... vs) -> std::shared_ptr<ListObj>;
 
@@ -78,8 +95,37 @@ namespace binon {
 		void push_back(const value_type& v) { mValue.push_back(v); }
 		void push_back(value_type&& v) { mValue.push_back(std::move(v)); }
 		auto size() const noexcept { return mValue.size(); }
+		
+		/**
+			append template method:
+				A higher-level alternative to push_back() that allocates a
+				BinONObj appropriate to the data type you supply. Works for
+				simple types typeinfo.hpp can recognize.
+
+				Args:
+					v: value to append to the current list
+				Returns:
+					shared pointer to the new list element
+				Example:
+					You can append an integer to the current list with:
+
+						myList.append(42);
+		**/
 		template<typename T>
 			auto append(T&& v) -> std::shared_ptr<TWrapper<T>>;
+
+		/**
+			extend template method:
+				This is like append() but you can call it with multiple
+				arguments, each of which will be appended to the list in the
+				order given. Unlike append, it does not return anything.
+				
+				extend() is called internally by MakeShared(). See the example
+				there to get an idea of what it can do.
+				
+				Args:
+					vs: values to add to the current list
+		**/
 		void extend() {}
 		template<typename T, typename... Ts>
 			void extend(T&& v, Ts&&... vs);
