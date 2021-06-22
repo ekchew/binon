@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 namespace binon {
 
@@ -39,6 +40,8 @@ namespace binon {
 					},
 					stream, requireIO);
 			}
+		template<typename... Ts>
+			static auto MakeShared(Ts&&... vs) -> std::shared_ptr<ListObj>;
 
 		TValue mValue;
 
@@ -75,6 +78,11 @@ namespace binon {
 		void push_back(const value_type& v) { mValue.push_back(v); }
 		void push_back(value_type&& v) { mValue.push_back(std::move(v)); }
 		auto size() const noexcept { return mValue.size(); }
+		template<typename T>
+			auto append(T&& v) -> std::shared_ptr<TWrapper<T>>;
+		void extend() {}
+		template<typename T, typename... Ts>
+			void extend(T&& v, Ts&&... vs);
 	};
 
 	struct SListVal {
@@ -304,6 +312,13 @@ namespace binon {
 				elem->encode(stream, kSkipRequireIO);
 			}
 		}
+	template<typename... Ts>
+		auto ListObj::MakeShared(Ts&&... vs)
+			-> std::shared_ptr<ListObj>
+		{
+			auto pList = std::make_shared<ListObj>();
+			pList->extend(std::forward<Ts>(vs)...);
+		}
 	template<typename TObj>
 		auto ListObj::obj(size_type i) -> TObj& {
 			std::shared_ptr<TObj> pObj;
@@ -313,6 +328,17 @@ namespace binon {
 				pBaseObj = pObj = std::make_shared<TObj>();
 			}
 			return *pObj;
+		}
+	template<typename T>
+		auto ListObj::append(T&& v) -> std::shared_ptr<TWrapper<T>> {
+			auto pObj = std::make_shared<TWrapper<T>>(std::forward<T>(v));
+			push_back(pObj);
+			return pObj;
+		}
+	template<typename T, typename... Ts>
+		void ListObj::extend(T&& v, Ts&&... vs) {
+			append(std::forward<T>(v));
+			extend(std::forward<Ts>(vs)...);
 		}
 
 	//---- SListT -------------------------------------------------------------
