@@ -7,6 +7,8 @@
 #include "intobj.hpp"
 #include "strobj.hpp"
 
+#include <memory>
+
 namespace binon {
 
 	//	This class template helps map simple data types to their BinON wrapper
@@ -54,6 +56,21 @@ namespace binon {
 	//	looking at a wrapper class while kIsWrapper<bool> evaluates false.
 	template<typename T> inline constexpr
 		bool kIsWrapper = std::is_base_of_v<BinONObj, T>;
+	
+	/**
+		MakeSharedObj function
+
+		A simple function that allocates a shared pointer to a BinON object of
+		the appropriate type based on the argument you supply. For example,
+		MakeSharedPtr(42) would return a std::shared_ptr<IntObj>.
+
+		Args:
+			v: a value of a type TypeInfo understands
+
+		Returns: a shared pointer containing the value
+	**/
+	template<typename T>
+		auto MakeSharedObj(T&& v) -> std::shared_ptr<TWrapper<T>>;
 
 	//==== Template Implementation ============================================
 
@@ -135,6 +152,13 @@ namespace binon {
 			using Wrapper = BufferObj;
 			static auto TypeName() -> std::string { return "TBuffer"; }
 		};
+
+	//---- Utility Functions ---------------------------------------------------
+
+	template<typename T>
+		auto MakeSharedObj(T&& v) -> std::shared_ptr<TWrapper<T>> {
+			return std::make_shared<TWrapper<T>>(std::forward<T>(v));
+		}
 }
 
 #endif
