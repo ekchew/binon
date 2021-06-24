@@ -364,6 +364,7 @@ namespace binon {
 		{
 			auto pList = std::make_shared<ListObj>();
 			pList->extend(std::forward<Ts>(vs)...);
+			return pList;
 		}
 	template<typename TObj>
 		auto ListObj::obj(size_type i) -> TObj& {
