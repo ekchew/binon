@@ -169,6 +169,25 @@ namespace binon {
 		auto clsName() const noexcept -> std::string override
 			{ return "ListObj"; }
 		void printArgsRepr(std::ostream& stream) const override;
+
+		using value_type = TList::value_type;
+		using size_type = TList::size_type;
+		auto& operator [] (size_type i)
+			{ return BINON_IF_DBG_REL(mValue.mList.at(i), mValue.mList[i]); }
+		const auto& operator [] (size_type i) const
+			{ return const_cast<SList&>(*this)[i]; }
+		template<typename TObj> auto obj(size_type i) -> TObj&;
+		auto begin() noexcept { return mValue.mList.begin(); }
+		auto begin() const noexcept { return mValue.mList.begin(); }
+		void clear() noexcept { mValue.mList.clear(); }
+		template<typename... Args>
+			auto& emplace_back(Args&&... args)
+			{ return mValue.mList.emplace_back(std::forward<Args>(args)...); }
+		auto end() noexcept { return mValue.mList.end(); }
+		auto end() const noexcept { return mValue.mList.end(); }
+		void push_back(const value_type& v) { mValue.mList.push_back(v); }
+		void push_back(value_type&& v) { mValue.mList.push_back(std::move(v)); }
+		auto size() const noexcept { return mValue.mList.size(); }
 	};
 
 	//	This template form of SList is generally easier to use and more
