@@ -94,6 +94,9 @@ namespace binon {
 	template<typename T>
 		auto MakeSharedObj(T&& v) -> std::shared_ptr<TWrapper<T>>;
 
+	template<typename T>
+		auto SharedObjVal(TSPBinONObj pObj) -> T&&;
+
 	//==== Template Implementation ============================================
 
 	//---- TypeInfo specializations -------------------------------------------
@@ -103,7 +106,7 @@ namespace binon {
 			using Wrapper = typename TypeInfo<T>::Wrapper;
 			static auto TypeName() -> std::string
 				{ return TypeInfo<T>::TypeName(); }
-			static auto GetValue(TSPBinONObj pObj)
+			static auto GetValue(const TSPBinONObj pObj)
 				{ return TypeInfo<T>::GetValue(pObj); }
 		};
 	template<typename T>
@@ -111,8 +114,10 @@ namespace binon {
 		{
 			using Wrapper = T;
 			static auto TypeName() -> std::string { return T{}.clsName(); }
-			static auto GetValue(TSPBinONObj pObj) -> typename T::TValue& {
-					return BinONObj::Cast<Wrapper>(pObj)->mValue;
+			static auto GetValue(const TSPBinONObj pObj)
+					-> const typename T::TValue&
+				{
+					return BinONObj::Cast<const Wrapper>(pObj)->mValue;
 				}
 		};
 	template<typename T>
@@ -130,9 +135,9 @@ namespace binon {
 						default: return "SIGNED_INTEGER";
 					}
 				}
-			static auto GetValue(TSPBinONObj pObj) -> T {
+			static auto GetValue(const TSPBinONObj pObj) -> T {
 					return static_cast<T>(
-						BinONObj::Cast<Wrapper>(pObj)->mValue
+						BinONObj::Cast<const Wrapper>(pObj)->mValue
 						);
 				}
 		};
@@ -148,9 +153,9 @@ namespace binon {
 						default: return "UNSIGNED_INTEGER";
 					}
 				}
-			static auto GetValue(TSPBinONObj pObj) -> T {
+			static auto GetValue(const TSPBinONObj pObj) -> T {
 					return static_cast<T>(
-						BinONObj::Cast<Wrapper>(pObj)->mValue
+						BinONObj::Cast<const Wrapper>(pObj)->mValue
 						);
 				}
 		};
@@ -158,55 +163,65 @@ namespace binon {
 		struct TypeInfo<bool> {
 			using Wrapper = BoolObj;
 			static auto TypeName() -> std::string { return "bool"; }
-			static auto GetValue(TSPBinONObj pObj) -> bool {
-					return BinONObj::Cast<Wrapper>(pObj)->mValue;
+			static auto GetValue(const TSPBinONObj pObj) -> bool {
+					return BinONObj::Cast<const Wrapper>(pObj)->mValue;
 				}
 		};
 	template<>
 		struct TypeInfo<types::TFloat32> {
 			using Wrapper = Float32Obj;
 			static auto TypeName() -> std::string { return "TFloat32"; }
-			static auto GetValue(TSPBinONObj pObj) -> types::TFloat32 {
-					return BinONObj::Cast<Wrapper>(pObj)->mValue;
+			static auto GetValue(const TSPBinONObj pObj)
+				-> types::TFloat32
+				{
+					return BinONObj::Cast<const Wrapper>(pObj)->mValue;
 				}
 		};
 	template<>
 		struct TypeInfo<types::TFloat64> {
 			using Wrapper = FloatObj;
 			static auto TypeName() -> std::string { return "TFloat64"; }
-			static auto GetValue(TSPBinONObj pObj) -> types::TFloat64 {
-					return BinONObj::Cast<Wrapper>(pObj)->mValue;
+			static auto GetValue(const TSPBinONObj pObj)
+				-> types::TFloat64
+				{
+					return BinONObj::Cast<const Wrapper>(pObj)->mValue;
 				}
 		};
 	template<>
 		struct TypeInfo<std::string> {
 			using Wrapper = StrObj;
 			static auto TypeName() -> std::string { return "string"; }
-			static auto GetValue(TSPBinONObj pObj) -> std::string {
-					return BinONObj::Cast<Wrapper>(pObj)->mValue.asStr();
+			static auto GetValue(const TSPBinONObj pObj) -> std::string {
+					return BinONObj::Cast<const Wrapper>(pObj)->mValue.asStr();
 				}
 		};
 	template<>
 		struct TypeInfo<std::string_view> {
 			using Wrapper = StrObj;
 			static auto TypeName() -> std::string { return "string"; }
-			static auto GetValue(TSPBinONObj pObj) -> std::string_view {
-					return BinONObj::Cast<Wrapper>(pObj)->mValue.asView();
+			static auto GetValue(const TSPBinONObj pObj)
+				-> std::string_view
+				{
+					return BinONObj::Cast<const Wrapper>(pObj)->mValue.asView();
 				}
 		};
 	template<>
 		struct TypeInfo<StrObj::TValue> {
 			using Wrapper = StrObj;
 			static auto TypeName() -> std::string { return "string"; }
-			static auto GetValue(TSPBinONObj pObj) -> StrObj::TValue& {
-					return BinONObj::Cast<Wrapper>(pObj)->mValue;
+			static auto GetValue(const TSPBinONObj pObj)
+				-> const StrObj::TValue&
+				{
+					return BinONObj::Cast<const Wrapper>(pObj)->mValue;
 				}
 		};
 	template<>
 		struct TypeInfo<TBuffer> {
 			using Wrapper = BufferObj;
 			static auto TypeName() -> std::string { return "TBuffer"; }
-			static auto GetValue(TSPBinONObj pObj) -> TBuffer& {
+			static auto GetValue(const TSPBinONObj pObj)
+				-> const TBuffer&
+				{
 					return BinONObj::Cast<Wrapper>(pObj)->mValue;
 				}
 		};

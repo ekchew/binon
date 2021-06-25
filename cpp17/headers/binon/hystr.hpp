@@ -194,6 +194,7 @@ namespace binon {
 				Returns:
 					TStr&: reference to internal string
 			**/
+			auto asStr() const -> const TStr&;
 			auto asStr() -> TStr&;
 			
 			/**
@@ -207,7 +208,7 @@ namespace binon {
 			constexpr auto hash() const noexcept -> std::size_t;
 
 		 private:
-			std::variant<TView,TStr> mV;
+			mutable std::variant<TView,TStr> mV;
 		};
 
 	//---- Free Functions Relating to BasicHyStr -------------------------------
@@ -348,12 +349,18 @@ namespace binon {
 				[](const auto& v)->TView { return v; }, mV);
 		}
 	template<typename C, typename T, typename A>
-		auto BasicHyStr<C,T,A>::asStr() -> TStr& {
+		auto BasicHyStr<C,T,A>::asStr() const -> const TStr& {
 			if(!isStr()) {
 				auto& sv = std::get<0>(mV);
 				mV = TStr(sv.begin(), sv.end());
 			}
 			return std::get<1>(mV);
+		}
+	template<typename C, typename T, typename A>
+		auto BasicHyStr<C,T,A>::asStr() -> TStr& {
+			return const_cast<TStr&>(
+				static_cast<const BasicHyStr*>(this)->asStr()
+				);
 		}
 	template<typename C, typename T, typename A>
 		constexpr BasicHyStr<C,T,A>::operator TView() const noexcept {
