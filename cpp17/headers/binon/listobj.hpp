@@ -112,6 +112,8 @@ namespace binon {
 						myList.append(42);
 		**/
 		template<typename T>
+			auto append(const T& v) -> std::shared_ptr<TWrapper<T>>;
+		template<typename T>
 			auto append(T&& v) -> std::shared_ptr<TWrapper<T>>;
 
 		/**
@@ -394,6 +396,12 @@ namespace binon {
 				pBaseObj = pObj = std::make_shared<TObj>();
 			}
 			return *pObj;
+		}
+	template<typename T>
+		auto ListObj::append(const T& v) -> std::shared_ptr<TWrapper<T>> {
+			auto pObj = std::make_shared<TWrapper<T>>(v);
+			push_back(pObj);
+			return pObj;
 		}
 	template<typename T>
 		auto ListObj::append(T&& v) -> std::shared_ptr<TWrapper<T>> {
