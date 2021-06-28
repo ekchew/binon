@@ -96,6 +96,14 @@ namespace binon {
 		auto MakeSharedObj(T&& v) -> std::shared_ptr<TWrapper<T>>;
 
 	/**
+		TSharedObjVal data type
+
+		This is the return value data type for the SharedObjVal function.
+	**/
+	template<typename T>
+		using TSharedObjVal = typename TypeInfo<T>::GetType;
+
+	/**
 		SharedObjVal function
 
 		This is essentially the opposite of MakeSharedObj(). It gets the value
@@ -108,7 +116,7 @@ namespace binon {
 			int i = TypeInfo<int>::GetValue(pObj);
 	**/
 	template<typename T>
-		auto SharedObjVal(TSPBinONObj pObj) -> typename TypeInfo<T>::GetType;
+		auto SharedObjVal(TSPBinONObj pObj) -> TSharedObjVal<T>;
 
 	//==== Template Implementation ============================================
 
@@ -245,7 +253,7 @@ namespace binon {
 			return std::make_shared<TWrapper<T>>(std::forward<T>(v));
 		}
 	template<typename T>
-		auto SharedObjVal(TSPBinONObj pObj) -> typename TypeInfo<T>::GetType {
+		auto SharedObjVal(TSPBinONObj pObj) -> TSharedObjVal<T> {
 			return TypeInfo<T>::GetValue(pObj);
 		}
 }
