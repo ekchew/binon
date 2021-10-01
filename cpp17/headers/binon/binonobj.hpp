@@ -7,9 +7,8 @@
 #include "hashutil.hpp"
 
 #include <cstdint>
-#include <istream>
+#include <iostream>
 #include <memory>
-#include <ostream>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -100,6 +99,13 @@ namespace binon {
 				}
 				pSubcls = std::dynamic_pointer_cast<Subcls>(p);
 				if(!pSubcls) {
+				 #ifdef BINON_DEBUG
+					std::cerr
+						<< "Dynamic cast of BinONObj shared pointer failed.\n"
+						<< "The supplied pointer looks like this:\n\t";
+					p->printPtrRepr(std::cerr);
+					std::cerr << '\n';
+				 #endif
 					throw TypeErr{
 						"BinONObj shared pointer will not cast to subclass"};
 				}
