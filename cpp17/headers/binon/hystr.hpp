@@ -129,7 +129,7 @@ namespace binon {
 					a C string.
 			**/
 			constexpr BasicHyStr(const TView& sv) noexcept;
-			constexpr BasicHyStr(const char* cStr) noexcept;
+			constexpr BasicHyStr(const TChr* cStr) noexcept;
 			constexpr BasicHyStr() noexcept = default;
 
 			//---- Methods Found In std::string --------------------------------
@@ -265,7 +265,7 @@ namespace binon {
 		{
 		}
 	template<typename C, typename T, typename A>
-		constexpr BasicHyStr<C,T,A>::BasicHyStr(const char* cStr) noexcept:
+		constexpr BasicHyStr<C,T,A>::BasicHyStr(const TChr* cStr) noexcept:
 			mV{static_cast<TView>(cStr)}
 		{
 		}
