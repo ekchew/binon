@@ -93,6 +93,8 @@ namespace binon {
 		Returns: a shared pointer containing the value
 	**/
 	template<typename T>
+		auto MakeSharedObj(const T& v) -> std::shared_ptr<TWrapper<T>>;
+	template<typename T>
 		auto MakeSharedObj(T&& v) -> std::shared_ptr<TWrapper<T>>;
 
 	/**
@@ -248,6 +250,10 @@ namespace binon {
 
 	//---- Utility Functions ---------------------------------------------------
 
+	template<typename T>
+		auto MakeSharedObj(const T& v) -> std::shared_ptr<TWrapper<T>> {
+			return std::make_shared<TWrapper<T>>(v);
+		}
 	template<typename T>
 		auto MakeSharedObj(T&& v) -> std::shared_ptr<TWrapper<T>> {
 			return std::make_shared<TWrapper<T>>(std::forward<T>(v));
