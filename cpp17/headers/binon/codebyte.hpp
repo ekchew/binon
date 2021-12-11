@@ -45,6 +45,10 @@ namespace binon {
 				}
 				return *this;
 			}
+		constexpr auto asUInt() const noexcept -> unsigned
+			//	This accessor was added mainly so that you can test CodeByte
+			//	values in a switch.
+			{ return static_cast<unsigned>(mValue); }
 		void write(TOStream& stream, bool requireIO=true) const;
 		void printRepr(std::ostream& stream) const;
 
