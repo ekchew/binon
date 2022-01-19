@@ -113,6 +113,7 @@ namespace binon {
 		DictObj() noexcept = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.size() != 0; }
+		using DictBase::dict;
 		auto dict() noexcept -> TDict& final { return mValue; }
 		auto typeCode() const noexcept -> CodeByte final {return kDictObjCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
@@ -142,6 +143,7 @@ namespace binon {
 		SKDict(SKDict&& obj) noexcept = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mDict.size() != 0; }
+		using DictBase::dict;
 		auto dict() noexcept -> TDict& final { return mValue.mDict; }
 		auto typeCode() const noexcept -> CodeByte final {return kSKDictCode;}
 		void encodeData(TOStream& stream, bool requireIO=true) const final;
