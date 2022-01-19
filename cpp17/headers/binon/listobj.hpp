@@ -20,6 +20,8 @@ namespace binon {
 		virtual auto list() noexcept -> TList& = 0;
 		auto list() const noexcept -> const TList&
 			{ return const_cast<ListBase*>(this)->list(); }
+		operator TList&() noexcept { return list(); }
+		operator const TList&() const noexcept { return list(); }
 		auto hasValue(TList::size_type i) const -> bool;
 		template<typename V> auto findValue(TList::size_type i) const
 			-> std::optional<V>;
@@ -53,7 +55,7 @@ namespace binon {
 			MakeShared template class method:
 				Allocates a new ListObj built around the arguments you supply.
 				These should be simple data types of the kind typeinfo.hpp can
-				handle. Internally, it calls appendValue() to populate the new
+				handle. Internally, it calls appendValues() to populate the new
 				list.
 
 				Args:
@@ -86,22 +88,6 @@ namespace binon {
 			{ return "ListObj"; }
 		void printArgsRepr(std::ostream& stream) const override
 			{ PrintTListRepr(mValue, stream); }
-
-		#if 0
-		using value_type = TValue::value_type;
-		using size_type = TValue::size_type;
-		auto& operator [] (size_type i)
-			{ return BINON_IF_DBG_REL(mValue.at(i), mValue[i]); }
-		const auto& operator [] (size_type i) const
-			{ return const_cast<ListObj&>(*this)[i]; }
-		template<typename TObj> auto obj(size_type i) -> TObj&;
-		auto begin() noexcept { return mValue.begin(); }
-		auto begin() const noexcept { return mValue.begin(); }
-		void clear() noexcept { mValue.clear(); }
-		auto end() noexcept { return mValue.end(); }
-		auto end() const noexcept { return mValue.end(); }
-		auto size() const noexcept { return mValue.size(); }
-		#endif
 	};
 
 	struct SListVal {
@@ -126,7 +112,6 @@ namespace binon {
 		SList(CodeByte elemCode = kNullObjCode) noexcept: mValue{elemCode} {}
 		SList(const TValue& v): mValue{v} {}
 		SList(TValue&& v) noexcept: mValue{std::move(v)} {}
-		//SList() noexcept = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mList.size() != 0; }
 		using ListBase::list;
