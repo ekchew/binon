@@ -122,6 +122,16 @@ namespace binon {
 	template<typename T>
 		auto SharedObjVal(TSPBinONObj pObj) -> TSharedObjVal<T>;
 
+	/**
+		TypeCode function
+
+		This function gives you a BinON type code suitable to pass to the
+		constructors of SList, SDict, or SKDict. For example, TypeCode<int>()
+		returns kIntObjCode (from codebyte.hpp).
+	**/
+	template<typename T>
+		auto TypeCode() -> CodeByte { return TWrapper<T>{}.typeCode(); }
+
 	//==== Template Implementation ============================================
 
 	//---- TypeInfo specializations -------------------------------------------
