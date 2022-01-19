@@ -6,6 +6,7 @@
 namespace binon {
 
 	struct NullObj: BinONObj {
+		using TValue = void;
 		auto typeCode() const noexcept -> CodeByte final {return kNullObjCode;}
 		auto getHash() const -> std::size_t override {return 0;}
 		auto equals(const BinONObj& other) const -> bool override

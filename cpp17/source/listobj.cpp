@@ -39,6 +39,13 @@ namespace binon {
 		stream << '}';
 	}
 
+	//---- ListBase ------------------------------------------------------------
+
+	auto ListBase::hasValue(TList::size_type i) const -> bool {
+		auto& lst = list();
+		return i < lst.size() && static_cast<bool>(lst[i]);
+	}
+
 	//---- ListObj -------------------------------------------------------------
 
 	void ListObj::EncodeData(const TValue& v, TOStream& stream, bool requireIO)
@@ -81,7 +88,10 @@ namespace binon {
 				auto hex0 = AsHex(v.mElemCode);
 				auto hex1 = AsHex(tc);
 				oss	<< "SList element " << i << " type code 0x" << hex1
-					<< " does not match expected 0x" << hex0;
+					<< " does not match expected 0x" << hex0
+					<< " (element value: ";
+				v.mList[i]->printRepr(oss);
+				oss << ", list size: " << v.mList.size() << ")";
 				throw TypeErr{oss.str()};
 			}
 		}

@@ -8,6 +8,7 @@
 #include "strobj.hpp"
 
 #include <memory>
+#include <type_traits>
 
 namespace binon {
 
@@ -73,12 +74,13 @@ namespace binon {
 			//		static auto TypeName() -> std::string;
 			//		static auto GetValue(const TSPBinONObj pObj) -> GetType;
 		};
-	template<typename T> using TWrapper = typename TypeInfo<T>::Wrapper;
+	template<typename T> using TWrapper
+		= typename TypeInfo<std::decay_t<T>>::Wrapper;
 
 	//	kIsWrapper<BoolObj> evaluates to true to indicate that you are already
 	//	looking at a wrapper class while kIsWrapper<bool> evaluates false.
 	template<typename T> inline constexpr
-		bool kIsWrapper = std::is_base_of_v<BinONObj, T>;
+		bool kIsWrapper = std::is_base_of_v<BinONObj, std::decay_t<T>>;
 	
 	/**
 		MakeSharedObj function
@@ -103,7 +105,7 @@ namespace binon {
 		This is the return value data type for the SharedObjVal function.
 	**/
 	template<typename T>
-		using TSharedObjVal = typename TypeInfo<T>::GetType;
+		using TSharedObjVal = typename TypeInfo<std::decay_t<T>>::GetType;
 
 	/**
 		SharedObjVal function

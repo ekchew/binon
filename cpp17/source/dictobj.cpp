@@ -34,6 +34,7 @@ namespace binon {
 
 	//---- DictBase ------------------------------------------------------------
 
+	#if 0
 	auto DictBase::hasKey(const TSPBinONObj& pKey) const -> bool {
 		const TDict& dct = dict();
 		return dct.find(pKey) != dct.end();
@@ -43,6 +44,7 @@ namespace binon {
 		auto iter = dct.find(pKey);
 		return iter != dct.end() && iter->second;
 	}
+	#endif
 
 	//---- DictObj -------------------------------------------------------------
 

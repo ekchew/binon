@@ -26,7 +26,26 @@ namespace binon {
 		virtual auto dict() noexcept -> TDict& = 0;
 		auto dict() const noexcept -> const TDict&
 			{ return const_cast<DictBase*>(this)->dict(); }
+		template<typename K>
+			auto hasValue(K&& key) const -> bool;
+		template<typename V, typename K>
+			auto findValue(K&& key) const -> std::optional<V>;
+		template<typename V, typename K>
+			auto getValue(K&& key) const -> V;
+		template<typename K, typename V>
+			void setValue(K&& key, V&& val);
+		template<typename K>
+			auto findObjPtr(K&& key) -> TSPBinONObj;
+		template<typename K>
+			auto findObjPtr(K&& key) const -> const TSPBinONObj;
+		template<typename K>
+			auto getObjPtr(K&& key) -> TSPBinONObj;
+		template<typename K>
+			auto getObjPtr(K&& key) const -> const TSPBinONObj;
+		template<typename K>
+			void setObjPtr(K&& key, TSPBinONObj pObj);
 
+		#if 0
 		//	hasKey() indicates whether a key you specify exists in the
 		//	dictionary. The low-level form takes the key as a shared pointer
 		//	the way it would be stored in the dictionary. There is also an
@@ -79,6 +98,7 @@ namespace binon {
 			auto value(const TSPBinONObj& pKey) -> Val&;
 		template<typename Key, typename Val, typename... Args>
 			auto value(Args&&... args) -> Val&;
+		#endif
 	};
 
 	struct DictObj: DictBase, AccessContainer_mValue<DictObj,TDict> {
@@ -105,7 +125,7 @@ namespace binon {
 	};
 
 	struct SKDictVal {
-		CodeByte mKeyCode = kIntObjCode;
+		CodeByte mKeyCode;
 		TDict mDict;
 	};
 	struct SKDict: DictBase, AccessContainer_mValue<SKDict,SKDictVal> {
@@ -115,12 +135,11 @@ namespace binon {
 
 		TValue mValue;
 
-		SKDict(CodeByte keyCode) noexcept: mValue{keyCode} {}
+		SKDict(CodeByte keyCode = kNullObjCode) noexcept: mValue{keyCode} {}
 		SKDict(const SKDictVal& v): mValue{v} {}
 		SKDict(SKDictVal&& v) noexcept: mValue{std::move(v)} {}
 		SKDict(const SKDict& obj) = default;
 		SKDict(SKDict&& obj) noexcept = default;
-		SKDict() noexcept = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mDict.size() != 0; }
 		auto dict() noexcept -> TDict& final { return mValue.mDict; }
@@ -134,8 +153,8 @@ namespace binon {
 	};
 
 	struct SDictVal {
-		CodeByte mKeyCode = kIntObjCode;
-		CodeByte mValCode = kIntObjCode;
+		CodeByte mKeyCode;
+		CodeByte mValCode;
 		TDict mDict;
 	};
 	struct SDict: DictBase, AccessContainer_mValue<SDict,SDictVal> {
@@ -145,13 +164,16 @@ namespace binon {
 
 		TValue mValue;
 
-		SDict(CodeByte keyCode, CodeByte valCode=kIntObjCode) noexcept:
+		SDict(
+			CodeByte keyCode = kNullObjCode,
+			CodeByte valCode = kNullObjCode
+			) noexcept:
 			mValue{keyCode, valCode} {}
 		SDict(const SDictVal& v): mValue{v} {}
 		SDict(SDictVal&& v) noexcept: mValue{std::move(v)} {}
 		SDict(const SDict& obj) = default;
 		SDict(SDict&& obj) noexcept = default;
-		SDict() noexcept = default;
+		//SDict() noexcept = default;
 		auto operator = (const SDict&) -> SDict& = default;
 		auto operator = (SDict&&) noexcept -> SDict& = default;
 		explicit operator bool() const noexcept override
@@ -166,9 +188,7 @@ namespace binon {
 		void printArgsRepr(std::ostream& stream) const override;
 	};
 
-	/**
-
-	**/
+	#if 0
 	template<
 		typename K,
 		typename Ctnr = std::unordered_map<K,TSPBinONObj>
@@ -285,11 +305,13 @@ namespace binon {
 			auto end() const noexcept { return mValue.end(); }
 			auto size() const noexcept { return mValue.size(); }
 		};
+		#endif
 
 	//==== Template Implementation =============================================
 
 	//---- DictBase ------------------------------------------------------------
 
+	#if 0
 	template<typename Key, typename... Args>
 		auto DictBase::hasKey(Args&&... args) const -> bool {
 			auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
@@ -340,7 +362,79 @@ namespace binon {
 			auto pKey = std::make_shared<Key>(std::forward<Args>(args)...);
 			return value<Val>(pKey);
 		}
+	#endif
+	template<typename K>
+		auto DictBase::findObjPtr(K&& key) -> TSPBinONObj {
+			using std::forward;
+			using std::make_shared;
+			auto& dct = dict();
+			auto pPair = dct.find(make_shared<TWrapper<K>>(forward<K>(key)));
+			if(pPair == dct.end()) {
+				return {};
+			}
+			else {
+				return pPair->second;
+			}
+		}
+	template<typename K>
+		auto DictBase::findObjPtr(K&& key) const -> const TSPBinONObj {
+			return const_cast<DictBase*>(this)->findObjPtr(
+				std::forward<K>(key)
+				);
+		}
+	template<typename K>
+		auto DictBase::getObjPtr(K&& key) -> TSPBinONObj {
+			using std::forward;
+			using std::make_shared;
+			auto pObj = dict().at(make_shared<TWrapper<K>>(forward<K>(key)));
+			if(!pObj) {
+				throw NullDeref{"unallocated BinON dict value"};
+			}
+			return pObj;
+		}
+	template<typename K>
+		auto DictBase::getObjPtr(K&& key) const -> const TSPBinONObj {
+			return const_cast<DictBase*>(this)->getObjPtr(std::forward<K>(key));
+		}
+	template<typename K>
+		void DictBase::setObjPtr(K&& key, TSPBinONObj pObj) {
+			using std::forward;
+			using std::make_shared;
+			dict().insert_or_assign(
+				make_shared<TWrapper<K>>(forward<K>(key)),
+				pObj
+				);
+		}
+	template<typename K>
+		auto DictBase::hasValue(K&& key) const -> bool {
+			return static_cast<bool>(findObjPtr(std::forward<K>(key)));
+		}
+	template<typename V, typename K>
+		auto DictBase::findValue(K&& key) const -> std::optional<V> {
+			auto pObj = findObjPtr(std::forward<K>(key));
+			if(pObj) {
+				return static_cast<V>(SharedObjVal<V>(pObj));
+			}
+			else  {
+				return std::nullopt;
+			}
+		}
+	template<typename V, typename K>
+		auto DictBase::getValue(K&& key) const -> V {
+			auto pObj = getObjPtr(std::forward<K>(key));
+			return static_cast<V>(SharedObjVal<V>(pObj));
+		}
+	template<typename K, typename V>
+		void DictBase::setValue(K&& key, V&& val) {
+			using std::forward;
+			using std::make_shared;
+			dict().insert_or_assign(
+				make_shared<TWrapper<K>>(forward<K>(key)),
+				make_shared<TWrapper<V>>(forward<V>(val))
+				);
+		}
 
+	#if 0
 	//---- SKDictT -------------------------------------------------------------
 
 	template<typename K, typename Ctnr>
@@ -668,6 +762,7 @@ namespace binon {
 		{
 			return BINON_IF_DBG_REL(mValue.at(key), mValue[key]);
 		}
+	#endif
 }
 
 #endif

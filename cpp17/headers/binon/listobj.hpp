@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <initializer_list>
+#include <optional>
 #include <sstream>
 #include <string_view>
 #include <type_traits>
@@ -19,8 +20,20 @@ namespace binon {
 		virtual auto list() noexcept -> TList& = 0;
 		auto list() const noexcept -> const TList&
 			{ return const_cast<ListBase*>(this)->list(); }
+		auto hasValue(TList::size_type i) const -> bool;
+		template<typename V> auto findValue(TList::size_type i) const
+			-> std::optional<V>;
+		template<typename V> auto getValue(TList::size_type i) const -> V;
+		template<typename V> void setValue(TList::size_type i, V&& value);
+		template<typename V> void appendValue(V&& value);
+		void appendValues() {}
+		template<typename V, typename... Vs>
+			void appendValues(V&& v, Vs&&... vs);
+
+		#if 0
 		template<typename Obj, typename... Args>
 			auto emplaceBack(Args&&... args) -> TSPBinONObj&;
+		#endif
 	};
 
 	struct ListObj: ListBase, AccessContainer_mValue<ListObj,TList> {
@@ -87,13 +100,17 @@ namespace binon {
 		auto begin() noexcept { return mValue.begin(); }
 		auto begin() const noexcept { return mValue.begin(); }
 		void clear() noexcept { mValue.clear(); }
+		#if 0
 		template<typename... Args>
 			auto& emplace_back(Args&&... args)
 			{ return mValue.emplace_back(std::forward<Args>(args)...); }
+		#endif
 		auto end() noexcept { return mValue.end(); }
 		auto end() const noexcept { return mValue.end(); }
+		#if 0
 		void push_back(const value_type& v) { mValue.push_back(v); }
 		void push_back(value_type&& v) { mValue.push_back(std::move(v)); }
+		#endif
 		auto size() const noexcept { return mValue.size(); }
 		
 		/**
@@ -111,8 +128,6 @@ namespace binon {
 
 						myList.append(42);
 		**/
-		template<typename T>
-			auto append(const T& v) -> std::shared_ptr<TWrapper<T>>;
 		template<typename T>
 			auto append(T&& v) -> std::shared_ptr<TWrapper<T>>;
 
@@ -134,7 +149,7 @@ namespace binon {
 	};
 
 	struct SListVal {
-		CodeByte mElemCode = kIntObjCode;
+		CodeByte mElemCode;
 		TList mList;
 	};
 	struct SList: ListBase,  AccessContainer_mValue<SList,SListVal> {
@@ -152,10 +167,10 @@ namespace binon {
 
 		TValue mValue;
 
-		SList(CodeByte elemCode) noexcept: mValue{elemCode} {}
+		SList(CodeByte elemCode = kNullObjCode) noexcept: mValue{elemCode} {}
 		SList(const TValue& v): mValue{v} {}
 		SList(TValue&& v) noexcept: mValue{std::move(v)} {}
-		SList() noexcept = default;
+		//SList() noexcept = default;
 		explicit operator bool() const noexcept override
 			{ return mValue.mList.size() != 0; }
 		auto list() noexcept -> TList& final { return mValue.mList; }
@@ -182,16 +197,21 @@ namespace binon {
 		auto begin() noexcept { return mValue.mList.begin(); }
 		auto begin() const noexcept { return mValue.mList.begin(); }
 		void clear() noexcept { mValue.mList.clear(); }
+		#if 0
 		template<typename... Args>
 			auto& emplace_back(Args&&... args)
 			{ return mValue.mList.emplace_back(std::forward<Args>(args)...); }
+		#endif
 		auto end() noexcept { return mValue.mList.end(); }
 		auto end() const noexcept { return mValue.mList.end(); }
+		#if 0
 		void push_back(const value_type& v) { mValue.mList.push_back(v); }
 		void push_back(value_type&& v) { mValue.mList.push_back(std::move(v)); }
+		#endif
 		auto size() const noexcept { return mValue.mList.size(); }
 	};
 
+	#if 0
 	//	This template form of SList is generally easier to use and more
 	//	efficient. If you call BinONObj::Decode(), however, it will return a
 	//	plain SList since Decode() cannot infer template arguments at runtime.
@@ -272,6 +292,7 @@ namespace binon {
 			void push_back(value_type&& v) { mValue.push_back(std::move(v)); }
 			auto size() const noexcept { return mValue.size(); }
 		};
+	#endif
 
 	//---- Low-Level Support Functions -----------------------------------------
 
@@ -360,6 +381,49 @@ namespace binon {
 
 	//---- ListBase -----------------------------------------------------------
 
+	template<typename V>
+		auto ListBase::findValue(TList::size_type i) const
+			-> std::optional<V> {
+			auto& lst = list();
+			if(i < lst.size()) {
+				auto pObj = lst[i];
+				if(pObj) {
+					return static_cast<V>(SharedObjVal<V>(pObj));
+				}
+			}
+			return std::nullopt;
+		}
+	template<typename V>
+		auto ListBase::getValue(TList::size_type i) const -> V {
+			auto& lst = list();
+			auto pObj = lst.at(i);
+			if(!pObj) {
+				throw NullDeref{"unallocated BinON list element"};
+			}
+			return static_cast<V>(SharedObjVal<V>(pObj));
+		}
+	template<typename V>
+		void ListBase::setValue(TList::size_type i, V&& value) {
+			using std::forward;
+			using std::make_shared;
+			auto& lst = list();
+			auto& pObj = lst.at(i);
+			pObj = make_shared<TWrapper<V>>(forward<V>(value));
+		}
+	template<typename V>
+		void ListBase::appendValue(V&& value) {
+			using std::forward;
+			using std::make_shared;
+			list().push_back(make_shared<TWrapper<V>>(forward<V>(value)));
+		}
+	template<typename V, typename... Vs>
+		void ListBase::appendValues(V&& v, Vs&&... vs) {
+			using std::forward;
+			appendValue(forward<V>(v));
+			appendValues(forward<Vs>(vs)...);
+		}
+	
+	#if 0
 	template<typename Obj, typename... Args>
 		auto ListBase::emplaceBack(Args&&... args) -> TSPBinONObj& {
 			TList& lst = list();
@@ -367,6 +431,7 @@ namespace binon {
 				std::make_shared<Obj>(std::forward<Args>(args)...));
 			return lst.back();
 		}
+	#endif
 
 	//---- ListObj ------------------------------------------------------------
 
@@ -398,15 +463,9 @@ namespace binon {
 			return *pObj;
 		}
 	template<typename T>
-		auto ListObj::append(const T& v) -> std::shared_ptr<TWrapper<T>> {
-			auto pObj = std::make_shared<TWrapper<T>>(v);
-			push_back(pObj);
-			return pObj;
-		}
-	template<typename T>
 		auto ListObj::append(T&& v) -> std::shared_ptr<TWrapper<T>> {
 			auto pObj = std::make_shared<TWrapper<T>>(std::forward<T>(v));
-			push_back(pObj);
+			list().push_back(pObj);
 			return pObj;
 		}
 	template<typename T, typename... Ts>
@@ -415,6 +474,7 @@ namespace binon {
 			extend(std::forward<Ts>(vs)...);
 		}
 
+	#if 0
 	//---- SListT -------------------------------------------------------------
 
 	template<typename T, typename Ctnr>
@@ -495,6 +555,7 @@ namespace binon {
 				PrintRepr<TElem>(elem, stream);
 			}
 		}
+	#endif
 
 	//---- Functions ----------------------------------------------------------
 
