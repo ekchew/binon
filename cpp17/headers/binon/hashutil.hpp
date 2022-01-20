@@ -28,7 +28,9 @@ namespace binon {
 			if constexpr(sizeof...(Vs) == 0) {
 				return v;
 			}
-			return details::HashCombine2(HashCombine(vs...), v);
+			else {
+				return details::HashCombine2(HashCombine(vs...), v);
+			}
 		}
 	
 	//	This is a high-level function that calls the std::hash functor on one

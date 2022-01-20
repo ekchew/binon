@@ -101,7 +101,7 @@ ${OBJ}intobj.o: ${SRC}intobj.cpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}intobj.cpp -o ${OBJ}intobj.o
 ${OBJ}ioutil.o: ${SRC}ioutil.cpp ${HDR}ioutil.hpp ${DEP0}
 	${CXX} ${FLAGS} ${SRC}ioutil.cpp -o ${OBJ}ioutil.o
-${OBJ}listobj.o: ${SRC}listobj.cpp ${DEP4}
+${OBJ}listobj.o: ${SRC}listobj.cpp ${DEP5}
 	${CXX} ${FLAGS} ${SRC}listobj.cpp -o ${OBJ}listobj.o
 ${OBJ}strobj.o: ${SRC}strobj.cpp ${HDR}strobj.hpp \
 	${HDR}hystr.hpp ${HDR}intobj.hpp ${DEP3}

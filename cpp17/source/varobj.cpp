@@ -22,6 +22,8 @@ namespace binon {
 				return TBoolObj{};
 			case kIntObjCode.asUInt():
 				return TIntObj{};
+			case kUIntCode.asUInt():
+				return TUIntObj{};
 			default:
 				throw BadCodeByte{cb};
 		}

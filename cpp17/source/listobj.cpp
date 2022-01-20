@@ -1,6 +1,7 @@
 #include "binon/listobj.hpp"
 #include "binon/boolobj.hpp"
 #include "binon/intobj.hpp"
+#include "binon/varobj.hpp"
 
 #include <sstream>
 #if BINON_LIB_EXECUTION
@@ -14,6 +15,84 @@
 #endif
 
 namespace binon {
+
+	//---- TListBase -----------------------------------------------------------
+
+	TListBase::TListBase(const TValue& value):
+		mValue{value}
+	{
+	}
+	TListBase::TListBase(TValue&& value):
+		mValue{std::forward<TValue>(value)}
+	{
+	}
+	TListBase::TListBase():
+		mValue{TValue()}
+	{
+	}
+	auto TListBase::value() -> TValue& {
+		return std::any_cast<TValue&>(mValue);
+	}
+	auto TListBase::value() const -> const TValue& {
+		return std::any_cast<const TValue&>(mValue);
+	}
+	auto TListBase::hashValue(std::size_t seed) const -> std::size_t {
+		auto& u = value();
+		for(auto& v: u) {
+			seed = HashCombine(seed, std::hash<TVarObj>{}(v));
+		}
+		return seed;
+	}
+	auto TListBase::sameValue(const TListBase& other) const -> bool {
+		auto& u = value();
+		auto& v = other.value();
+		auto n = u.size();
+		if(n != v.size()) {
+			return false;
+		}
+		for(decltype(n) i = 0; i < n; ++i) {
+			if(u[i] != v[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	//---- TListObj ------------------------------------------------------------
+
+	auto TListObj::hash() const -> std::size_t {
+		return hashValue(std::hash<CodeByte>{}(kTypeCode));
+	}
+	void TListObj::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		for(auto& v: u) {
+			v.encode(stream, kSkipRequireIO);
+		}
+	}
+	void TListObj::decodeData(CodeByte cb, TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj sizeObj;
+		sizeObj.decodeData(sizeObj.kTypeCode, stream, kSkipRequireIO);
+		auto n = sizeObj.mValue;
+		u.resize(0);
+		while(n-->0) {
+			u.push_back(TVarObj::Decode(stream, kSkipRequireIO));
+		}
+	}
+
+	//---- TSList --------------------------------------------------------------
+
+	auto TSList::operator== (const TSList& rhs) const -> bool {
+		return mElemCode == rhs.mElemCode && sameValue(rhs);
+	}
+	auto TSList::hash() const noexcept -> std::size_t {
+		return hashValue(Hash(kTypeCode, mElemCode));
+	}
+
+	//--------------------------------------------------------------------------
 
 	auto DeepCopyTList(const TList& list) -> TList {
 		TList copy(list.size());

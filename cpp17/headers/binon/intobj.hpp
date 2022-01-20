@@ -19,6 +19,21 @@ namespace binon {
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(CodeByte cb, TIStream& stream, bool requireIO = true);
 	};
+	struct TUIntObj:
+		TStdEqObj<TUIntObj>,
+		TStdHashObj<TUIntObj>,
+		TStdHasDefValObj<TUIntObj>,
+		TStdPrintArgsObj<TUIntObj>,
+		TStdCodecObj<TUIntObj>
+	{
+		using TValue = std::uint64_t;
+		static constexpr auto kTypeCode = kUIntCode;
+		static constexpr auto kClsName = std::string_view{"TUIntObj"};
+		TValue mValue;
+		constexpr TUIntObj(TValue v = 0) noexcept: mValue{v} {}
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(CodeByte cb, TIStream& stream, bool requireIO = true);
+	};
 
 	struct IntRangeError: std::range_error {
 		IntRangeError();

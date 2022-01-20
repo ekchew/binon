@@ -3,6 +3,7 @@
 
 #include "typeinfo.hpp"
 
+#include <any>
 #include <functional>
 #include <initializer_list>
 #include <optional>
@@ -10,8 +11,46 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace binon {
+
+	struct TVarObj;
+	struct TListBase {
+		using TValue = std::vector<TVarObj>;
+		TListBase(const TValue& value);
+		TListBase(TValue&& value);
+		TListBase();
+		auto value() -> TValue&;
+		auto value() const -> const TValue&;
+	 protected:
+		auto hashValue(std::size_t seed) const -> std::size_t;
+		auto sameValue(const TListBase& other) const -> bool;
+	 private:
+		std::any mValue;
+	};
+	struct TListObj: TListBase, TStdCodecObj<TListObj> {
+		static constexpr auto kTypeCode = kListObjCode;
+		static constexpr auto kClsName = std::string_view{"TListObj"};
+		using TListBase::TListBase;
+		auto operator== (const TListObj& rhs) const { return sameValue(rhs); }
+		auto hash() const -> std::size_t;
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(CodeByte cb, TIStream& stream, bool requireIO = true);
+	};
+	struct TSList: TListBase {
+		static constexpr auto kTypeCode = kSListCode;
+		static constexpr auto kClsName = std::string_view{"TSList"};
+		CodeByte mElemCode;
+		TSList(const TValue& value, CodeByte elemCode = kNullObjCode):
+			TListBase{value}, mElemCode{elemCode} {}
+		TSList(TValue&& value, CodeByte elemCode = kNullObjCode):
+			TListBase{std::forward<TValue>(value)}, mElemCode{elemCode} {}
+		TSList(CodeByte elemCode = kNullObjCode):
+			mElemCode{elemCode} {}
+		auto operator== (const TSList& rhs) const -> bool;
+		auto hash() const noexcept -> std::size_t;
+	};
 
 	auto DeepCopyTList(const TList& list) -> TList;
 	void PrintTListRepr(const TList& list, std::ostream& stream);

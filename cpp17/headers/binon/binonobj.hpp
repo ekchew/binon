@@ -44,9 +44,11 @@ namespace binon {
 	template<typename Child>
 		struct TStdHashObj {
 			auto hash() const noexcept {
-					return std::hash<typename Child::TValue>{}(
-						static_cast<const Child*>(this)->mValue
-						);
+					using TValue = typename Child::TValue;
+					auto& child = *static_cast<const Child*>(this);
+					auto codeHash = std::hash<CodeByte>{}(child.kTypeCode);
+					auto valHash = std::hash<TValue>{}(child.mValue);
+					return HashCombine(codeHash, valHash);
 				}
 		};
 	template<typename Child>

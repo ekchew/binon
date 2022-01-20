@@ -13,7 +13,8 @@ namespace binon {
 	using TVarBase = std::variant<
 		TNullObj,
 		TBoolObj,
-		TIntObj
+		TIntObj,
+		TUIntObj
 		>;
 	struct TVarObj: TVarBase
 	{

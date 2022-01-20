@@ -84,6 +84,73 @@ namespace binon {
 		mValue = v;
 	}
 
+	//---- TUIntObj ------------------------------------------------------------
+
+	void TUIntObj::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto v = mValue;
+		if(v < 0x80) {
+			WriteWord(ToByte(v), stream, kSkipRequireIO);
+		}
+		else if(v < 0x4000) {
+			WriteWord(
+				static_cast<std::uint16_t>(0x8000 | v),
+				stream, kSkipRequireIO
+				);
+		}
+		else if(v < 0x20000000) {
+			WriteWord(
+				static_cast<std::uint32_t>(0xC0000000 | v),
+				stream, kSkipRequireIO
+				);
+		}
+		else if(v < 0x10000000'00000000) {
+			WriteWord(
+				0xE0000000'00000000 | v,
+				stream, kSkipRequireIO
+				);
+		}
+		else {
+			WriteWord('\xf0', stream, kSkipRequireIO);
+			WriteWord(v, stream, kSkipRequireIO);
+		}
+	}
+	void TUIntObj::decodeData(CodeByte cb, TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		TValue v;
+		auto byte0 = ReadWord<std::byte>(stream, kSkipRequireIO);
+		if((byte0 & 0x80_byte) == 0x00_byte) {
+			v = ReadWord<std::uint8_t>(&byte0);
+		}
+		else {
+			std::array<std::byte,8> buffer;
+			auto bufPlus1 = reinterpret_cast<TStreamByte*>(buffer.data()) + 1;
+			buffer[0] = byte0;
+			if((byte0 & 0x40_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 1);
+				v = ReadWord<std::uint16_t>(buffer.data())
+					& 0x3fffu;
+			}
+			else if((byte0 & 0x20_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 3);
+				v = ReadWord<std::uint32_t>(buffer.data())
+					& 0x1fffffffu;
+			}
+			else if((byte0 & 0x10_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 7);
+				v = ReadWord<std::uint64_t>(buffer.data())
+					& 0x0fffffff'ffffffffu;
+			}
+			else if((byte0 & 0x01_byte) == 0x00_byte) {
+				v = ReadWord<std::uint64_t>(stream, kSkipRequireIO);
+			}
+			else {
+				throw IntRangeError{};
+			}
+		}
+		mValue = v;
+	}
+
 	//---- IntRangeError -------------------------------------------------------
 
 	IntRangeError::IntRangeError():

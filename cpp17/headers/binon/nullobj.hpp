@@ -10,12 +10,15 @@ namespace binon {
 		static constexpr auto kTypeCode = kNullObjCode;
 		static constexpr auto kClsName = std::string_view{"TNullObj"};
 		constexpr auto operator== (TNullObj) const noexcept { return true; }
-		constexpr auto hash() const noexcept -> std::size_t { return 0; }
+		constexpr auto operator!= (TNullObj) const noexcept { return false; }
+		auto hash() const noexcept -> std::size_t {
+				return std::hash<CodeByte>{}(kTypeCode);
+			}
 		constexpr auto hasDefVal() const noexcept { return false; }
 		constexpr void encodeData(TOStream&, bool requireIO = true)
 			const noexcept {}
 		constexpr void decodeData(CodeByte, TIStream&, bool requireIO = true)
-			const noexcept {}
+			noexcept {}
 		constexpr void printArgs(std::ostream&) const noexcept {}
 	};
 
