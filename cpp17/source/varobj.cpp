@@ -6,7 +6,7 @@ namespace binon {
 	auto VarObj::Decode(TIStream& stream, bool requireIO) -> VarObj {
 		RequireIO rio{stream, requireIO};
 		CodeByte cb = CodeByte::Read(stream, kSkipRequireIO);
-		auto varObj{FromTypeCode(cb)};
+		auto varObj{FromTypeCode(cb.typeCode())};
 		std::visit(
 			[&](auto& obj) { obj.decode(cb, stream, kSkipRequireIO); },
 			varObj
@@ -24,6 +24,8 @@ namespace binon {
 				return TIntObj{};
 			case kUIntCode.asUInt():
 				return TUIntObj{};
+			case kListObjCode.asUInt():
+				return TListObj{};
 			default:
 				throw BadCodeByte{typeCode};
 		}

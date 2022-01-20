@@ -23,6 +23,7 @@ namespace binon {
 		TListBase();
 		auto value() -> TValue&;
 		auto value() const -> const TValue&;
+		auto hasDefVal() const -> bool;
 	 protected:
 		auto hashValue(std::size_t seed) const -> std::size_t;
 		auto sameValue(const TListBase& other) const -> bool;
@@ -34,6 +35,7 @@ namespace binon {
 		static constexpr auto kClsName = std::string_view{"TListObj"};
 		using TListBase::TListBase;
 		auto operator== (const TListObj& rhs) const { return sameValue(rhs); }
+		auto operator!= (const TListObj& rhs) const { return !sameValue(rhs); }
 		auto hash() const -> std::size_t;
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(TIStream& stream, bool requireIO = true);

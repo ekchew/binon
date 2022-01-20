@@ -36,6 +36,9 @@ namespace binon {
 	auto TListBase::value() const -> const TValue& {
 		return std::any_cast<const TValue&>(mValue);
 	}
+	auto TListBase::hasDefVal() const -> bool {
+		return value().size() == 0;
+	}
 	auto TListBase::hashValue(std::size_t seed) const -> std::size_t {
 		auto& u = value();
 		for(auto& v: u) {
