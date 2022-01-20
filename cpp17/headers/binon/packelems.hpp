@@ -4,24 +4,24 @@
 #include "varobj.hpp"
 
 namespace binon {
-	struct PackElems: RequireIO {
-		PackElems(CodeByte elemCode, TOStream& stream, bool requireIO = true);
-		void operator() (const VarObj& obj);
+	struct PackElems {
+		PackElems(CodeByte elemCode, TOStream& stream);
+		void operator() (const VarObj& obj, bool requireIO = true);
 		~PackElems();
 	 private:
 		CodeByte mElemCode;
+		TOStream& mStream;
 		std::byte mByte;
 		std::size_t mIndex;
-		auto stream() -> TOStream&;
 	};
-	struct UnpackElems: RequireIO {
-		UnpackElems(CodeByte elemCode, TIStream& stream, bool requireIO = true);
-		auto operator() () -> VarObj;
+	struct UnpackElems {
+		UnpackElems(CodeByte elemCode, TIStream& stream);
+		auto operator() (bool requireIO = true) -> VarObj;
 	 private:
 		CodeByte mElemCode;
+		TIStream& mStream;
 		std::byte mByte;
 		std::size_t mIndex;
-		auto stream() -> TIStream&;
 	};
 }
 

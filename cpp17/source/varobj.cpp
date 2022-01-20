@@ -26,6 +26,8 @@ namespace binon {
 				return TUIntObj{};
 			case kListObjCode.asUInt():
 				return TListObj{};
+			case kSListCode.asUInt():
+				return TSList{};
 			default:
 				throw BadCodeByte{typeCode};
 		}

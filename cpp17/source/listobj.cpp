@@ -1,6 +1,7 @@
 #include "binon/listobj.hpp"
 #include "binon/boolobj.hpp"
 #include "binon/intobj.hpp"
+#include "binon/packelems.hpp"
 #include "binon/varobj.hpp"
 
 #include <sstream>
@@ -108,6 +109,45 @@ namespace binon {
 	}
 	auto TSList::hash() const noexcept -> std::size_t {
 		return hashValue(Hash(kTypeCode, mElemCode));
+	}
+	void TSList::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		mElemCode.write(stream, kSkipRequireIO);
+		PackElems pack{mElemCode, stream};
+		for(auto& v: u) {
+			pack(v, kSkipRequireIO);
+		}
+	}
+	void TSList::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj sizeObj;
+		sizeObj.decodeData(stream, kSkipRequireIO);
+		auto n = sizeObj.mValue;
+		mElemCode = CodeByte::Read(stream, kSkipRequireIO);
+		u.resize(0);
+		UnpackElems unpack{mElemCode, stream};
+		while(n-->0) {
+			u.push_back(unpack(kSkipRequireIO));
+		}
+	}
+	void TSList::printArgs(std::ostream& stream) const {
+		stream << "vector<VarObj>{";
+		auto& u = value();
+		bool first = true;
+		for(auto& v: u) {
+			if(first) {
+				first = false;
+			}
+			else {
+				stream << ", ";
+			}
+			v.print(stream);
+		}
+		stream << "}, ";
+		mElemCode.printRepr(stream);
 	}
 
 	//--------------------------------------------------------------------------

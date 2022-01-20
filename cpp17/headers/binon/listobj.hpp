@@ -41,7 +41,7 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
 	};
-	struct TSList: TListBase {
+	struct TSList: TListBase, TStdCodecObj<TSList> {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"TSList"};
 		CodeByte mElemCode;
@@ -52,7 +52,13 @@ namespace binon {
 		TSList(CodeByte elemCode = kNullObjCode):
 			mElemCode{elemCode} {}
 		auto operator== (const TSList& rhs) const -> bool;
+		auto operator!= (const TSList& rhs) const -> bool {
+				return !(*this == rhs);
+			}
 		auto hash() const noexcept -> std::size_t;
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(TIStream& stream, bool requireIO = true);
+		void printArgs(std::ostream& stream) const;
 	};
 
 	auto DeepCopyTList(const TList& list) -> TList;
