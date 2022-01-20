@@ -1,9 +1,28 @@
 #include "binon/dictobj.hpp"
 #include "binon/listobj.hpp"
+#include "binon/packelems.hpp"
+#include "binon/varobj.hpp"
 
 #include <iostream>
 
 namespace binon {
+
+	//---- TDictBase -----------------------------------------------------------
+
+	TDictBase::TDictBase(const TValue& value):
+		mValue{value}
+	{
+	}
+	TDictBase::TDictBase(TValue&& value):
+		mValue{std::forward<TValue>(value)}
+	{
+	}
+	TDictBase::TDictBase():
+		mValue{TValue()}
+	{
+	}
+
+	//--------------------------------------------------------------------------
 
 	auto DeepCopyTDict(const TDict& dict) -> TDict {
 		TDict copy;
