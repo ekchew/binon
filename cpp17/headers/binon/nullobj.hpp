@@ -5,6 +5,20 @@
 
 namespace binon {
 
+	struct TNullObj: TStdCodecObj<TNullObj> {
+		using TValue = void;
+		static constexpr auto kTypeCode = kNullObjCode;
+		static constexpr auto kClsName = std::string_view{"TNullObj"};
+		constexpr auto operator== (TNullObj) const noexcept { return true; }
+		constexpr auto hash() const noexcept -> std::size_t { return 0; }
+		constexpr auto hasDefVal() const noexcept { return false; }
+		constexpr void encodeData(TOStream&, bool requireIO = true)
+			const noexcept {}
+		constexpr void decodeData(CodeByte, TIStream&, bool requireIO = true)
+			const noexcept {}
+		constexpr void printArgs(std::ostream&) const noexcept {}
+	};
+
 	struct NullObj: BinONObj {
 		using TValue = void;
 		auto typeCode() const noexcept -> CodeByte final {return kNullObjCode;}

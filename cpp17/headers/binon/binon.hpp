@@ -27,5 +27,6 @@
 #include "refutil.hpp"
 #include "strobj.hpp"
 #include "typeinfo.hpp"
+#include "varobj.hpp"
 
 #endif

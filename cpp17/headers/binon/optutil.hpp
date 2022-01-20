@@ -16,6 +16,15 @@ Contains utility functions related to std::optional.
 namespace binon {
 
 	/**
+	OptRef type template
+
+	OptRef<T> is equivalent to std::optional<std::reference_wrapper<T>>.
+	This can be a very useful construct, but boy is it a mouthful!
+	**/
+	template<typename T>
+		using OptRef = std::optional<std::reference_wrapper<T>>;
+
+	/**
 	MakeOpt function template
 
 	Depending on the bool you pass to this function, it will return either a

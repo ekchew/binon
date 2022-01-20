@@ -2,6 +2,90 @@
 
 namespace binon {
 
+	//---- TIntObj -------------------------------------------------------------
+
+	void TIntObj::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto v = mValue;
+		if(-0x40 <= v && v < 0x40) {
+			WriteWord(ToByte(v & 0x7f), stream, kSkipRequireIO);
+		}
+		else if(-0x2000 <= v && v < 0x2000) {
+			WriteWord(
+				static_cast<std::int16_t>(0x8000 | (v & 0x3fff)),
+				stream, kSkipRequireIO
+				);
+		}
+		else if(-0x10000000 <= v && v < 0x10000000) {
+			WriteWord(
+				static_cast<std::int32_t>(0xC0000000 | (v & 0x1fffffff)),
+				stream, kSkipRequireIO
+				);
+		}
+		else if(-0x08000000'00000000 <= v && v < 0x08000000'00000000)
+		{
+			WriteWord(
+				0xE0000000'00000000 | (v & 0x0fffffff'ffffffff),
+				stream, kSkipRequireIO
+				);
+		}
+		else {
+			WriteWord('\xf0', stream, kSkipRequireIO);
+			WriteWord(v, stream, kSkipRequireIO);
+		}
+	}
+	void TIntObj::decodeData(CodeByte cb, TIStream& stream, bool requireIO) {
+		auto signExtend = [](std::int64_t v, std::int64_t msbMask) {
+			auto sigBits = msbMask | msbMask - 1;
+			if(v & msbMask) {
+				v |= ~sigBits;
+			}
+			else {
+				v &= sigBits;
+			}
+			return v;
+		};
+		RequireIO rio{stream, requireIO};
+		TValue v;
+		auto byte0 = ReadWord<std::byte>(stream, kSkipRequireIO);
+		if((byte0 & 0x80_byte) == 0x00_byte) {
+			v = signExtend(ReadWord<std::int8_t>(&byte0), 0x40);
+		}
+		else {
+			std::array<std::byte,8> buffer;
+			auto bufPlus1 = reinterpret_cast<TStreamByte*>(buffer.data()) + 1;
+			buffer[0] = byte0;
+			if((byte0 & 0x40_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 1);
+				v = signExtend(
+					ReadWord<std::int16_t>(buffer.data()), 0x2000
+					);
+			}
+			else if((byte0 & 0x20_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 3);
+				v = signExtend(
+					ReadWord<std::int32_t>(buffer.data()), 0x10000000
+					);
+			}
+			else if((byte0 & 0x10_byte) == 0x00_byte) {
+				stream.read(bufPlus1, 7);
+				v = signExtend(
+					ReadWord<std::int64_t>(buffer.data()),
+					0x08000000'00000000
+					);
+			}
+			else if((byte0 & 0x01_byte) == 0x00_byte) {
+				v = ReadWord<std::int64_t>(stream, kSkipRequireIO);
+			}
+			else {
+				throw IntRangeError{};
+			}
+		}
+		mValue = v;
+	}
+
+	//---- IntRangeError -------------------------------------------------------
+
 	IntRangeError::IntRangeError():
 		std::range_error{"C++ BinON does not support integers > 64 bits"}
 	{

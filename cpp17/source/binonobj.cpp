@@ -11,6 +11,8 @@
 
 namespace binon {
 
+	//---- BinOnObj ------------------------------------------------------------
+
 	auto BinONObj::Decode(TIStream& stream, bool requireIO)
 		-> TSPBinONObj
 	{

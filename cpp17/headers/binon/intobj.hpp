@@ -4,6 +4,21 @@
 #include "binonobj.hpp"
 
 namespace binon {
+	struct TIntObj:
+		TStdEqObj<TIntObj>,
+		TStdHashObj<TIntObj>,
+		TStdHasDefValObj<TIntObj>,
+		TStdPrintArgsObj<TIntObj>,
+		TStdCodecObj<TIntObj>
+	{
+		using TValue = std::int64_t;
+		static constexpr auto kTypeCode = kIntObjCode;
+		static constexpr auto kClsName = std::string_view{"TIntObj"};
+		TValue mValue;
+		constexpr TIntObj(TValue v = 0) noexcept: mValue{v} {}
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(CodeByte cb, TIStream& stream, bool requireIO = true);
+	};
 
 	struct IntRangeError: std::range_error {
 		IntRangeError();

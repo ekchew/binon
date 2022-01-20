@@ -35,7 +35,8 @@ SRC_NAMES := \
 	intobj \
 	ioutil \
 	listobj \
-	strobj
+	strobj \
+	varobj
 OBJ := ${DEST_DIR}/obj/
 OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
@@ -76,6 +77,7 @@ DEP4 := \
 DEP5 := \
 	${HDR}idgen.hpp \
 	${HDR}pbinonobjt.hpp \
+	${HDR}varobj.hpp \
 	${DEP4}
 ${HDR}/binon.hpp: ${DEP5}
 	touch ${HDR}/binon.hpp
@@ -104,3 +106,5 @@ ${OBJ}listobj.o: ${SRC}listobj.cpp ${DEP4}
 ${OBJ}strobj.o: ${SRC}strobj.cpp ${HDR}strobj.hpp \
 	${HDR}hystr.hpp ${HDR}intobj.hpp ${DEP3}
 	${CXX} ${FLAGS} ${SRC}strobj.cpp -o ${OBJ}strobj.o
+${OBJ}varobj.o: ${SRC}varobj.cpp ${DEP5}
+	${CXX} ${FLAGS} ${SRC}varobj.cpp -o ${OBJ}varobj.o

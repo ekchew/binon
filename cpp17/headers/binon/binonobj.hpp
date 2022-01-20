@@ -31,6 +31,49 @@ namespace binon {
 
 	constexpr bool kDeepCopy = true;
 
+	template<typename Child>
+		struct TStdEqObj {
+			auto operator== (const Child& rhs) const noexcept {
+					return static_cast<const Child*>(this)->mValue
+						== rhs.mValue;
+				}
+			auto operator!= (const Child& rhs) const noexcept {
+					return !(*this == rhs);
+				}
+		};
+	template<typename Child>
+		struct TStdHashObj {
+			auto hash() const noexcept {
+					return std::hash<typename Child::TValue>{}(
+						static_cast<const Child*>(this)->mValue
+						);
+				}
+		};
+	template<typename Child>
+		struct TStdHasDefValObj {
+			auto hasDefVal() const noexcept {
+					return !static_cast<const Child*>(this)->mValue;
+				}
+		};
+	template<typename Child>
+		struct TStdPrintArgsObj {
+			void printArgs(std::ostream& stream) const {
+					stream << static_cast<const Child*>(this)->mValue;
+				}
+		};
+	template<typename Child>
+		struct TStdCodecObj {
+			static void Encode(
+				const Child& child, TOStream& stream, bool requireIO = true
+				);
+			static void Decode(
+				Child& child, CodeByte cb, TIStream& stream,
+				bool requireIO = true
+				);
+			void encode(TOStream& stream, bool requireIO = true) const;
+			void decode(CodeByte cb, TIStream& stream, bool requireIO = true);
+		};
+
 	struct BinONObj {
 
 		//	Cast() dynamically casts a shared pointer to a BinONObj to one of
@@ -86,7 +129,50 @@ namespace binon {
 	auto operator << (std::ostream& stream, const TSPBinONObj& pObj)
 		-> std::ostream&;
 
-	//---- Template Implementation ---------------------------------------------
+	//==== Template Implementation =============================================
+
+	//--- TStdCodec ------------------------------------------------------------
+
+	template<typename Child>
+		void TStdCodecObj<Child>::Encode(
+			const Child& child, TOStream& stream, bool requireIO
+			)
+		{
+			RequireIO rio{stream, requireIO};
+			CodeByte cb = Child::kTypeCode;
+			bool hasDefVal = child.hasDefVal();
+			if(hasDefVal) {
+				Subtype{cb} = Subtype::kDefault;
+			}
+			cb.write(stream, kSkipRequireIO);
+			if(!hasDefVal) {
+				child.encodeData(stream, kSkipRequireIO);
+			}
+		}
+	template<typename Child>
+		void TStdCodecObj<Child>::Decode(
+			Child& child, CodeByte cb, TIStream& stream, bool requireIO
+			)
+		{
+			RequireIO rio{stream, requireIO};
+			if(Subtype(cb) != Subtype::kDefault) {
+				child.decodeData(cb, stream, kSkipRequireIO);
+			}
+		}
+	template<typename Child>
+		void TStdCodecObj<Child>::encode(
+			TOStream& stream, bool requireIO) const
+		{
+			Encode(*static_cast<const Child*>(this), stream, requireIO);
+		}
+	template<typename Child>
+		void TStdCodecObj<Child>::decode(
+			CodeByte cb, TIStream& stream, bool requireIO)
+		{
+			Decode(*static_cast<Child*>(this), cb, stream, requireIO);
+		}
+
+	//--- BinONObj -------------------------------------------------------------
 
 	template<typename Subcls, bool Assert>
 		auto BinONObj::Cast(const TSPBinONObj& p)
