@@ -20,6 +20,26 @@ namespace binon {
 		void decodeData(CodeByte, TIStream&, bool requireIO = true) {}
 		void printArgs(std::ostream& stream) const;
 	};
+	struct PackBools: RequireIO {
+		PackBools(std::ostream& stream, bool requireIO = true):
+			RequireIO{stream, requireIO}, mStream{stream} {};
+		void write(bool v);
+		void write(const TBoolObj& obj) { write(obj.mValue); }
+		~PackBools();
+	private:
+		std::ostream& mStream;
+		std::byte mByte = 0x00_byte;
+		unsigned mNBits = 0;
+	};
+	struct UnpackBools: RequireIO {
+		UnpackBools(std::istream& stream, bool requireIO = true):
+			RequireIO{stream, requireIO}, mStream{stream} {};
+		auto read() -> bool;
+	private:
+		std::istream& mStream;
+		std::byte mByte = 0x00_byte;
+		unsigned mNBits = 0;
+	};
 
 	struct BoolObj: BinONObj, Access_mValue<BoolObj,bool> {
 		static void EncodeData(TValue v, TOStream& stream, bool requireIO=true);

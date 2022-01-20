@@ -37,6 +37,7 @@ namespace binon {
 		auto hash() const -> std::size_t;
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(CodeByte cb, TIStream& stream, bool requireIO = true);
+		void printArgs(std::ostream& stream) const;
 	};
 	struct TSList: TListBase {
 		static constexpr auto kTypeCode = kSListCode;

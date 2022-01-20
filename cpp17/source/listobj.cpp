@@ -82,6 +82,21 @@ namespace binon {
 			u.push_back(TVarObj::Decode(stream, kSkipRequireIO));
 		}
 	}
+	void TListObj::printArgs(std::ostream& stream) const {
+		stream << "vector<TVarObj>{";
+		auto& u = value();
+		bool first = true;
+		for(auto& v: u) {
+			if(first) {
+				first = false;
+			}
+			else {
+				stream << ", ";
+			}
+			v.print(stream);
+		}
+		stream << "}";
+	}
 
 	//---- TSList --------------------------------------------------------------
 
