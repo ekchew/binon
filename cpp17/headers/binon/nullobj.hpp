@@ -17,7 +17,7 @@ namespace binon {
 		constexpr auto hasDefVal() const noexcept { return false; }
 		constexpr void encodeData(TOStream&, bool requireIO = true)
 			const noexcept {}
-		constexpr void decodeData(CodeByte, TIStream&, bool requireIO = true)
+		constexpr void decodeData(TIStream&, bool requireIO = true)
 			noexcept {}
 		constexpr void printArgs(std::ostream&) const noexcept {}
 	};

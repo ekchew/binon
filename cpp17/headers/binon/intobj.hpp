@@ -17,7 +17,7 @@ namespace binon {
 		TValue mValue;
 		constexpr TIntObj(TValue v = 0) noexcept: mValue{v} {}
 		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(CodeByte cb, TIStream& stream, bool requireIO = true);
+		void decodeData(TIStream& stream, bool requireIO = true);
 	};
 	struct TUIntObj:
 		TStdEqObj<TUIntObj>,
@@ -32,7 +32,7 @@ namespace binon {
 		TValue mValue;
 		constexpr TUIntObj(TValue v = 0) noexcept: mValue{v} {}
 		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(CodeByte cb, TIStream& stream, bool requireIO = true);
+		void decodeData(TIStream& stream, bool requireIO = true);
 	};
 
 	struct IntRangeError: std::range_error {

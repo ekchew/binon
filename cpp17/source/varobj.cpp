@@ -3,18 +3,18 @@
 #include <iostream>
 
 namespace binon {
-	auto TVarObj::Decode(TIStream& stream, bool requireIO) -> TVarObj {
+	auto VarObj::Decode(TIStream& stream, bool requireIO) -> VarObj {
 		RequireIO rio{stream, requireIO};
 		CodeByte cb = CodeByte::Read(stream, kSkipRequireIO);
-		auto varObj{FromCodeByte(cb)};
+		auto varObj{FromTypeCode(cb)};
 		std::visit(
 			[&](auto& obj) { obj.decode(cb, stream, kSkipRequireIO); },
 			varObj
 			);
 		return varObj;
 	}
-	auto TVarObj::FromCodeByte(CodeByte cb) -> TVarObj {
-		switch(cb.typeCode().asUInt()) {
+	auto VarObj::FromTypeCode(CodeByte typeCode) -> VarObj {
+		switch(typeCode.asUInt()) {
 			case kNullObjCode.asUInt():
 				return TNullObj{};
 			case kBoolObjCode.asUInt(): [[fallthrough]];
@@ -25,16 +25,16 @@ namespace binon {
 			case kUIntCode.asUInt():
 				return TUIntObj{};
 			default:
-				throw BadCodeByte{cb};
+				throw BadCodeByte{typeCode};
 		}
 	}
-	void TVarObj::encode(TOStream& stream, bool requireIO) const {
+	void VarObj::encode(TOStream& stream, bool requireIO) const {
 		std::visit(
 			[&](const auto& obj) { obj.encode(stream, requireIO); },
 		 	*this
 			);
 	}
-	void TVarObj::print(OptRef<std::ostream> optStream) const {
+	void VarObj::print(OptRef<std::ostream> optStream) const {
 		auto& stream = optStream.value_or(std::cout).get();
 		std::visit(
 			[&stream](const auto& obj) {
@@ -45,7 +45,7 @@ namespace binon {
 			*this
 			);
 	}
-	auto TVarObj::typeCode() const -> CodeByte {
+	auto VarObj::typeCode() const -> CodeByte {
 		return std::visit(
 			[](const auto& obj) -> CodeByte { return obj.kTypeCode; },
 			*this

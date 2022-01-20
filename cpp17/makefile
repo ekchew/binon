@@ -35,6 +35,7 @@ SRC_NAMES := \
 	intobj \
 	ioutil \
 	listobj \
+	packelems \
 	strobj \
 	varobj
 OBJ := ${DEST_DIR}/obj/
@@ -66,6 +67,7 @@ DEPS := \
 	${HDR}nullobj.hpp \
 	${HDR}optutil.hpp \
 	${HDR}pbinonobjt.hpp \
+	${HDR}packelems.hpp \
 	${HDR}refutil.hpp \
 	${HDR}strobj.hpp \
 	${HDR}typeinfo.hpp \
@@ -95,6 +97,8 @@ ${OBJ}ioutil.o: ${SRC}ioutil.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}ioutil.cpp -o ${OBJ}ioutil.o
 ${OBJ}listobj.o: ${SRC}listobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}listobj.cpp -o ${OBJ}listobj.o
+${OBJ}packelems.o: ${SRC}packelems.cpp ${DEPS}
+	${CXX} ${FLAGS} ${SRC}packelems.cpp -o ${OBJ}packelems.o
 ${OBJ}strobj.o: ${SRC}strobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}strobj.cpp -o ${OBJ}strobj.o
 ${OBJ}varobj.o: ${SRC}varobj.cpp ${DEPS}

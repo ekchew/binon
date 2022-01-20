@@ -15,9 +15,9 @@
 
 namespace binon {
 
-	struct TVarObj;
+	struct VarObj;
 	struct TListBase {
-		using TValue = std::vector<TVarObj>;
+		using TValue = std::vector<VarObj>;
 		TListBase(const TValue& value);
 		TListBase(TValue&& value);
 		TListBase();
@@ -36,7 +36,7 @@ namespace binon {
 		auto operator== (const TListObj& rhs) const { return sameValue(rhs); }
 		auto hash() const -> std::size_t;
 		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(CodeByte cb, TIStream& stream, bool requireIO = true);
+		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
 	};
 	struct TSList: TListBase {

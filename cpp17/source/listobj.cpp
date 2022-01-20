@@ -39,7 +39,7 @@ namespace binon {
 	auto TListBase::hashValue(std::size_t seed) const -> std::size_t {
 		auto& u = value();
 		for(auto& v: u) {
-			seed = HashCombine(seed, std::hash<TVarObj>{}(v));
+			seed = HashCombine(seed, std::hash<VarObj>{}(v));
 		}
 		return seed;
 	}
@@ -71,19 +71,19 @@ namespace binon {
 			v.encode(stream, kSkipRequireIO);
 		}
 	}
-	void TListObj::decodeData(CodeByte cb, TIStream& stream, bool requireIO) {
+	void TListObj::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj sizeObj;
-		sizeObj.decodeData(sizeObj.kTypeCode, stream, kSkipRequireIO);
+		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.mValue;
 		u.resize(0);
 		while(n-->0) {
-			u.push_back(TVarObj::Decode(stream, kSkipRequireIO));
+			u.push_back(VarObj::Decode(stream, kSkipRequireIO));
 		}
 	}
 	void TListObj::printArgs(std::ostream& stream) const {
-		stream << "vector<TVarObj>{";
+		stream << "vector<VarObj>{";
 		auto& u = value();
 		bool first = true;
 		for(auto& v: u) {

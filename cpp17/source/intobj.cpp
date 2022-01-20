@@ -34,7 +34,7 @@ namespace binon {
 			WriteWord(v, stream, kSkipRequireIO);
 		}
 	}
-	void TIntObj::decodeData(CodeByte cb, TIStream& stream, bool requireIO) {
+	void TIntObj::decodeData(TIStream& stream, bool requireIO) {
 		auto signExtend = [](std::int64_t v, std::int64_t msbMask) {
 			auto sigBits = msbMask | msbMask - 1;
 			if(v & msbMask) {
@@ -115,7 +115,7 @@ namespace binon {
 			WriteWord(v, stream, kSkipRequireIO);
 		}
 	}
-	void TUIntObj::decodeData(CodeByte cb, TIStream& stream, bool requireIO) {
+	void TUIntObj::decodeData(TIStream& stream, bool requireIO) {
 		RequireIO rio{stream, requireIO};
 		TValue v;
 		auto byte0 = ReadWord<std::byte>(stream, kSkipRequireIO);

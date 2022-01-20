@@ -86,10 +86,9 @@ namespace binon {
 		RequireIO(RequireIO&& rio) noexcept;
 		auto operator = (const RequireIO& rio) noexcept -> RequireIO& = delete;
 		auto operator = (RequireIO&& rio) noexcept -> RequireIO&;
-		auto stream() noexcept -> TIOS& { return *mPStream; }
 		~RequireIO();
 
-	 private:
+	 protected:
 		TIOS* mPStream;
 		TIOS::iostate mEx0;
 	};

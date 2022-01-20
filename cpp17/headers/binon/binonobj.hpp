@@ -158,7 +158,7 @@ namespace binon {
 		{
 			RequireIO rio{stream, requireIO};
 			if(Subtype(cb) != Subtype::kDefault) {
-				child.decodeData(cb, stream, kSkipRequireIO);
+				child.decodeData(stream, kSkipRequireIO);
 			}
 		}
 	template<typename Child>

@@ -16,10 +16,10 @@ namespace binon {
 		TIntObj,
 		TUIntObj
 		>;
-	struct TVarObj: TVarBase
+	struct VarObj: TVarBase
 	{
-		static auto Decode(TIStream& stream, bool requireIO = true) -> TVarObj;
-		static auto FromCodeByte(CodeByte cb) -> TVarObj;
+		static auto Decode(TIStream& stream, bool requireIO = true) -> VarObj;
+		static auto FromTypeCode(CodeByte cb) -> VarObj;
 		using TVarBase::variant;
 		auto typeCode() const -> CodeByte;
 		void encode(TOStream& stream, bool requireIO = true) const;
@@ -27,8 +27,8 @@ namespace binon {
 	};
 }
 namespace std {
-	template<> struct hash<binon::TVarObj> {
-		auto operator() (const binon::TVarObj& obj) const -> std::size_t {
+	template<> struct hash<binon::VarObj> {
+		auto operator() (const binon::VarObj& obj) const -> std::size_t {
 			return std::visit([](const auto& obj) { return obj.hash(); }, obj);
 		}
 	};
