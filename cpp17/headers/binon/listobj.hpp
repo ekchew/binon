@@ -16,46 +16,21 @@
 namespace binon {
 
 	struct VarObj;
-	struct TListBase {
-		using TValue = std::vector<VarObj>;
-		TListBase(const TValue& value);
-		TListBase(TValue&& value);
-		TListBase();
-		auto value() -> TValue&;
-		auto value() const -> const TValue&;
-		auto hasDefVal() const -> bool;
-	 protected:
-		auto hashValue(std::size_t seed) const -> std::size_t;
-		auto sameValue(const TListBase& other) const -> bool;
-	 private:
-		std::any mValue;
-	};
-	struct TListObj: TListBase, TStdCodecObj<TListObj> {
+	struct TListObj: TStdCtnrObj<TListObj, std::vector<VarObj>> {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"TListObj"};
-		using TListBase::TListBase;
-		auto operator== (const TListObj& rhs) const { return sameValue(rhs); }
-		auto operator!= (const TListObj& rhs) const { return !sameValue(rhs); }
-		auto hash() const -> std::size_t;
+		using TStdCtnrObj<TListObj,TValue>::TStdCtnrObj;
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
 	};
-	struct TSList: TListBase, TStdCodecObj<TSList> {
+	struct TSList: TStdCtnrObj<TSList, std::vector<VarObj>> {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"TSList"};
 		CodeByte mElemCode;
-		TSList(const TValue& value, CodeByte elemCode = kNullObjCode):
-			TListBase{value}, mElemCode{elemCode} {}
-		TSList(TValue&& value, CodeByte elemCode = kNullObjCode):
-			TListBase{std::forward<TValue>(value)}, mElemCode{elemCode} {}
-		TSList(CodeByte elemCode = kNullObjCode):
-			mElemCode{elemCode} {}
-		auto operator== (const TSList& rhs) const -> bool;
-		auto operator!= (const TSList& rhs) const -> bool {
-				return !(*this == rhs);
-			}
-		auto hash() const noexcept -> std::size_t;
+		TSList(const TValue& value, CodeByte elemCode = kNullObjCode);
+		TSList(TValue&& value, CodeByte elemCode = kNullObjCode);
+		TSList(CodeByte elemCode = kNullObjCode);
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;

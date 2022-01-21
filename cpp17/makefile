@@ -64,6 +64,7 @@ DEPS := \
 	${HDR}listobj.hpp \
 	${HDR}literals.hpp \
 	${HDR}macros.hpp \
+	${HDR}mixins.hpp \
 	${HDR}nullobj.hpp \
 	${HDR}optutil.hpp \
 	${HDR}pbinonobjt.hpp \

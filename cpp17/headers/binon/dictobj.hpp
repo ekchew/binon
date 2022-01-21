@@ -9,14 +9,17 @@
 #include <type_traits>
 
 namespace binon {
-	struct TDictBase {
+	/*struct TDictBase {
 		using TValue = std::unordered_map<VarObj,VarObj>;
 		TDictBase(const TValue& value);
 		TDictBase(TValue&& value);
 		TDictBase();
+		auto value() -> TValue&;
+		auto value() const -> const TValue&;
+		auto hasDefVal() const -> bool;
 	  private:
 		std::any mValue;
-	};
+	};*/
 
 	auto DeepCopyTDict(const TDict& dict) -> TDict;
 	void PrintTDictRepr(const TDict& list, std::ostream& stream);

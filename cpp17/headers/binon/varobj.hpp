@@ -32,7 +32,10 @@ namespace binon {
 namespace std {
 	template<> struct hash<binon::VarObj> {
 		auto operator() (const binon::VarObj& obj) const -> std::size_t {
-			return std::visit([](const auto& obj) { return obj.hash(); }, obj);
+			return std::visit(
+				[](const auto& obj) -> std::size_t { return obj.hash(); },
+				obj
+				);
 		}
 	};
 }

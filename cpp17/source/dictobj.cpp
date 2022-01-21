@@ -9,7 +9,7 @@ namespace binon {
 
 	//---- TDictBase -----------------------------------------------------------
 
-	TDictBase::TDictBase(const TValue& value):
+	/*TDictBase::TDictBase(const TValue& value):
 		mValue{value}
 	{
 	}
@@ -21,6 +21,15 @@ namespace binon {
 		mValue{TValue()}
 	{
 	}
+	auto TDictBase::value() -> TValue& {
+		return std::any_cast<TValue&>(mValue);
+	}
+	auto TDictBase::value() const -> const TValue& {
+		return std::any_cast<const TValue&>(mValue);
+	}
+	auto TDictBase::hasDefVal() const -> bool {
+		return value().size() == 0;
+	}*/
 
 	//--------------------------------------------------------------------------
 

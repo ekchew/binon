@@ -17,56 +17,8 @@
 
 namespace binon {
 
-	//---- TListBase -----------------------------------------------------------
-
-	TListBase::TListBase(const TValue& value):
-		mValue{value}
-	{
-	}
-	TListBase::TListBase(TValue&& value):
-		mValue{std::forward<TValue>(value)}
-	{
-	}
-	TListBase::TListBase():
-		mValue{TValue()}
-	{
-	}
-	auto TListBase::value() -> TValue& {
-		return std::any_cast<TValue&>(mValue);
-	}
-	auto TListBase::value() const -> const TValue& {
-		return std::any_cast<const TValue&>(mValue);
-	}
-	auto TListBase::hasDefVal() const -> bool {
-		return value().size() == 0;
-	}
-	auto TListBase::hashValue(std::size_t seed) const -> std::size_t {
-		auto& u = value();
-		for(auto& v: u) {
-			seed = HashCombine(seed, std::hash<VarObj>{}(v));
-		}
-		return seed;
-	}
-	auto TListBase::sameValue(const TListBase& other) const -> bool {
-		auto& u = value();
-		auto& v = other.value();
-		auto n = u.size();
-		if(n != v.size()) {
-			return false;
-		}
-		for(decltype(n) i = 0; i < n; ++i) {
-			if(u[i] != v[i]) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	//---- TListObj ------------------------------------------------------------
 
-	auto TListObj::hash() const -> std::size_t {
-		return hashValue(std::hash<CodeByte>{}(kTypeCode));
-	}
 	void TListObj::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -104,11 +56,19 @@ namespace binon {
 
 	//---- TSList --------------------------------------------------------------
 
-	auto TSList::operator== (const TSList& rhs) const -> bool {
-		return mElemCode == rhs.mElemCode && sameValue(rhs);
+	TSList::TSList(const TValue& value, CodeByte elemCode):
+		TStdCtnrObj<TSList,TValue>{value},
+		mElemCode{elemCode}
+	{
 	}
-	auto TSList::hash() const noexcept -> std::size_t {
-		return hashValue(Hash(kTypeCode, mElemCode));
+	TSList::TSList(TValue&& value, CodeByte elemCode):
+		TStdCtnrObj<TSList,TValue>{std::forward<TValue>(value)},
+		mElemCode{elemCode}
+	{
+	}
+	TSList::TSList(CodeByte elemCode):
+		mElemCode{elemCode}
+	{
 	}
 	void TSList::encodeData(TOStream& stream, bool requireIO) const {
 		RequireIO rio{stream, requireIO};
