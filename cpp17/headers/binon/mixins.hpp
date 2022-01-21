@@ -58,6 +58,9 @@ namespace binon {
 			void decode(CodeByte cb, TIStream& stream, bool requireIO = true);
 		};
 
+	struct NoComparing: std::invalid_argument {
+		using std::invalid_argument::invalid_argument;
+	};
 	struct NoHashing: std::invalid_argument {
 		using std::invalid_argument::invalid_argument;
 	};
@@ -69,8 +72,13 @@ namespace binon {
 			TStdCtnr();
 			auto value() -> TValue&;
 			auto value() const -> const TValue&;
-			auto hash() const -> std::size_t; // throws NoHashing
 			auto hasDefVal() const -> bool;
+
+			auto operator== (const TStdCtnr& rhs) const -> bool;
+			auto operator!= (const TStdCtnr& rhs) const -> bool;
+				 // throw NoComparing
+
+			auto hash() const -> std::size_t; // throws NoHashing
 			
 		private:
 			std::any mValue;
@@ -145,6 +153,16 @@ namespace binon {
 			-> const TValue&
 		{
 			return std::any_cast<const TValue&>(mValue);
+		}
+	template<typename Child, typename Ctnr>
+		auto TStdCtnr<Child,Ctnr>::operator== (const TStdCtnr&) const -> bool {
+			throw NoComparing{"BinON container objects cannot be compared"};
+		}
+	template<typename Child, typename Ctnr>
+		auto TStdCtnr<Child,Ctnr>::operator!= (const TStdCtnr& rhs) const
+			-> bool
+		{
+			return !(*this == rhs);
 		}
 	template<typename Child, typename Ctnr>
 		auto TStdCtnr<Child,Ctnr>::hash() const -> std::size_t {
