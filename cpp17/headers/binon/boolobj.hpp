@@ -5,9 +5,10 @@
 
 namespace binon {
 	struct TBoolObj:
-		TStdEqObj<TBoolObj>,
-		TStdHashObj<TBoolObj>,
-		TStdHasDefValObj<TBoolObj>
+		TStdAcc<TBoolObj>,
+		TStdEq<TBoolObj>,
+		TStdHash<TBoolObj>,
+		TStdHasDefVal<TBoolObj>
 	{
 		using TValue = bool;
 		TValue mValue;

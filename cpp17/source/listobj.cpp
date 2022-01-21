@@ -57,12 +57,12 @@ namespace binon {
 	//---- TSList --------------------------------------------------------------
 
 	TSList::TSList(const TValue& value, CodeByte elemCode):
-		TStdCtnrObj<TSList,TValue>{value},
+		TStdCtnr<TSList,TValue>{value},
 		mElemCode{elemCode}
 	{
 	}
 	TSList::TSList(TValue&& value, CodeByte elemCode):
-		TStdCtnrObj<TSList,TValue>{std::forward<TValue>(value)},
+		TStdCtnr<TSList,TValue>{std::forward<TValue>(value)},
 		mElemCode{elemCode}
 	{
 	}

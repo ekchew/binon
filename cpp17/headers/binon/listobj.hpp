@@ -16,15 +16,15 @@
 namespace binon {
 
 	struct VarObj;
-	struct TListObj: TStdCtnrObj<TListObj, std::vector<VarObj>> {
+	struct TListObj: TStdCtnr<TListObj, std::vector<VarObj>> {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"TListObj"};
-		using TStdCtnrObj<TListObj,TValue>::TStdCtnrObj;
+		using TStdCtnr<TListObj,TValue>::TStdCtnr;
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
 	};
-	struct TSList: TStdCtnrObj<TSList, std::vector<VarObj>> {
+	struct TSList: TStdCtnr<TSList, std::vector<VarObj>> {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"TSList"};
 		CodeByte mElemCode;

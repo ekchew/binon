@@ -5,7 +5,7 @@
 
 namespace binon {
 
-	struct TNullObj: TStdCodecObj<TNullObj> {
+	struct TNullObj: TStdCodec<TNullObj> {
 		using TValue = void;
 		static constexpr auto kTypeCode = kNullObjCode;
 		static constexpr auto kClsName = std::string_view{"TNullObj"};

@@ -5,11 +5,12 @@
 
 namespace binon {
 	struct TIntObj:
-		TStdEqObj<TIntObj>,
-		TStdHashObj<TIntObj>,
-		TStdHasDefValObj<TIntObj>,
-		TStdPrintArgsObj<TIntObj>,
-		TStdCodecObj<TIntObj>
+		TStdAcc<TIntObj>,
+		TStdEq<TIntObj>,
+		TStdHash<TIntObj>,
+		TStdHasDefVal<TIntObj>,
+		TStdPrintArgs<TIntObj>,
+		TStdCodec<TIntObj>
 	{
 		using TValue = std::int64_t;
 		static constexpr auto kTypeCode = kIntObjCode;
@@ -20,11 +21,12 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO = true);
 	};
 	struct TUIntObj:
-		TStdEqObj<TUIntObj>,
-		TStdHashObj<TUIntObj>,
-		TStdHasDefValObj<TUIntObj>,
-		TStdPrintArgsObj<TUIntObj>,
-		TStdCodecObj<TUIntObj>
+		TStdAcc<TUIntObj>,
+		TStdEq<TUIntObj>,
+		TStdHash<TUIntObj>,
+		TStdHasDefVal<TUIntObj>,
+		TStdPrintArgs<TUIntObj>,
+		TStdCodec<TUIntObj>
 	{
 		using TValue = std::uint64_t;
 		static constexpr auto kTypeCode = kUIntCode;

@@ -9,7 +9,12 @@
 
 namespace binon {
 	template<typename Child>
-		struct TStdEqObj {
+		struct TStdAcc {
+			auto& value() { static_cast<Child*>(this)->mValue; }
+			auto& value() const { static_cast<const Child*>(this)->mValue; }
+		};
+	template<typename Child>
+		struct TStdEq {
 			auto operator== (const Child& rhs) const noexcept {
 					return static_cast<const Child*>(this)->mValue
 						== rhs.mValue;
@@ -19,7 +24,7 @@ namespace binon {
 				}
 		};
 	template<typename Child>
-		struct TStdHashObj {
+		struct TStdHash {
 			auto hash() const noexcept {
 					using TValue = typename Child::TValue;
 					auto& child = *static_cast<const Child*>(this);
@@ -29,19 +34,19 @@ namespace binon {
 				}
 		};
 	template<typename Child>
-		struct TStdHasDefValObj {
+		struct TStdHasDefVal {
 			auto hasDefVal() const noexcept {
 					return !static_cast<const Child*>(this)->mValue;
 				}
 		};
 	template<typename Child>
-		struct TStdPrintArgsObj {
+		struct TStdPrintArgs {
 			void printArgs(std::ostream& stream) const {
 					stream << static_cast<const Child*>(this)->mValue;
 				}
 		};
 	template<typename Child>
-		struct TStdCodecObj {
+		struct TStdCodec {
 			static void Encode(
 				const Child& child, TOStream& stream, bool requireIO = true
 				);
@@ -57,11 +62,11 @@ namespace binon {
 		using std::invalid_argument::invalid_argument;
 	};
 	template<typename Child, typename Ctnr>
-		struct TStdCtnrObj: TStdCodecObj<Child> {
+		struct TStdCtnr: TStdCodec<Child> {
 			using TValue = Ctnr;
-			TStdCtnrObj(const TValue& ctnr);
-			TStdCtnrObj(TValue&& ctnr);
-			TStdCtnrObj();
+			TStdCtnr(const TValue& ctnr);
+			TStdCtnr(TValue&& ctnr);
+			TStdCtnr();
 			auto value() -> TValue&;
 			auto value() const -> const TValue&;
 			auto hash() const -> std::size_t; // throws NoHashing
@@ -76,7 +81,7 @@ namespace binon {
 	//--- TStdCodec ------------------------------------------------------------
 
 	template<typename Child>
-		void TStdCodecObj<Child>::Encode(
+		void TStdCodec<Child>::Encode(
 			const Child& child, TOStream& stream, bool requireIO
 			)
 		{
@@ -92,7 +97,7 @@ namespace binon {
 			}
 		}
 	template<typename Child>
-		void TStdCodecObj<Child>::Decode(
+		void TStdCodec<Child>::Decode(
 			Child& child, CodeByte cb, TIStream& stream, bool requireIO
 			)
 		{
@@ -102,51 +107,51 @@ namespace binon {
 			}
 		}
 	template<typename Child>
-		void TStdCodecObj<Child>::encode(
+		void TStdCodec<Child>::encode(
 			TOStream& stream, bool requireIO) const
 		{
 			Encode(*static_cast<const Child*>(this), stream, requireIO);
 		}
 	template<typename Child>
-		void TStdCodecObj<Child>::decode(
+		void TStdCodec<Child>::decode(
 			CodeByte cb, TIStream& stream, bool requireIO)
 		{
 			Decode(*static_cast<Child*>(this), cb, stream, requireIO);
 		}
 
-	//--- TStdCtnrObj ----------------------------------------------------------
+	//--- TStdCtnr ----------------------------------------------------------
 
 	template<typename Child, typename Ctnr>
-		TStdCtnrObj<Child,Ctnr>::TStdCtnrObj(const TValue& ctnr):
+		TStdCtnr<Child,Ctnr>::TStdCtnr(const TValue& ctnr):
 			mValue{ctnr}
 		{
 		}
 	template<typename Child, typename Ctnr>
-		TStdCtnrObj<Child,Ctnr>::TStdCtnrObj(TValue&& ctnr):
+		TStdCtnr<Child,Ctnr>::TStdCtnr(TValue&& ctnr):
 			mValue{std::forward<TValue>(ctnr)}
 		{
 		}
 	template<typename Child, typename Ctnr>
-		TStdCtnrObj<Child,Ctnr>::TStdCtnrObj():
+		TStdCtnr<Child,Ctnr>::TStdCtnr():
 			mValue{TValue()}
 		{
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnrObj<Child,Ctnr>::value() -> TValue& {
+		auto TStdCtnr<Child,Ctnr>::value() -> TValue& {
 			return std::any_cast<TValue&>(mValue);
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnrObj<Child,Ctnr>::value() const
+		auto TStdCtnr<Child,Ctnr>::value() const
 			-> const TValue&
 		{
 			return std::any_cast<const TValue&>(mValue);
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnrObj<Child,Ctnr>::hash() const -> std::size_t {
+		auto TStdCtnr<Child,Ctnr>::hash() const -> std::size_t {
 			throw NoHashing{"BinON container objects cannot be hashed"};
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnrObj<Child,Ctnr>::hasDefVal() const -> bool {
+		auto TStdCtnr<Child,Ctnr>::hasDefVal() const -> bool {
 			return value().size() == 0;
 		}
 }
