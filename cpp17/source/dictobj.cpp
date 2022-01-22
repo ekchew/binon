@@ -57,6 +57,72 @@ namespace binon {
 		stream << "}";
 	}
 
+	//---- TSKDict -------------------------------------------------------------
+
+	TSKDict::TSKDict(std::any value, CodeByte keyCode):
+		TStdCtnr<TSKDict,TValue>{std::move(value)},
+		mKeyCode{keyCode}
+	{
+	}
+	TSKDict::TSKDict(CodeByte keyCode):
+		mKeyCode{keyCode}
+	{
+	}
+	void TSKDict::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		mKeyCode.write(stream, kSkipRequireIO);
+		{
+			PackElems packKey{mKeyCode, stream};
+			for(auto& [k, v]: u) {
+				packKey(k, kSkipRequireIO);
+			}
+		}
+		for(auto& [k, v]: u) {
+			v.encode(stream, kSkipRequireIO);
+		}
+	}
+	void TSKDict::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj sizeObj;
+		sizeObj.decodeData(stream, kSkipRequireIO);
+		auto n = sizeObj.value();
+		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
+		std::vector<VarObj> ks;
+		ks.reserve(n);
+		u.clear();
+		u.reserve(n);
+		UnpackElems unpackKey{mKeyCode, stream};
+		while(n-->0) {
+			ks.push_back(unpackKey(kSkipRequireIO));
+		}
+		for(auto& k: ks) {
+			u[std::move(k)] = VarObj::Decode(stream, kSkipRequireIO);
+		}
+	}
+	void TSKDict::printArgs(std::ostream& stream) const {
+		stream << "std::unordered_map<VarObj,VarObj>{";
+		auto& u = value();
+		bool first = true;
+		for(auto& [k, v]: u) {
+			if(first) {
+				first = false;
+			}
+			else {
+				stream << ", ";
+			}
+			stream << '{';
+			k.print(stream);
+			stream << ", ";
+			v.print(stream);
+			stream << '}';
+		}
+		stream << "}, ";
+		mKeyCode.printRepr(stream);
+	}
+
 	//--------------------------------------------------------------------------
 
 	auto DeepCopyTDict(const TDict& dict) -> TDict {

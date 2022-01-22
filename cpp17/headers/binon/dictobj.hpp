@@ -9,26 +9,6 @@
 #include <type_traits>
 
 namespace binon {
-	#if 0
-	struct TDictObj {
-		using TValue = std::unordered_map<VarObj,VarObj>;
-		static constexpr auto kTypeCode = kDictObjCode;
-		static constexpr auto kClsName = std::string_view{"TDictObj"};
-		TDictObj(const TValue& ctnr);
-		TDictObj(TValue&& ctnr);
-		TDictObj();
-		auto value() -> TValue&;
-		auto value() const -> const TValue&;
-		auto hasDefVal() const -> bool;
-		auto operator== (const TDictObj& rhs) const -> bool;
-		auto operator!= (const TDictObj& rhs) const -> bool;
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
-		void printArgs(std::ostream& stream) const;
-	private:
-		std::any mValue;
-	};
-	#endif
 	struct TDictObj: TStdCtnr<TDictObj, std::unordered_map<VarObj,VarObj>> {
 		using TStdCtnr<TDictObj, std::unordered_map<VarObj,VarObj>>::TStdCtnr;
 		static constexpr auto kTypeCode = kDictObjCode;
@@ -36,6 +16,16 @@ namespace binon {
 		void encodeData(TOStream&, bool requireIO = true) const;
 		void decodeData(TIStream&, bool requireIO = true);
 		void printArgs(std::ostream&) const;
+	};
+	struct TSKDict: TStdCtnr<TSKDict, std::unordered_map<VarObj,VarObj>> {
+		static constexpr auto kTypeCode = kSKDictCode;
+		static constexpr auto kClsName = std::string_view{"TKDict"};
+		CodeByte mKeyCode;
+		TSKDict(std::any value, CodeByte keyCode = kNullObjCode);
+		TSKDict(CodeByte keyCode = kNullObjCode);
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(TIStream& stream, bool requireIO = true);
+		void printArgs(std::ostream& stream) const;
 	};
 
 	auto DeepCopyTDict(const TDict& dict) -> TDict;

@@ -19,7 +19,8 @@ namespace binon {
 		TUIntObj,
 		TListObj,
 		TSList,
-		TDictObj
+		TDictObj,
+		TSKDict
 		>;
 	struct VarObj: TVarBase
 	{

@@ -28,8 +28,7 @@ namespace binon {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"TSList"};
 		CodeByte mElemCode;
-		TSList(const TValue& value, CodeByte elemCode = kNullObjCode);
-		TSList(TValue&& value, CodeByte elemCode = kNullObjCode);
+		TSList(std::any value, CodeByte elemCode = kNullObjCode);
 		TSList(CodeByte elemCode = kNullObjCode);
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(TIStream& stream, bool requireIO = true);

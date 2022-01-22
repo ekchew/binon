@@ -30,6 +30,8 @@ namespace binon {
 				return TSList{};
 			case kDictObjCode.asUInt():
 				return TDictObj{};
+			case kSKDictCode.asUInt():
+				return TSKDict{};
 			default:
 				throw BadCodeByte{typeCode};
 		}

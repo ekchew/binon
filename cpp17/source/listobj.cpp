@@ -57,13 +57,8 @@ namespace binon {
 
 	//---- TSList --------------------------------------------------------------
 
-	TSList::TSList(const TValue& value, CodeByte elemCode):
-		TStdCtnr<TSList,TValue>{value},
-		mElemCode{elemCode}
-	{
-	}
-	TSList::TSList(TValue&& value, CodeByte elemCode):
-		TStdCtnr<TSList,TValue>{std::forward<TValue>(value)},
+	TSList::TSList(std::any value, CodeByte elemCode):
+		TStdCtnr<TSList,TValue>{std::move(value)},
 		mElemCode{elemCode}
 	{
 	}
