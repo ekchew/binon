@@ -28,6 +28,8 @@ namespace binon {
 				return TListObj{};
 			case kSListCode.asUInt():
 				return TSList{};
+			case kDictObjCode.asUInt():
+				return TDictObj{};
 			default:
 				throw BadCodeByte{typeCode};
 		}

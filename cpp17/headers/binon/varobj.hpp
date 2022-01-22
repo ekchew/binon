@@ -5,6 +5,7 @@
 #include "boolobj.hpp"
 #include "intobj.hpp"
 #include "listobj.hpp"
+#include "dictobj.hpp"
 #include <functional>
 #include <optional>
 #include <type_traits>
@@ -17,7 +18,8 @@ namespace binon {
 		TIntObj,
 		TUIntObj,
 		TListObj,
-		TSList
+		TSList,
+		TDictObj
 		>;
 	struct VarObj: TVarBase
 	{

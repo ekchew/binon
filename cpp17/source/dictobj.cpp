@@ -7,29 +7,55 @@
 
 namespace binon {
 
-	//---- TDictBase -----------------------------------------------------------
+	//---- TDictObj ------------------------------------------------------------
 
-	/*TDictBase::TDictBase(const TValue& value):
-		mValue{value}
-	{
+	void TDictObj::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		for(auto& [k, v]: u) {
+			k.encode(stream, kSkipRequireIO);
+		}
+		for(auto& [k, v]: u) {
+			v.encode(stream, kSkipRequireIO);
+		}
 	}
-	TDictBase::TDictBase(TValue&& value):
-		mValue{std::forward<TValue>(value)}
-	{
+	void TDictObj::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj sizeObj;
+		sizeObj.decodeData(stream, kSkipRequireIO);
+		auto n = sizeObj.value();
+		std::vector<VarObj> ks;
+		ks.reserve(n);
+		u.clear();
+		u.reserve(n);
+		while(n-->0) {
+			ks.push_back(VarObj::Decode(stream, kSkipRequireIO));
+		}
+		for(auto& k: ks) {
+			u[std::move(k)] = VarObj::Decode(stream, kSkipRequireIO);
+		}
 	}
-	TDictBase::TDictBase():
-		mValue{TValue()}
-	{
+	void TDictObj::printArgs(std::ostream& stream) const {
+		stream << "std::unordered_map<VarObj,VarObj>{";
+		auto& u = value();
+		bool first = true;
+		for(auto& [k, v]: u) {
+			if(first) {
+				first = false;
+			}
+			else {
+				stream << ", ";
+			}
+			stream << '{';
+			k.print(stream);
+			stream << ", ";
+			v.print(stream);
+			stream << '}';
+		}
+		stream << "}";
 	}
-	auto TDictBase::value() -> TValue& {
-		return std::any_cast<TValue&>(mValue);
-	}
-	auto TDictBase::value() const -> const TValue& {
-		return std::any_cast<const TValue&>(mValue);
-	}
-	auto TDictBase::hasDefVal() const -> bool {
-		return value().size() == 0;
-	}*/
 
 	//--------------------------------------------------------------------------
 
@@ -59,20 +85,6 @@ namespace binon {
 		}
 		stream << '}';
 	}
-
-	//---- DictBase ------------------------------------------------------------
-
-	#if 0
-	auto DictBase::hasKey(const TSPBinONObj& pKey) const -> bool {
-		const TDict& dct = dict();
-		return dct.find(pKey) != dct.end();
-	}
-	auto DictBase::hasValue(const TSPBinONObj& pKey) const -> bool {
-		const TDict& dct = dict();
-		auto iter = dct.find(pKey);
-		return iter != dct.end() && iter->second;
-	}
-	#endif
 
 	//---- DictObj -------------------------------------------------------------
 

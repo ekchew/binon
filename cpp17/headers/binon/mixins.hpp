@@ -10,8 +10,12 @@
 namespace binon {
 	template<typename Child>
 		struct TStdAcc {
-			auto& value() { static_cast<Child*>(this)->mValue; }
-			auto& value() const { static_cast<const Child*>(this)->mValue; }
+			auto& value() {
+					return static_cast<Child*>(this)->mValue;
+				}
+			auto& value() const {
+					return static_cast<const Child*>(this)->mValue;
+				}
 		};
 	template<typename Child>
 		struct TStdEq {
@@ -67,9 +71,9 @@ namespace binon {
 	template<typename Child, typename Ctnr>
 		struct TStdCtnr: TStdCodec<Child> {
 			using TValue = Ctnr;
-			TStdCtnr(const TValue& ctnr);
-			TStdCtnr(TValue&& ctnr);
-			TStdCtnr();
+			TStdCtnr(const std::any& ctnr);
+			TStdCtnr(std::any&& ctnr);
+			TStdCtnr() = default;
 			auto value() -> TValue&;
 			auto value() const -> const TValue&;
 			auto hasDefVal() const -> bool;
@@ -130,28 +134,29 @@ namespace binon {
 	//--- TStdCtnr ----------------------------------------------------------
 
 	template<typename Child, typename Ctnr>
-		TStdCtnr<Child,Ctnr>::TStdCtnr(const TValue& ctnr):
+		TStdCtnr<Child,Ctnr>::TStdCtnr(const std::any& ctnr):
 			mValue{ctnr}
 		{
 		}
 	template<typename Child, typename Ctnr>
-		TStdCtnr<Child,Ctnr>::TStdCtnr(TValue&& ctnr):
-			mValue{std::forward<TValue>(ctnr)}
-		{
-		}
-	template<typename Child, typename Ctnr>
-		TStdCtnr<Child,Ctnr>::TStdCtnr():
-			mValue{TValue()}
+		TStdCtnr<Child,Ctnr>::TStdCtnr(std::any&& ctnr):
+			mValue{std::forward<std::any>(ctnr)}
 		{
 		}
 	template<typename Child, typename Ctnr>
 		auto TStdCtnr<Child,Ctnr>::value() -> TValue& {
+			if(!mValue.has_value()) {
+				mValue = TValue();
+			}
 			return std::any_cast<TValue&>(mValue);
 		}
 	template<typename Child, typename Ctnr>
 		auto TStdCtnr<Child,Ctnr>::value() const
 			-> const TValue&
 		{
+			if(!mValue.has_value()) {
+				const_cast<TStdCtnr*>(this)->mValue = TValue();
+			}
 			return std::any_cast<const TValue&>(mValue);
 		}
 	template<typename Child, typename Ctnr>

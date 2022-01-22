@@ -9,17 +9,34 @@
 #include <type_traits>
 
 namespace binon {
-	/*struct TDictBase {
+	#if 0
+	struct TDictObj {
 		using TValue = std::unordered_map<VarObj,VarObj>;
-		TDictBase(const TValue& value);
-		TDictBase(TValue&& value);
-		TDictBase();
+		static constexpr auto kTypeCode = kDictObjCode;
+		static constexpr auto kClsName = std::string_view{"TDictObj"};
+		TDictObj(const TValue& ctnr);
+		TDictObj(TValue&& ctnr);
+		TDictObj();
 		auto value() -> TValue&;
 		auto value() const -> const TValue&;
 		auto hasDefVal() const -> bool;
-	  private:
+		auto operator== (const TDictObj& rhs) const -> bool;
+		auto operator!= (const TDictObj& rhs) const -> bool;
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(TIStream& stream, bool requireIO = true);
+		void printArgs(std::ostream& stream) const;
+	private:
 		std::any mValue;
-	};*/
+	};
+	#endif
+	struct TDictObj: TStdCtnr<TDictObj, std::unordered_map<VarObj,VarObj>> {
+		using TStdCtnr<TDictObj, std::unordered_map<VarObj,VarObj>>::TStdCtnr;
+		static constexpr auto kTypeCode = kDictObjCode;
+		static constexpr auto kClsName = std::string_view{"TDictObj"};
+		void encodeData(TOStream&, bool requireIO = true) const;
+		void decodeData(TIStream&, bool requireIO = true);
+		void printArgs(std::ostream&) const;
+	};
 
 	auto DeepCopyTDict(const TDict& dict) -> TDict;
 	void PrintTDictRepr(const TDict& list, std::ostream& stream);

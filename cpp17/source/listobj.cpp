@@ -32,14 +32,15 @@ namespace binon {
 		auto& u = value();
 		TUIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
-		auto n = sizeObj.mValue;
+		auto n = sizeObj.value();
 		u.resize(0);
+		u.reserve(n);
 		while(n-->0) {
 			u.push_back(VarObj::Decode(stream, kSkipRequireIO));
 		}
 	}
 	void TListObj::printArgs(std::ostream& stream) const {
-		stream << "vector<VarObj>{";
+		stream << "TListObj::TValue{std::vector<VarObj>{";
 		auto& u = value();
 		bool first = true;
 		for(auto& v: u) {
@@ -51,7 +52,7 @@ namespace binon {
 			}
 			v.print(stream);
 		}
-		stream << "}";
+		stream << "}}";
 	}
 
 	//---- TSList --------------------------------------------------------------
@@ -94,7 +95,7 @@ namespace binon {
 		}
 	}
 	void TSList::printArgs(std::ostream& stream) const {
-		stream << "vector<VarObj>{";
+		stream << "std::vector<VarObj>{";
 		auto& u = value();
 		bool first = true;
 		for(auto& v: u) {
