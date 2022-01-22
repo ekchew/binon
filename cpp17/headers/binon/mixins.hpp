@@ -148,10 +148,7 @@ namespace binon {
 		auto TStdCtnr<Child,Ctnr>::value() const
 			-> const TValue&
 		{
-			if(!mValue.has_value()) {
-				const_cast<TStdCtnr*>(this)->mValue = TValue();
-			}
-			return std::any_cast<const TValue&>(mValue);
+			return const_cast<TStdCtnr*>(this)->value();
 		}
 	template<typename Child, typename Ctnr>
 		auto TStdCtnr<Child,Ctnr>::operator== (const TStdCtnr&) const -> bool {
