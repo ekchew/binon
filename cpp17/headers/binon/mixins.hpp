@@ -71,8 +71,7 @@ namespace binon {
 	template<typename Child, typename Ctnr>
 		struct TStdCtnr: TStdCodec<Child> {
 			using TValue = Ctnr;
-			TStdCtnr(const std::any& ctnr);
-			TStdCtnr(std::any&& ctnr);
+			TStdCtnr(std::any ctnr);
 			TStdCtnr() = default;
 			auto value() -> TValue&;
 			auto value() const -> const TValue&;
@@ -134,13 +133,8 @@ namespace binon {
 	//--- TStdCtnr ----------------------------------------------------------
 
 	template<typename Child, typename Ctnr>
-		TStdCtnr<Child,Ctnr>::TStdCtnr(const std::any& ctnr):
-			mValue{ctnr}
-		{
-		}
-	template<typename Child, typename Ctnr>
-		TStdCtnr<Child,Ctnr>::TStdCtnr(std::any&& ctnr):
-			mValue{std::forward<std::any>(ctnr)}
+		TStdCtnr<Child,Ctnr>::TStdCtnr(std::any ctnr):
+			mValue{std::move(ctnr)}
 		{
 		}
 	template<typename Child, typename Ctnr>
