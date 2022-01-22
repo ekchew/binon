@@ -123,6 +123,82 @@ namespace binon {
 		mKeyCode.printRepr(stream);
 	}
 
+	//---- TSDict -------------------------------------------------------------
+
+	TSDict::TSDict(std::any value, CodeByte keyCode, CodeByte valCode):
+		TStdCtnr<TSDict,TValue>{std::move(value)},
+		mKeyCode{keyCode},
+		mValCode{valCode}
+	{
+	}
+	TSDict::TSDict(CodeByte keyCode, CodeByte valCode):
+		mKeyCode{keyCode},
+		mValCode{valCode}
+	{
+	}
+	void TSDict::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		mKeyCode.write(stream, kSkipRequireIO);
+		{
+			PackElems packKey{mKeyCode, stream};
+			for(auto& [k, v]: u) {
+				packKey(k, kSkipRequireIO);
+			}
+		}
+		mValCode.write(stream, kSkipRequireIO);
+		{
+			PackElems packVal{mValCode, stream};
+			for(auto& [k, v]: u) {
+				packVal(v, kSkipRequireIO);
+			}
+		}
+	}
+	void TSDict::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		auto& u = value();
+		TUIntObj sizeObj;
+		sizeObj.decodeData(stream, kSkipRequireIO);
+		auto n = sizeObj.value();
+		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
+		std::vector<VarObj> ks;
+		ks.reserve(n);
+		u.clear();
+		u.reserve(n);
+		UnpackElems unpackKey{mKeyCode, stream};
+		while(n-->0) {
+			ks.push_back(unpackKey(kSkipRequireIO));
+		}
+		mValCode = CodeByte::Read(stream, kSkipRequireIO);
+		UnpackElems unpackVal{mValCode, stream};
+		for(auto& k: ks) {
+			u[std::move(k)] = unpackVal(kSkipRequireIO);
+		}
+	}
+	void TSDict::printArgs(std::ostream& stream) const {
+		stream << "std::unordered_map<VarObj,VarObj>{";
+		auto& u = value();
+		bool first = true;
+		for(auto& [k, v]: u) {
+			if(first) {
+				first = false;
+			}
+			else {
+				stream << ", ";
+			}
+			stream << '{';
+			k.print(stream);
+			stream << ", ";
+			v.print(stream);
+			stream << '}';
+		}
+		stream << "}, ";
+		mKeyCode.printRepr(stream);
+		stream << ", ";
+		mValCode.printRepr(stream);
+	}
+
 	//--------------------------------------------------------------------------
 
 	auto DeepCopyTDict(const TDict& dict) -> TDict {

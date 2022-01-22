@@ -19,10 +19,23 @@ namespace binon {
 	};
 	struct TSKDict: TStdCtnr<TSKDict, std::unordered_map<VarObj,VarObj>> {
 		static constexpr auto kTypeCode = kSKDictCode;
-		static constexpr auto kClsName = std::string_view{"TKDict"};
+		static constexpr auto kClsName = std::string_view{"TSKDict"};
 		CodeByte mKeyCode;
-		TSKDict(std::any value, CodeByte keyCode = kNullObjCode);
-		TSKDict(CodeByte keyCode = kNullObjCode);
+		TSKDict(std::any value, CodeByte keyCode = kIntObjCode);
+		TSKDict(CodeByte keyCode = kIntObjCode);
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(TIStream& stream, bool requireIO = true);
+		void printArgs(std::ostream& stream) const;
+	};
+	struct TSDict: TStdCtnr<TSDict, std::unordered_map<VarObj,VarObj>> {
+		static constexpr auto kTypeCode = kSDictCode;
+		static constexpr auto kClsName = std::string_view{"TSDict"};
+		CodeByte mKeyCode;
+		CodeByte mValCode;
+		TSDict(std::any value,
+			CodeByte keyCode = kIntObjCode, CodeByte valCode = kIntObjCode
+			);
+		TSDict(CodeByte keyCode = kIntObjCode, CodeByte valCode = kIntObjCode);
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
