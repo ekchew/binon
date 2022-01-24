@@ -25,7 +25,7 @@ namespace binon {
 		auto& u = value();
 		TUIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
-		auto n = sizeObj.value();
+		auto n = sizeObj.value().scalar();
 		std::vector<VarObj> ks;
 		ks.reserve(n);
 		u.clear();
@@ -88,7 +88,7 @@ namespace binon {
 		auto& u = value();
 		TUIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
-		auto n = sizeObj.value();
+		auto n = sizeObj.value().scalar();
 		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
 		std::vector<VarObj> ks;
 		ks.reserve(n);
@@ -160,7 +160,7 @@ namespace binon {
 		auto& u = value();
 		TUIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
-		auto n = sizeObj.value();
+		auto n = sizeObj.value().scalar();
 		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
 		std::vector<VarObj> ks;
 		ks.reserve(n);

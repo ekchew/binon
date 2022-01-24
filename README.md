@@ -31,7 +31,7 @@ The complete codec has been implemented in Python 3.6.
 It is a self-contained repository with no dependencies outside of standard
 Python modules.
 
-*(A C++ implementation is planned.)*
+*(A C++ implementation is in the works.)*
 
 <a name="data_format"></a>
 ## Data Format
@@ -118,23 +118,21 @@ The `IntObj` base type can encode signed integers of any length, but there is al
 
 Binary Encoding:
 
-| Code Byte   | Data                       | Python Value | Range        | Class  |
-| :---------- | :------------------------- | -----------: | :----------- | :----- |
-| `00100000`  |                            |            0 | [0,0]        | IntObj |
-| `00100001`  | `0iiiiiii`                 |    int(*i…*) | [-2⁶,2⁶-1]   | IntObj |
-| `00100001`  | `10iiiiii` `iiiiiiii`      |    int(*i…*) | [-2¹³,2¹³-1] | IntObj |
-| `00100001`  | `110iiiii` `iiiiiiii`\*3   |    int(*i…*) | [-2²⁸,2²⁸-1] | IntObj |
-| `00100001`  | `1110iiii` `iiiiiiii`\*7   |    int(*i…*) | [-2⁵⁹,2⁵⁹-1] | IntObj |
-| `00100001`  | `11110000` `iiiiiiii`\*8   |    int(*i…*) | [-2⁶³,2⁶³-1] | IntObj |
-| `00100001`† | `11110001` U `iiiiiiii`\*U |    int(*i…*) | unbounded    | IntObj |
-| `00100010`  | `0iiiiiii`                 |    int(*i…*) | [0,2⁷-1]     | UInt   |
-| `00100010`  | `10iiiiii` `iiiiiiii`      |    int(*i…*) | [0,2¹⁴-1]    | UInt   |
-| `00100010`  | `110iiiii` `iiiiiiii`\*3   |    int(*i…*) | [0,2²⁹-1]    | UInt   |
-| `00100010`  | `1110iiii` `iiiiiiii`\*7   |    int(*i…*) | [0,2⁶⁰-1]    | UInt   |
-| `00100010`  | `11110000` `iiiiiiii`\*8   |    int(*i…*) | [0,2⁶⁴-1]    | UInt   |
-| `00100010`† | `11110001` U `iiiiiiii`\*U |    int(*i…*) | ≥ 0          | UInt   |
-
-† These codes may only be supported by the Python implementation, since Python supports unlimited integer sizes.
+| Code Byte  | Data                       | Python Value | Range        | Class  |
+| :--------- | :------------------------- | -----------: | :----------- | :----- |
+| `00100000` |                            |            0 | [0,0]        | IntObj |
+| `00100001` | `0iiiiiii`                 |    int(*i…*) | [-2⁶,2⁶-1]   | IntObj |
+| `00100001` | `10iiiiii` `iiiiiiii`      |    int(*i…*) | [-2¹³,2¹³-1] | IntObj |
+| `00100001` | `110iiiii` `iiiiiiii`\*3   |    int(*i…*) | [-2²⁸,2²⁸-1] | IntObj |
+| `00100001` | `1110iiii` `iiiiiiii`\*7   |    int(*i…*) | [-2⁵⁹,2⁵⁹-1] | IntObj |
+| `00100001` | `11110000` `iiiiiiii`\*8   |    int(*i…*) | [-2⁶³,2⁶³-1] | IntObj |
+| `00100001` | `11110001` U `iiiiiiii`\*U |    int(*i…*) | unbounded    | IntObj |
+| `00100010` | `0iiiiiii`                 |    int(*i…*) | [0,2⁷-1]     | UInt   |
+| `00100010` | `10iiiiii` `iiiiiiii`      |    int(*i…*) | [0,2¹⁴-1]    | UInt   |
+| `00100010` | `110iiiii` `iiiiiiii`\*3   |    int(*i…*) | [0,2²⁹-1]    | UInt   |
+| `00100010` | `1110iiii` `iiiiiiii`\*7   |    int(*i…*) | [0,2⁶⁰-1]    | UInt   |
+| `00100010` | `11110000` `iiiiiiii`\*8   |    int(*i…*) | [0,2⁶⁴-1]    | UInt   |
+| `00100010` | `11110001` U `iiiiiiii`\*U |    int(*i…*) | ≥ 0          | UInt   |
 
 As you can see above, integers encode in a variable-length format. Typical values will be either 1, 2, 4, or 8 bytes in length, with the most-signficant bits of the first byte indicating the length using a scheme somewhat reminiscent of UTF-8.
 
@@ -313,7 +311,7 @@ A third option would be to write into a `BytesIO` buffer and later call its `get
 
 Setting `optimize=True` (it defaults to `False`) tells `Encode()` to look more closely at `value` to determine whether it can apply more optimized subtype classes to encoding to it.
 
-For example, calling `BinONObj.Encode(100, outF)` would ultimately invoke `IntObj(100).encode(myFile)`. But `BinONObj.Encode(100, outF, optimize=True)` would invoke `UInt(100).encode(myFile)` instead. (For the particular value of 100, this will save 1 byte over the signed integer encoding.)
+For example, calling `BinONObj.Encode(100, outF)` would ultimately invoke `IntObj(100).encode(outF)`. But `BinONObj.Encode(100, outF, optimize=True)` would invoke `UInt(100).encode(outF)` instead. (For the particular value of 100, this will save 1 byte over the signed integer encoding.)
 
 `optimize` should give you the tightest encoding in most situations, but it comes at a cost in that it has to run over your data once before deciding what to do. This can be particularly expensive with container types. For example, in encoding a list of integers, it would need to check that all elements are indeed integers before substituting an `SList` for a `ListObj`.
 

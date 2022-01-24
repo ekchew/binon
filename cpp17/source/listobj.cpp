@@ -32,7 +32,7 @@ namespace binon {
 		auto& u = value();
 		TUIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
-		auto n = sizeObj.value();
+		auto n = sizeObj.value().scalar();
 		u.resize(0);
 		u.reserve(n);
 		while(n-->0) {
@@ -81,7 +81,7 @@ namespace binon {
 		auto& u = value();
 		TUIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
-		auto n = sizeObj.mValue;
+		auto n = sizeObj.mValue.scalar();
 		mElemCode = CodeByte::Read(stream, kSkipRequireIO);
 		u.resize(0);
 		UnpackElems unpack{mElemCode, stream};

@@ -3,129 +3,75 @@
 
 #include "binonobj.hpp"
 #include "hystr.hpp"
+#include <ostream>
 #include <type_traits>
 #include <variant>
 
 namespace binon {
 
-	//	IntBase is the parent of IntVal and UIntVal. The latter are used to
-	//	store integers encoded/decoded by BinON. The data structure is a
-	//	variant of an integral type and a byte vector. For IntVal (used by
-	//	IntObj), the integral type is std::int64_t. For UIntVal (used by
-	//	UIntObj), it is std::uint64_t.
-	//
-	//	The byte vector (std::vector<std::byte>) is typically used when you
-	//	have integers too big to fit into a 64-bit container. Such values get
-	//	stored in big-endian form in the vector.
-	//
-	//	This project does not provide any explicit support for 3rd party big
-	//	number libraries since it was a design goal not to require external
-	//	dependencies outside the standard library. But 2 methods are included
-	//	to encode/decode the integer data in hexadecimal string form (using
-	//	the FromHex() and asHex() methods, respectively). The GMP library, for
-	//	example, supports assigning hexadecimal strings to its objects.
-	template<typename Child, typename Fixed>
-		struct IntBase:
-			protected std::variant<Fixed, std::vector<std::byte>>
+	template<typename Child, typename Scalar>
+		struct IntBase: std::variant<Scalar, std::basic_string<std::byte>>
 		{
-			using TFixed = Fixed;
-			using TVariable = std::vector<std::byte>;
+			using TScalar = Scalar;
+			using TVect = std::basic_string<std::byte>;
 
-			using std::variant<TFixed,TVariable>::variant;
-			using std::variant<TFixed,TVariable>::operator=;
+			using std::variant<TScalar,TVect>::variant;
 
-			auto isFixed() const noexcept -> bool;
+			auto isScalar() const noexcept -> bool;
+			auto canBeScalar() const noexcept -> bool;
 
-			//	These methods will throw std::bad_variant_access if you choose
-			//	the wrong one. Call isFixed() to check if you are unsure.
-			//
-			//	The asFixed() method (defined in subclasses) will narrow a
-			//	variable value if necessary rather than throw. The TFixed
-			//	conversion operator calls asFixed().
-			auto fixed() -> TFixed&;
-			auto fixed() const -> TFixed;
-			auto variable() -> TVariable&;
-			auto variable() const -> const TVariable&;
-			operator TFixed() const noexcept;
+			auto scalar() -> TScalar&;
+			auto scalar() const -> TScalar;
+			auto vect() -> TVect&;
+			auto vect() const -> const TVect&;
+			operator TScalar() const;
+			auto asVect() const -> TVect;
+			template<typename ReturnType>
+				auto asVect(
+					std::function<ReturnType(const TVect&)> callback
+					) const -> ReturnType;
 
-			//	The as() method is equivalent to static_cast<T>(asFixed()).
-			//	It shouldn't throw in most cases unless T's constructor does.
-			//	If T is an integral type, you can call fits<T>() to check if
-			//	it has enough bits to accommodate the whole value.
 			template<typename T>
 				auto as() const -> T;
 		};
+	template<typename Child, typename Scalar>
+		auto operator<< (
+			std::ostream& stream, const IntBase<Child,Scalar>& i
+			) -> std::ostream&;
+
 	struct IntVal: IntBase<IntVal, std::int64_t> {
 
-		//	Reads an IntVal from a string containing hexadecimal digits.
-		//	Negative numbers are indicated by the most-significant bit of the
-		//	1st hex digit encountered. If you want to encode 255 rather than
-		//	-1, for example, you should write IntVal::FromHex("0ff") rather
-		//	than IntVal::FromHex("ff"). (Note that if you begin the string
-		//	with "0x", the '0' before the 'x' is ignored from the standpoint
-		//	of setting the sign. See the description under UIntVal for more
-		//	general info on this class method.
-		static auto FromHex(const HyStr& hex) -> IntVal;
+		static auto FromHex(const HyStr& hex,
+			std::size_t wordSize = sizeof(TScalar)
+			) -> IntVal;
 
-		//	asHex() is essentially the opposite of FromHex(), generating a
-		//	hexadecimal representation of the integer for you and returning it
-		//	in a std::string. It takes 2 optional arguments:
-		//		zerox: prepend a "0x" before the hexadecimal data?
-		//			This defaults to true.
-		//		wordSize: the number of bytes in a "word"
-		//			This parameter helps determine how many '0' or 'f' padding
-		//			digits should be inserted before the significant bits of
-		//			the integer begin. The hexadecimal representation should be
-		//			a multiple of wordSize bytes long.
-		//
-		//			Let's say the integer was 0x12345 and the wordSize was 8.
-		//			Then asHex should return "0x00012345". This is particularly
-		//			important when you are dealing with negative numbers, since
-		//			it will determine how many 'f' digits to insert for the
-		//			integer size you are considering to read negative.
-		//
-		//			The default 1 means asHex will insert at most 1 '0' or 'f'
-		//			to pad the number out to the nearest byte boundary.
 		auto asHex(
-			bool zerox = true, std::size_t wordSize = 1
+			bool zerox = true, std::size_t wordSize = sizeof(TScalar)
 			) const -> std::string;
 
 		template<typename, typename> friend struct IntBase;
-		using IntBase<IntVal,TFixed>::IntBase;
+		using IntBase<IntVal,TScalar>::IntBase;
 
-		auto asFixed() const noexcept -> TFixed;
+		auto asScalar() const noexcept -> TScalar;
 
-		//	Ahead of calling as() on an integral type, you can call fits<I>()
-		//	to check if the currently stored value can really fit inside your
-		//	type. For example, if the number is a million and you offer a
-		//	std::uint16_t, fits will return false.
-		//	Along somewhat similar lines is the byteCount() method, which
-		//	returns how many bytes would be needed to represent the current
-		//	integer. This can take a bit longer to calculate than fits().
 		template<typename Int>
 			auto fits() const noexcept -> bool;
-		auto byteCount() const noexcept -> std::size_t;
 	};
 	struct UIntVal: IntBase<UIntVal, std::uint64_t> {
 
-		//	Reads a UIntVal from a string containing hexadecimal digits.
-		//	Any non-hex characters are ignored (so if your string begins
-		//	with "0x", the 'x' should be skipped over as appropriate).
-		//	If there are no hex digits in the string, FromHex() will return
-		//	a UIntVal containing 0. Note that this method is smart enough to
-		//	use a TFixed representation if the number fits.
-		static auto FromHex(const HyStr& hex) -> UIntVal;
+		static auto FromHex(const HyStr& hex,
+			std::size_t wordSize = sizeof(TScalar)
+			) -> UIntVal;
 		auto asHex(
-			bool zerox = true, std::size_t wordSize = 1
+			bool zerox = true, std::size_t wordSize = sizeof(TScalar)
 			) const -> std::string;
 
 		template<typename, typename> friend struct IntBase;
-		using IntBase<UIntVal,TFixed>::IntBase;
-		auto asFixed() const noexcept -> TFixed;
+		using IntBase<UIntVal,TScalar>::IntBase;
+		auto asScalar() const noexcept -> TScalar;
 
 		template<typename UInt>
 			auto fits() const noexcept -> bool;
-		auto byteCount() const noexcept -> std::size_t;
 	};
 
 	struct TIntObj:
@@ -136,11 +82,12 @@ namespace binon {
 		TStdPrintArgs<TIntObj>,
 		TStdCodec<TIntObj>
 	{
-		using TValue = std::int64_t;
+		using TValue = IntVal;
 		static constexpr auto kTypeCode = kIntObjCode;
 		static constexpr auto kClsName = std::string_view{"TIntObj"};
 		TValue mValue;
-		constexpr TIntObj(TValue v = 0) noexcept: mValue{v} {}
+		TIntObj(TValue v);
+		TIntObj() = default;
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(TIStream& stream, bool requireIO = true);
 	};
@@ -152,11 +99,12 @@ namespace binon {
 		TStdPrintArgs<TUIntObj>,
 		TStdCodec<TUIntObj>
 	{
-		using TValue = std::uint64_t;
+		using TValue = UIntVal; //std::uint64_t;
 		static constexpr auto kTypeCode = kUIntCode;
 		static constexpr auto kClsName = std::string_view{"TUIntObj"};
 		TValue mValue;
-		constexpr TUIntObj(TValue v = 0) noexcept: mValue{v} {}
+		TUIntObj(TValue v);
+		TUIntObj() = default;
 		void encodeData(TOStream& stream, bool requireIO = true) const;
 		void decodeData(TIStream& stream, bool requireIO = true);
 	};
@@ -224,76 +172,133 @@ namespace binon {
 
 	//---- IntBase -------------------------------------------------------------
 
-	template<typename Child, typename Fixed>
-		auto IntBase<Child,Fixed>::isFixed() const noexcept -> bool {
-			return std::holds_alternative<TFixed>(*this);
+	template<typename Child, typename Scalar>
+		auto IntBase<Child,Scalar>::isScalar() const noexcept -> bool {
+			return std::holds_alternative<TScalar>(*this);
 		}
-	template<typename Child, typename Fixed>
-		auto IntBase<Child,Fixed>::fixed() -> TFixed& {
-			return std::get<TFixed>(*this);
+	template<typename Child, typename Scalar>
+		auto IntBase<Child,Scalar>::canBeScalar() const noexcept -> bool {
+			if(isScalar()) {
+				return true;
+			}
+			return std::get<TVect>(*this).size() <= sizeof(TScalar);
 		}
-	template<typename Child, typename Fixed>
-		auto IntBase<Child,Fixed>::fixed() const -> TFixed {
-			return std::get<TFixed>(*this);
+	template<typename Child, typename Scalar>
+		auto IntBase<Child,Scalar>::scalar() -> TScalar& {
+			if(	!isScalar() &&
+				std::get<TVect>(*this).size() <= sizeof(TScalar)
+				)
+			{
+				*this = static_cast<Child*>(this)->asScalar();
+			}
+			return std::get<TScalar>(*this);
 		}
-	template<typename Child, typename Fixed>
-		auto IntBase<Child,Fixed>::variable() -> TVariable& {
-			return std::get<TVariable>(*this);
+	template<typename Child, typename Scalar>
+		auto IntBase<Child,Scalar>::scalar() const -> TScalar {
+			return const_cast<IntBase*>(this)->scalar();
 		}
-	template<typename Child, typename Fixed>
-		auto IntBase<Child,Fixed>::variable() const -> const TVariable& {
-			return std::get<TVariable>(*this);
+	template<typename Child, typename Scalar>
+		auto IntBase<Child,Scalar>::vect() -> TVect& {
+			return std::get<TVect>(*this);
 		}
-	template<typename Child, typename Fixed>
-		IntBase<Child,Fixed>::operator TFixed() const noexcept {
-			return static_cast<const Child*>(this)->asFixed();
+	template<typename Child, typename Scalar>
+		auto IntBase<Child,Scalar>::vect() const -> const TVect& {
+			return std::get<TVect>(*this);
 		}
-	template<typename Child, typename Fixed> template<typename T>
-		auto IntBase<Child,Fixed>::as() const -> T {
-			return static_cast<T>(static_cast<const Child*>(this)->asFixed());
+	template<typename Child, typename Scalar>
+		IntBase<Child,Scalar>::operator TScalar() const {
+			return static_cast<const Child*>(this)->scalar();
+		}
+	template<typename Child, typename Scalar> template<typename T>
+		auto IntBase<Child,Scalar>::as() const -> T {
+			return static_cast<T>(static_cast<const Child*>(this)->asScalar());
+		}
+	template<typename Child, typename Scalar>
+		auto IntBase<Child,Scalar>::asVect() const -> TVect {
+			return asVect<TVect>([](const TVect& v) { return v; });
+		}
+	template<typename Child, typename Scalar> template<typename ReturnType>
+		auto IntBase<Child,Scalar>::asVect(
+			std::function<ReturnType(const TVect&)> callback
+			) const -> ReturnType
+		{
+			using std::get;
+			using Callback = std::function<ReturnType(const TVect&)>;
+			if(isScalar()) {
+				auto i = get<TScalar>(*this);
+				TVect v;
+				v.reserve(sizeof(TScalar));
+				auto n = sizeof(TScalar) << 3;
+				while((n -= 8u) > 0u) {
+					v.push_back(ToByte(i >> n & 0xff));
+				}
+				return callback(v);
+			}
+			return callback(get<TVect>(*this));
+		}
+	template<typename Child, typename Scalar>
+		auto operator<< (
+			std::ostream& stream, const IntBase<Child,Scalar>& i
+			) -> std::ostream&
+		{
+			auto& child = static_cast<const Child&>(i);
+			if(i.canBeScalar()) {
+				stream << child.scalar();
+			}
+			else {
+				stream << child.asHex();
+			}
+			return stream;
 		}
 
 	//---- IntVal --------------------------------------------------------------
 
 	template<typename Int>
 		auto IntVal::fits() const noexcept -> bool {
-			using std::get_if;
-			if(isFixed()) {
-				if(sizeof(Int) >= sizeof(TFixed)) {
+			using std::get;
+			if(canBeScalar()) {
+				auto i = scalar();
+				if(sizeof(Int) >= sizeof(TScalar)) {
 					return true;
 				}
 				auto limit = 1ULL << (sizeof(Int) * 8 - 1);
-				auto i = *get_if<TFixed>(this);
 				return -limit <= i && i < limit;
 			}
-			return get_if<TVariable>(this)->size() <= sizeof(Int);
+			return get<TVect>(*this).size() <= sizeof(Int);
 		}
 
 	//---- UIntVal -------------------------------------------------------------
 
 	template<typename UInt>
 		auto UIntVal::fits() const noexcept -> bool {
-			using std::get_if;
-			if(isFixed()) {
-				if(sizeof(UInt) >= sizeof(TFixed)) {
+			if(canBeScalar()) {
+				auto i = scalar();
+				if(sizeof(UInt) >= sizeof(TScalar)) {
 					return true;
 				}
-				auto limit = 1ULL << (sizeof(UInt) * 8);
-				auto i = *get_if<TFixed>(this);
+				auto limit = 1ULL << sizeof(UInt) << 3;
 				return i < limit;
 			}
-			return get_if<TVariable>(this)->size() <= sizeof(UInt);
+			return std::get<TVect>(*this).size() <= sizeof(UInt);
 		}
 }
 
 namespace std {
+	template<> struct hash<binon::IntVal> {
+		auto operator () (const binon::IntVal& i) const noexcept
+			-> std::size_t;
+	};
+	template<> struct hash<binon::UIntVal> {
+		auto operator () (const binon::UIntVal& i) const noexcept
+			-> std::size_t;
+	};
 	template<> struct hash<binon::IntObj> {
-		constexpr auto operator () (const binon::IntObj& obj) const noexcept
-			-> std::size_t { return obj.hash(); }
+		auto operator () (const binon::IntObj& obj) const noexcept
+			-> std::size_t;
 	};
 	template<> struct hash<binon::UIntObj> {
-		 constexpr auto operator () (const binon::UIntObj& obj) const noexcept
-			-> std::size_t { return obj.hash(); }
+		auto operator () (const binon::UIntObj& obj) const noexcept
+			-> std::size_t;
 	};
 }
 
