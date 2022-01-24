@@ -1,9 +1,37 @@
 #ifndef BINON_BUFFEROBJ_HPP
 #define BINON_BUFFEROBJ_HPP
 
-#include "binonobj.hpp"
+#include "byteutil.hpp"
+#include "hystr.hpp"
+#include "intobj.hpp"
+#include <ostream>
 
 namespace binon {
+
+	struct BufferVal: BasicHyStr<std::byte> {
+		using BasicHyStr<std::byte>::BasicHyStr;
+		BufferVal(const HyStr& hyStr);
+	};
+	auto operator<< (std::ostream& stream, const BufferVal& v) -> std::ostream&;
+
+	struct TBufferObj:
+		TStdAcc<TBufferObj>,
+		TStdEq<TBufferObj>,
+		TStdHash<TBufferObj>,
+		TStdCodec<TBufferObj>
+	{
+		using TValue = BufferVal;
+		static constexpr auto kTypeCode = kBufferObjCode;
+		static constexpr auto kClsName = std::string_view{"TBufferObj"};
+		TValue mValue;
+		TBufferObj(const HyStr& hyStr);
+		TBufferObj(TValue v);
+		TBufferObj() = default;
+		auto hasDefVal() const noexcept -> bool;
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(TIStream& stream, bool requireIO = true);
+		void printArgs(std::ostream& stream) const;
+	};
 
 	struct BufferObj: BinONObj, AccessContainer_mValue<BufferObj,TBuffer> {
 		static void EncodeData(
@@ -34,6 +62,10 @@ namespace binon {
 }
 
 namespace std {
+	template<> struct hash<binon::BufferVal> {
+		auto operator () (const binon::BufferVal& obj) const noexcept
+			-> std::size_t;
+	};
 	template<> struct hash<binon::BufferObj> {
 		auto operator () (const binon::BufferObj& obj) const noexcept
 			-> std::size_t { return obj.hash(); }

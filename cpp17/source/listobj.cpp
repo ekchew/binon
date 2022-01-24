@@ -40,7 +40,7 @@ namespace binon {
 		}
 	}
 	void TListObj::printArgs(std::ostream& stream) const {
-		stream << "TListObj::TValue{std::vector<VarObj>{";
+		stream << "TListObj::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& v: u) {
@@ -52,7 +52,7 @@ namespace binon {
 			}
 			v.print(stream);
 		}
-		stream << "}}";
+		stream << "}";
 	}
 
 	//---- TSList --------------------------------------------------------------
@@ -90,7 +90,7 @@ namespace binon {
 		}
 	}
 	void TSList::printArgs(std::ostream& stream) const {
-		stream << "std::vector<VarObj>{";
+		stream << "TSList::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& v: u) {

@@ -5,6 +5,56 @@
 
 namespace binon {
 
+	//---- TBufferVal ----------------------------------------------------------
+
+	BufferVal::BufferVal(const HyStr& hyStr) {
+		auto n = hyStr.size();
+		resize(n);
+		std::memcpy(data(), hyStr.data(), n);
+	}
+	auto operator<< (std::ostream& stream, const BufferVal& v) -> std::ostream&
+	{
+		for(auto byt: v) {
+			auto hex = AsHexC(byt);
+			stream << "\\x" << hex.data();
+		}
+		return stream;
+	}
+
+	//---- TBufferObj ----------------------------------------------------------
+
+	TBufferObj::TBufferObj(const HyStr& hyStr):
+		mValue{hyStr}
+	{
+	}
+	TBufferObj::TBufferObj(TValue v):
+		mValue{v}
+	{
+	}
+	auto TBufferObj::hasDefVal() const noexcept -> bool {
+		return mValue.size() == 0;
+	}
+	void TBufferObj::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		TUIntObj{mValue.size()}.encodeData(stream, kSkipRequireIO);
+		auto data = reinterpret_cast<const TStreamByte*>(mValue.data());
+		stream.write(data, mValue.size());
+	}
+	void TBufferObj::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		TUIntObj sizeObj;
+		sizeObj.decodeData(stream, kSkipRequireIO);
+		auto n = sizeObj.value().scalar();
+		mValue.resize(n);
+		auto data = reinterpret_cast<TStreamByte*>(mValue.data());
+		stream.read(data, n);
+	}
+	void TBufferObj::printArgs(std::ostream& stream) const {
+		stream << '"' << mValue << '"';
+	}
+
+	//--------------------------------------------------------------------------
+
 	void BufferObj::EncodeData(
 		const TValue& v, TOStream& stream, bool requireIO)
 	{
@@ -58,4 +108,12 @@ namespace binon {
 		stream << '}';
 	}
 
+}
+auto std::hash<binon::BufferVal>::operator() (
+	const binon::BufferVal& obj
+	) const noexcept -> std::size_t
+{
+	auto data = reinterpret_cast<const binon::TStreamByte*>(obj.data());
+	std::string_view sv{data, obj.size()};
+	return std::hash<std::string_view>{}(sv);
 }

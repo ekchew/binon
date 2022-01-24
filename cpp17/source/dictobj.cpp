@@ -38,7 +38,7 @@ namespace binon {
 		}
 	}
 	void TDictObj::printArgs(std::ostream& stream) const {
-		stream << "std::unordered_map<VarObj,VarObj>{";
+		stream << "TDictObj::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& [k, v]: u) {
@@ -103,7 +103,7 @@ namespace binon {
 		}
 	}
 	void TSKDict::printArgs(std::ostream& stream) const {
-		stream << "std::unordered_map<VarObj,VarObj>{";
+		stream << "TSKDict::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& [k, v]: u) {
@@ -177,7 +177,7 @@ namespace binon {
 		}
 	}
 	void TSDict::printArgs(std::ostream& stream) const {
-		stream << "std::unordered_map<VarObj,VarObj>{";
+		stream << "TSDict::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& [k, v]: u) {

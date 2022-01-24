@@ -2,6 +2,35 @@
 #include "binon/intobj.hpp"
 
 namespace binon {
+
+	//---- TStrObj -------------------------------------------------------------
+
+	TStrObj::TStrObj(TValue v):
+		mValue{v}
+	{
+	}
+	auto TStrObj::hasDefVal() const noexcept -> bool {
+		return mValue.size() == 0;
+	}
+	void TStrObj::encodeData(TOStream& stream, bool requireIO) const {
+		RequireIO rio{stream, requireIO};
+		TUIntObj{mValue.size()}.encodeData(stream, kSkipRequireIO);
+		stream.write(mValue.data(), mValue.size());
+	}
+	void TStrObj::decodeData(TIStream& stream, bool requireIO) {
+		RequireIO rio{stream, requireIO};
+		TUIntObj sizeObj;
+		sizeObj.decodeData(stream, kSkipRequireIO);
+		auto n = sizeObj.value().scalar();
+		mValue.resize(n);
+		stream.read(mValue.data(), n);
+	}
+	void TStrObj::printArgs(std::ostream& stream) const {
+		stream << '"' << mValue << '"';
+	}
+
+	//--------------------------------------------------------------------------
+
 	void StrObj::EncodeData(
 		const TValue& v, TOStream& stream, bool requireIO)
 	{

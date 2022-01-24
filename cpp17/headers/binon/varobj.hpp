@@ -4,6 +4,7 @@
 #include "nullobj.hpp"
 #include "boolobj.hpp"
 #include "intobj.hpp"
+#include "floatobj.hpp"
 #include "listobj.hpp"
 #include "dictobj.hpp"
 #include <functional>
@@ -17,6 +18,10 @@ namespace binon {
 		TBoolObj,
 		TIntObj,
 		TUIntObj,
+		TFloatObj,
+		TFloat32Obj,
+		TBufferObj,
+		TStrObj,
 		TListObj,
 		TSList,
 		TDictObj,

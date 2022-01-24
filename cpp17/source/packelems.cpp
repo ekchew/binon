@@ -17,7 +17,7 @@ namespace binon {
 		if(varObj.typeCode() != mElemCode) {
 			std::ostringstream oss;
 			oss << "expected BinON element " << mIndex
-				<< "to have type code ";
+				<< " to have type code ";
 			mElemCode.printRepr(oss);
 			oss << " rather than ";
 			varObj.typeCode().printRepr(oss);

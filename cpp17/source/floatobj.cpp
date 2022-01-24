@@ -1,6 +1,35 @@
 #include "binon/floatobj.hpp"
 
 namespace binon {
+
+	//---- TFloatObj -----------------------------------------------------------
+
+	TFloatObj::TFloatObj(TValue v):
+		mValue{v}
+	{
+	}
+	void TFloatObj::encodeData(TOStream& stream, bool requireIO) const {
+		WriteWord(mValue, stream, requireIO);
+	}
+	void TFloatObj::decodeData(TIStream& stream, bool requireIO) {
+		mValue = ReadWord<TValue>(stream, requireIO);
+	}
+
+	//---- TFloat32Obj ---------------------------------------------------------
+
+	TFloat32Obj::TFloat32Obj(TValue v):
+		mValue{v}
+	{
+	}
+	void TFloat32Obj::encodeData(TOStream& stream, bool requireIO) const {
+		WriteWord(mValue, stream, requireIO);
+	}
+	void TFloat32Obj::decodeData(TIStream& stream, bool requireIO) {
+		mValue = ReadWord<TValue>(stream, requireIO);
+	}
+
+	//--------------------------------------------------------------------------
+
 	void FloatObj::EncodeData(TValue data, TOStream& stream, bool requireIO) {
 		WriteWord(data, stream, requireIO);
 	}

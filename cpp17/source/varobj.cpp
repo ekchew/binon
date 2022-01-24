@@ -24,6 +24,14 @@ namespace binon {
 				return TIntObj{};
 			case kUIntCode.asUInt():
 				return TUIntObj{};
+			case kFloatObjCode.asUInt():
+				return TFloatObj{};
+			case kFloat32Code.asUInt():
+				return TFloat32Obj{};
+			case kBufferObjCode.asUInt():
+				return TBufferObj{};
+			case kStrObjCode.asUInt():
+				return TStrObj{};
 			case kListObjCode.asUInt():
 				return TListObj{};
 			case kSListCode.asUInt():

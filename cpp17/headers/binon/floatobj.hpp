@@ -5,6 +5,39 @@
 
 namespace binon {
 
+	struct TFloatObj:
+		TStdAcc<TFloatObj>,
+		TStdEq<TFloatObj>,
+		TStdHash<TFloatObj>,
+		TStdHasDefVal<TFloatObj>,
+		TStdPrintArgs<TFloatObj>,
+		TStdCodec<TFloatObj>
+	{
+		using TValue = types::TFloat64;
+		static constexpr auto kTypeCode = kFloatObjCode;
+		static constexpr auto kClsName = std::string_view{"TFloatObj"};
+		TValue mValue;
+		TFloatObj(TValue v = 0.0);
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(TIStream& stream, bool requireIO = true);
+	};
+	struct TFloat32Obj:
+		TStdAcc<TFloat32Obj>,
+		TStdEq<TFloat32Obj>,
+		TStdHash<TFloat32Obj>,
+		TStdHasDefVal<TFloat32Obj>,
+		TStdPrintArgs<TFloat32Obj>,
+		TStdCodec<TFloat32Obj>
+	{
+		using TValue = types::TFloat32;
+		static constexpr auto kTypeCode = kFloat32Code;
+		static constexpr auto kClsName = std::string_view{"TFloat32Obj"};
+		TValue mValue;
+		TFloat32Obj(TValue v = 0.0f);
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(TIStream& stream, bool requireIO = true);
+	};
+
 	struct FloatObj: BinONObj, Access_mValue<FloatObj,types::TFloat64> {
 		static void EncodeData(
 			TValue data, TOStream& stream, bool requireIO=true);
