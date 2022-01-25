@@ -52,7 +52,7 @@ namespace binon {
 	template<typename T>
 		auto VarObjVal(TVarObj&& obj) -> TVarObjVal<T>&&;
 
-	//==== Template Implementation ============================================
+	//==== Template Implementation =============================================
 
 	template<typename T>
 		auto MakeVarObj(const T& v) -> TVarObj {
