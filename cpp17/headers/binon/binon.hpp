@@ -26,6 +26,7 @@
 #include "pbinonobjt.hpp"
 #include "refutil.hpp"
 #include "strobj.hpp"
+#include "typeconv.hpp"
 #include "typeinfo.hpp"
 #include "varobj.hpp"
 

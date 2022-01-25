@@ -26,15 +26,15 @@ namespace binon {
 		TUIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
-		std::vector<VarObj> ks;
+		std::vector<TVarObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);
 		while(n-->0) {
-			ks.push_back(VarObj::Decode(stream, kSkipRequireIO));
+			ks.push_back(TVarObj::Decode(stream, kSkipRequireIO));
 		}
 		for(auto& k: ks) {
-			u[std::move(k)] = VarObj::Decode(stream, kSkipRequireIO);
+			u[std::move(k)] = TVarObj::Decode(stream, kSkipRequireIO);
 		}
 	}
 	void TDictObj::printArgs(std::ostream& stream) const {
@@ -90,7 +90,7 @@ namespace binon {
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
 		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
-		std::vector<VarObj> ks;
+		std::vector<TVarObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);
@@ -99,7 +99,7 @@ namespace binon {
 			ks.push_back(unpackKey(kSkipRequireIO));
 		}
 		for(auto& k: ks) {
-			u[std::move(k)] = VarObj::Decode(stream, kSkipRequireIO);
+			u[std::move(k)] = TVarObj::Decode(stream, kSkipRequireIO);
 		}
 	}
 	void TSKDict::printArgs(std::ostream& stream) const {
@@ -162,7 +162,7 @@ namespace binon {
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
 		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
-		std::vector<VarObj> ks;
+		std::vector<TVarObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);

@@ -36,7 +36,7 @@ namespace binon {
 		u.resize(0);
 		u.reserve(n);
 		while(n-->0) {
-			u.push_back(VarObj::Decode(stream, kSkipRequireIO));
+			u.push_back(TVarObj::Decode(stream, kSkipRequireIO));
 		}
 	}
 	void TListObj::printArgs(std::ostream& stream) const {

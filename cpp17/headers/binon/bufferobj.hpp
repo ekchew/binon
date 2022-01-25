@@ -8,11 +8,12 @@
 
 namespace binon {
 
-	struct BufferVal: BasicHyStr<std::byte> {
+	struct TBufferVal: BasicHyStr<std::byte> {
 		using BasicHyStr<std::byte>::BasicHyStr;
-		BufferVal(const HyStr& hyStr);
+		TBufferVal(const HyStr& hyStr);
 	};
-	auto operator<< (std::ostream& stream, const BufferVal& v) -> std::ostream&;
+	auto operator<< (std::ostream& stream, const TBufferVal& v)
+		-> std::ostream&;
 
 	struct TBufferObj:
 		TStdAcc<TBufferObj>,
@@ -20,7 +21,7 @@ namespace binon {
 		TStdHash<TBufferObj>,
 		TStdCodec<TBufferObj>
 	{
-		using TValue = BufferVal;
+		using TValue = TBufferVal;
 		static constexpr auto kTypeCode = kBufferObjCode;
 		static constexpr auto kClsName = std::string_view{"TBufferObj"};
 		TValue mValue;
@@ -62,8 +63,8 @@ namespace binon {
 }
 
 namespace std {
-	template<> struct hash<binon::BufferVal> {
-		auto operator () (const binon::BufferVal& obj) const noexcept
+	template<> struct hash<binon::TBufferVal> {
+		auto operator () (const binon::TBufferVal& obj) const noexcept
 			-> std::size_t;
 	};
 	template<> struct hash<binon::BufferObj> {

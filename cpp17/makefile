@@ -71,6 +71,7 @@ DEPS := \
 	${HDR}packelems.hpp \
 	${HDR}refutil.hpp \
 	${HDR}strobj.hpp \
+	${HDR}typeconv.hpp \
 	${HDR}typeinfo.hpp \
 	${HDR}varobj.hpp \
 	makefile

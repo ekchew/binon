@@ -10,10 +10,13 @@
 namespace binon {
 	template<typename Child>
 		struct TStdAcc {
-			auto& value() {
+			auto& value() & {
 					return static_cast<Child*>(this)->mValue;
 				}
-			auto& value() const {
+			auto value() && {
+					return std::move(static_cast<Child*>(this)->mValue);
+				}
+			auto& value() const& {
 					return static_cast<const Child*>(this)->mValue;
 				}
 		};
@@ -73,8 +76,9 @@ namespace binon {
 			using TValue = Ctnr;
 			TStdCtnr(std::any ctnr);
 			TStdCtnr() = default;
-			auto value() -> TValue&;
-			auto value() const -> const TValue&;
+			auto value() & -> TValue&;
+			auto value() && -> TValue;
+			auto value() const& -> const TValue&;
 			auto hasDefVal() const -> bool;
 
 			auto operator== (const TStdCtnr& rhs) const -> bool;
@@ -138,14 +142,21 @@ namespace binon {
 		{
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::value() -> TValue& {
+		auto TStdCtnr<Child,Ctnr>::value() & -> TValue& {
 			if(!mValue.has_value()) {
 				mValue = TValue();
 			}
 			return std::any_cast<TValue&>(mValue);
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::value() const
+		auto TStdCtnr<Child,Ctnr>::value() && -> TValue {
+			if(!mValue.has_value()) {
+				mValue = TValue();
+			}
+			return std::any_cast<TValue&&>(std::move(mValue));
+		}
+	template<typename Child, typename Ctnr>
+		auto TStdCtnr<Child,Ctnr>::value() const&
 			-> const TValue&
 		{
 			return const_cast<TStdCtnr*>(this)->value();

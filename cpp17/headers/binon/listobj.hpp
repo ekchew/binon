@@ -15,8 +15,8 @@
 
 namespace binon {
 
-	struct VarObj;
-	struct TListObj: TStdCtnr<TListObj, std::vector<VarObj>> {
+	struct TVarObj;
+	struct TListObj: TStdCtnr<TListObj, std::vector<TVarObj>> {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"TListObj"};
 		using TStdCtnr<TListObj,TValue>::TStdCtnr;
@@ -24,7 +24,7 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
 	};
-	struct TSList: TStdCtnr<TSList, std::vector<VarObj>> {
+	struct TSList: TStdCtnr<TSList, std::vector<TVarObj>> {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"TSList"};
 		CodeByte mElemCode;

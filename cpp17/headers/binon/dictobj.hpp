@@ -9,15 +9,15 @@
 #include <type_traits>
 
 namespace binon {
-	struct TDictObj: TStdCtnr<TDictObj, std::unordered_map<VarObj,VarObj>> {
-		using TStdCtnr<TDictObj, std::unordered_map<VarObj,VarObj>>::TStdCtnr;
+	struct TDictObj: TStdCtnr<TDictObj, std::unordered_map<TVarObj,TVarObj>> {
+		using TStdCtnr<TDictObj, std::unordered_map<TVarObj,TVarObj>>::TStdCtnr;
 		static constexpr auto kTypeCode = kDictObjCode;
 		static constexpr auto kClsName = std::string_view{"TDictObj"};
 		void encodeData(TOStream&, bool requireIO = true) const;
 		void decodeData(TIStream&, bool requireIO = true);
 		void printArgs(std::ostream&) const;
 	};
-	struct TSKDict: TStdCtnr<TSKDict, std::unordered_map<VarObj,VarObj>> {
+	struct TSKDict: TStdCtnr<TSKDict, std::unordered_map<TVarObj,TVarObj>> {
 		static constexpr auto kTypeCode = kSKDictCode;
 		static constexpr auto kClsName = std::string_view{"TSKDict"};
 		CodeByte mKeyCode;
@@ -27,7 +27,7 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
 	};
-	struct TSDict: TStdCtnr<TSDict, std::unordered_map<VarObj,VarObj>> {
+	struct TSDict: TStdCtnr<TSDict, std::unordered_map<TVarObj,TVarObj>> {
 		static constexpr auto kTypeCode = kSDictCode;
 		static constexpr auto kClsName = std::string_view{"TSDict"};
 		CodeByte mKeyCode;

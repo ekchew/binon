@@ -7,12 +7,12 @@ namespace binon {
 
 	//---- TBufferVal ----------------------------------------------------------
 
-	BufferVal::BufferVal(const HyStr& hyStr) {
+	TBufferVal::TBufferVal(const HyStr& hyStr) {
 		auto n = hyStr.size();
 		resize(n);
 		std::memcpy(data(), hyStr.data(), n);
 	}
-	auto operator<< (std::ostream& stream, const BufferVal& v) -> std::ostream&
+	auto operator<< (std::ostream& stream, const TBufferVal& v) -> std::ostream&
 	{
 		for(auto byt: v) {
 			auto hex = AsHexC(byt);
@@ -109,8 +109,8 @@ namespace binon {
 	}
 
 }
-auto std::hash<binon::BufferVal>::operator() (
-	const binon::BufferVal& obj
+auto std::hash<binon::TBufferVal>::operator() (
+	const binon::TBufferVal& obj
 	) const noexcept -> std::size_t
 {
 	auto data = reinterpret_cast<const binon::TStreamByte*>(obj.data());
