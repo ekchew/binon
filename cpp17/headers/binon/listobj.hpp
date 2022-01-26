@@ -42,6 +42,8 @@ namespace binon {
 		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
 	};
+	
+	//	See also list helper functions defined in typeconv.hpp.
 
 	auto DeepCopyTList(const TList& list) -> TList;
 	void PrintTListRepr(const TList& list, std::ostream& stream);

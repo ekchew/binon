@@ -51,6 +51,8 @@ namespace binon {
 		void printArgs(std::ostream& stream) const;
 	};
 
+	//	See also dict helper functions defined in typeconv.hpp.
+
 	auto DeepCopyTDict(const TDict& dict) -> TDict;
 	void PrintTDictRepr(const TDict& list, std::ostream& stream);
 
