@@ -34,13 +34,18 @@ namespace binon {
 	auto TBufferObj::hasDefVal() const noexcept -> bool {
 		return mValue.size() == 0;
 	}
-	void TBufferObj::encodeData(TOStream& stream, bool requireIO) const {
+	auto TBufferObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const TBufferObj&
+	{
 		RequireIO rio{stream, requireIO};
 		TUIntObj{mValue.size()}.encodeData(stream, kSkipRequireIO);
 		auto data = reinterpret_cast<const TStreamByte*>(mValue.data());
 		stream.write(data, mValue.size());
+		return *this;
 	}
-	void TBufferObj::decodeData(TIStream& stream, bool requireIO) {
+	auto TBufferObj::decodeData(TIStream& stream, bool requireIO)
+		-> TBufferObj&
+	{
 		RequireIO rio{stream, requireIO};
 		TUIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
@@ -48,6 +53,7 @@ namespace binon {
 		mValue.resize(n);
 		auto data = reinterpret_cast<TStreamByte*>(mValue.data());
 		stream.read(data, n);
+		return *this;
 	}
 	void TBufferObj::printArgs(std::ostream& stream) const {
 		stream << '"' << mValue << '"';

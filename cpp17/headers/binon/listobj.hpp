@@ -25,8 +25,10 @@ namespace binon {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"TListObj"};
 		using TStdCtnr<TListObj,TValue>::TStdCtnr;
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TListObj&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TListObj&;
 		void printArgs(std::ostream& stream) const;
 	};
 	struct TSList:
@@ -38,11 +40,13 @@ namespace binon {
 		CodeByte mElemCode;
 		TSList(std::any value, CodeByte elemCode = kNullObjCode);
 		TSList(CodeByte elemCode = kNullObjCode);
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TSList&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TSList&;
 		void printArgs(std::ostream& stream) const;
 	};
-	
+
 	//	See also list helper functions defined in typeconv.hpp.
 
 	auto DeepCopyTList(const TList& list) -> TList;
@@ -290,7 +294,7 @@ namespace binon {
 			appendValue(forward<V>(v));
 			appendValues(forward<Vs>(vs)...);
 		}
-	
+
 	//---- ListObj ------------------------------------------------------------
 
 	template<typename ElemGen>

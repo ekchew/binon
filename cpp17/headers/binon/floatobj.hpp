@@ -18,8 +18,10 @@ namespace binon {
 		static constexpr auto kClsName = std::string_view{"TFloatObj"};
 		TValue mValue;
 		TFloatObj(TValue v = 0.0);
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TFloatObj&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TFloatObj&;
 	};
 	struct TFloat32Obj:
 		TStdAcc<TFloat32Obj>,
@@ -34,8 +36,10 @@ namespace binon {
 		static constexpr auto kClsName = std::string_view{"TFloat32Obj"};
 		TValue mValue;
 		TFloat32Obj(TValue v = 0.0f);
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TFloat32Obj&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TFloat32Obj&;
 	};
 
 	struct FloatObj: BinONObj, Access_mValue<FloatObj,types::TFloat64> {

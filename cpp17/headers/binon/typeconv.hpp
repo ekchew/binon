@@ -174,11 +174,11 @@ namespace binon {
 				std::decay_t<T>,
 				typename TypeConv<std::decay_t<T>>::TObj::TValue
 				>;
-				
+
 	/*
 	MakeVarObj() returns a TVarObj based on the type you give it, provided said
 	type is known to TypeConv. (Otherwise, it will fail to compile.)
-	
+
 	Conceptually, it looks like this:
 
 		template<typename T>
@@ -553,7 +553,7 @@ namespace binon {
 		auto VarObjVal(TVarObj&& obj)
 			-> std::enable_if_t<kIsBinONVal<T>, TVarObjVal<T>>
 		{
-			return 
+			return
 				TypeConv<std::decay_t<T>>::GetVal(std::forward<TVarObj>(obj));
 		}
 	template<typename T>
@@ -561,7 +561,7 @@ namespace binon {
 			-> std::enable_if_t<!kIsBinONVal<T>, TVarObjVal<T>> {
 			return TypeConv<std::decay_t<T>>::GetVal(obj);
 		}
-		
+
 	//---- List object helper functions ----------------------------------------
 
 	template<typename T, typename List>
@@ -600,7 +600,7 @@ namespace binon {
 		{
 			return VarObjVal<T>(list.value().at(index));
 		}
-		
+
 	template<
 		typename List,
 		typename std::enable_if_t<kIsListType<List>, int> = 0
@@ -805,7 +805,7 @@ namespace binon {
 				dict.value().at(MakeVarObj(std::forward<Key>(key)))
 				);
 		}
-		
+
 	template<
 		typename Dict,
 		typename std::enable_if_t<kIsDictType<Dict>, int> = 0

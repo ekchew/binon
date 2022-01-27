@@ -322,7 +322,9 @@ namespace binon {
 		mValue{v}
 	{
 	}
-	void TIntObj::encodeData(TOStream& stream, bool requireIO) const {
+	auto TIntObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const TIntObj&
+	{
 		RequireIO rio{stream, requireIO};
 		if(mValue.canBeScalar()) {
 			auto v = mValue.scalar();
@@ -360,8 +362,11 @@ namespace binon {
 				WriteWord(b, stream, kSkipRequireIO);
 			}
 		}
+		return *this;
 	}
-	void TIntObj::decodeData(TIStream& stream, bool requireIO) {
+	auto TIntObj::decodeData(TIStream& stream, bool requireIO)
+		-> TIntObj&
+	{
 		auto signExtend = [](std::int64_t v, std::int64_t msbMask) {
 			auto sigBits = msbMask | msbMask - 1;
 			if(v & msbMask) {
@@ -382,7 +387,7 @@ namespace binon {
 			TUIntObj sizeObj;
 			sizeObj.decodeData(stream, kSkipRequireIO);
 			auto n = sizeObj.value().scalar();
-			TUIntVal::TVect u;			
+			TUIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
 				u.push_back(ReadWord<std::byte>(stream));
@@ -420,6 +425,7 @@ namespace binon {
 			}
 		}
 		mValue = v;
+		return *this;
 	}
 
 	//---- TUIntObj ------------------------------------------------------------
@@ -428,7 +434,9 @@ namespace binon {
 		mValue{v}
 	{
 	}
-	void TUIntObj::encodeData(TOStream& stream, bool requireIO) const {
+	auto TUIntObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const TUIntObj&
+	{
 		RequireIO rio{stream, requireIO};
 		if(mValue.canBeScalar()) {
 			auto v = mValue.scalar();
@@ -465,8 +473,11 @@ namespace binon {
 				WriteWord(b, stream, kSkipRequireIO);
 			}
 		}
+		return *this;
 	}
-	void TUIntObj::decodeData(TIStream& stream, bool requireIO) {
+	auto TUIntObj::decodeData(TIStream& stream, bool requireIO)
+		-> TUIntObj&
+	{
 		RequireIO rio{stream, requireIO};
 		TValue v;
 		auto byte0 = ReadWord<std::byte>(stream, kSkipRequireIO);
@@ -477,7 +488,7 @@ namespace binon {
 			TUIntObj sizeObj;
 			sizeObj.decodeData(stream, kSkipRequireIO);
 			auto n = sizeObj.value().scalar();
-			TUIntVal::TVect u;			
+			TUIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
 				u.push_back(ReadWord<std::byte>(stream));
@@ -511,6 +522,7 @@ namespace binon {
 			}
 		}
 		mValue = std::move(v);
+		return *this;
 	}
 
 	//---- IntRangeError -------------------------------------------------------

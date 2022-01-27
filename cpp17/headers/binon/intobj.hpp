@@ -204,8 +204,10 @@ namespace binon {
 		TValue mValue;
 		TIntObj(TValue v);
 		TIntObj() = default;
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TIntObj&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TIntObj&;
 	};
 	struct TUIntObj:
 		TStdAcc<TUIntObj>,
@@ -221,8 +223,10 @@ namespace binon {
 		TValue mValue;
 		TUIntObj(TValue v);
 		TUIntObj() = default;
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TUIntObj&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TUIntObj&;
 	};
 
 	struct IntRangeError: std::range_error {

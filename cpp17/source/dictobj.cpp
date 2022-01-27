@@ -9,7 +9,9 @@ namespace binon {
 
 	//---- TDictObj ------------------------------------------------------------
 
-	void TDictObj::encodeData(TOStream& stream, bool requireIO) const {
+	auto TDictObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const TDictObj&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
@@ -19,8 +21,11 @@ namespace binon {
 		for(auto& [k, v]: u) {
 			v.encode(stream, kSkipRequireIO);
 		}
+		return *this;
 	}
-	void TDictObj::decodeData(TIStream& stream, bool requireIO) {
+	auto TDictObj::decodeData(TIStream& stream, bool requireIO)
+		-> TDictObj&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj sizeObj;
@@ -36,6 +41,7 @@ namespace binon {
 		for(auto& k: ks) {
 			u[std::move(k)] = TVarObj::Decode(stream, kSkipRequireIO);
 		}
+		return *this;
 	}
 	void TDictObj::printArgs(std::ostream& stream) const {
 		stream << "TDictObj::TValue{";
@@ -68,7 +74,9 @@ namespace binon {
 		mKeyCode{keyCode}
 	{
 	}
-	void TSKDict::encodeData(TOStream& stream, bool requireIO) const {
+	auto TSKDict::encodeData(TOStream& stream, bool requireIO) const
+		-> const TSKDict&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
@@ -82,8 +90,11 @@ namespace binon {
 		for(auto& [k, v]: u) {
 			v.encode(stream, kSkipRequireIO);
 		}
+		return *this;
 	}
-	void TSKDict::decodeData(TIStream& stream, bool requireIO) {
+	auto TSKDict::decodeData(TIStream& stream, bool requireIO)
+		-> TSKDict&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj sizeObj;
@@ -101,6 +112,7 @@ namespace binon {
 		for(auto& k: ks) {
 			u[std::move(k)] = TVarObj::Decode(stream, kSkipRequireIO);
 		}
+		return *this;
 	}
 	void TSKDict::printArgs(std::ostream& stream) const {
 		stream << "TSKDict::TValue{";
@@ -136,7 +148,9 @@ namespace binon {
 		mValCode{valCode}
 	{
 	}
-	void TSDict::encodeData(TOStream& stream, bool requireIO) const {
+	auto TSDict::encodeData(TOStream& stream, bool requireIO) const
+		-> const TSDict&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
@@ -154,8 +168,11 @@ namespace binon {
 				packVal(v, kSkipRequireIO);
 			}
 		}
+		return *this;
 	}
-	void TSDict::decodeData(TIStream& stream, bool requireIO) {
+	auto TSDict::decodeData(TIStream& stream, bool requireIO)
+		-> TSDict&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj sizeObj;
@@ -175,6 +192,7 @@ namespace binon {
 		for(auto& k: ks) {
 			u[std::move(k)] = unpackVal(kSkipRequireIO);
 		}
+		return *this;
 	}
 	void TSDict::printArgs(std::ostream& stream) const {
 		stream << "TSDict::TValue{";

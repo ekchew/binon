@@ -29,8 +29,10 @@ namespace binon {
 		TBufferObj(TValue v);
 		TBufferObj() = default;
 		auto hasDefVal() const noexcept -> bool;
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TBufferObj&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TBufferObj&;
 		void printArgs(std::ostream& stream) const;
 	};
 

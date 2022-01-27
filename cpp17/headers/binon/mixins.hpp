@@ -61,8 +61,10 @@ namespace binon {
 				Child& child, CodeByte cb, TIStream& stream,
 				bool requireIO = true
 				);
-			void encode(TOStream& stream, bool requireIO = true) const;
-			void decode(CodeByte cb, TIStream& stream, bool requireIO = true);
+			auto encode(TOStream& stream, bool requireIO = true) const
+				-> const Child&;
+			auto decode(CodeByte cb, TIStream& stream, bool requireIO = true)
+				-> Child&;
 		};
 
 	struct NoComparing: std::invalid_argument {
@@ -122,16 +124,22 @@ namespace binon {
 			}
 		}
 	template<typename Child>
-		void TStdCodec<Child>::encode(
-			TOStream& stream, bool requireIO) const
+		auto TStdCodec<Child>::encode(
+			TOStream& stream, bool requireIO
+			) const -> const Child&
 		{
-			Encode(*static_cast<const Child*>(this), stream, requireIO);
+			auto& child = *static_cast<const Child*>(this);
+			Encode(child, stream, requireIO);
+			return child;
 		}
 	template<typename Child>
-		void TStdCodec<Child>::decode(
-			CodeByte cb, TIStream& stream, bool requireIO)
+		auto TStdCodec<Child>::decode(
+			CodeByte cb, TIStream& stream, bool requireIO
+			) -> Child&
 		{
-			Decode(*static_cast<Child*>(this), cb, stream, requireIO);
+			auto& child = *static_cast<Child*>(this);
+			Decode(child, cb, stream, requireIO);
+			return child;
 		}
 
 	//--- TStdCtnr ----------------------------------------------------------

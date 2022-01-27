@@ -8,11 +8,17 @@ namespace binon {
 		mValue{v}
 	{
 	}
-	void TFloatObj::encodeData(TOStream& stream, bool requireIO) const {
+	auto TFloatObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const TFloatObj&
+	{
 		WriteWord(mValue, stream, requireIO);
+		return *this;
 	}
-	void TFloatObj::decodeData(TIStream& stream, bool requireIO) {
+	auto TFloatObj::decodeData(TIStream& stream, bool requireIO)
+		-> TFloatObj&
+	{
 		mValue = ReadWord<TValue>(stream, requireIO);
+		return *this;
 	}
 
 	//---- TFloat32Obj ---------------------------------------------------------
@@ -21,11 +27,17 @@ namespace binon {
 		mValue{v}
 	{
 	}
-	void TFloat32Obj::encodeData(TOStream& stream, bool requireIO) const {
+	auto TFloat32Obj::encodeData(TOStream& stream, bool requireIO) const
+		-> const TFloat32Obj&
+	{
 		WriteWord(mValue, stream, requireIO);
+		return *this;
 	}
-	void TFloat32Obj::decodeData(TIStream& stream, bool requireIO) {
+	auto TFloat32Obj::decodeData(TIStream& stream, bool requireIO)
+		-> TFloat32Obj&
+	{
 		mValue = ReadWord<TValue>(stream, requireIO);
+		return *this;
 	}
 
 	//--------------------------------------------------------------------------

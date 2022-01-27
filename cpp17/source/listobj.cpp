@@ -19,15 +19,20 @@ namespace binon {
 
 	//---- TListObj ------------------------------------------------------------
 
-	void TListObj::encodeData(TOStream& stream, bool requireIO) const {
+	auto TListObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const TListObj&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
 		for(auto& v: u) {
 			v.encode(stream, kSkipRequireIO);
 		}
+		return *this;
 	}
-	void TListObj::decodeData(TIStream& stream, bool requireIO) {
+	auto TListObj::decodeData(TIStream& stream, bool requireIO)
+		-> TListObj&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj sizeObj;
@@ -38,6 +43,7 @@ namespace binon {
 		while(n-->0) {
 			u.push_back(TVarObj::Decode(stream, kSkipRequireIO));
 		}
+		return *this;
 	}
 	void TListObj::printArgs(std::ostream& stream) const {
 		stream << "TListObj::TValue{";
@@ -66,7 +72,9 @@ namespace binon {
 		mElemCode{elemCode}
 	{
 	}
-	void TSList::encodeData(TOStream& stream, bool requireIO) const {
+	auto TSList::encodeData(TOStream& stream, bool requireIO) const
+		-> const TSList&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
@@ -75,8 +83,11 @@ namespace binon {
 		for(auto& v: u) {
 			pack(v, kSkipRequireIO);
 		}
+		return *this;
 	}
-	void TSList::decodeData(TIStream& stream, bool requireIO) {
+	auto TSList::decodeData(TIStream& stream, bool requireIO)
+		-> TSList&
+	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj sizeObj;
@@ -88,6 +99,7 @@ namespace binon {
 		while(n-->0) {
 			u.push_back(unpack(kSkipRequireIO));
 		}
+		return *this;
 	}
 	void TSList::printArgs(std::ostream& stream) const {
 		stream << "TSList::TValue{";

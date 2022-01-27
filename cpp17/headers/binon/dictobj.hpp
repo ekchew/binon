@@ -17,8 +17,10 @@ namespace binon {
 		using TStdCtnr<TDictObj, std::unordered_map<TVarObj,TVarObj>>::TStdCtnr;
 		static constexpr auto kTypeCode = kDictObjCode;
 		static constexpr auto kClsName = std::string_view{"TDictObj"};
-		void encodeData(TOStream&, bool requireIO = true) const;
-		void decodeData(TIStream&, bool requireIO = true);
+		auto encodeData(TOStream&, bool requireIO = true) const
+			-> const TDictObj&;
+		auto decodeData(TIStream&, bool requireIO = true)
+			-> TDictObj&;
 		void printArgs(std::ostream&) const;
 	};
 	struct TSKDict:
@@ -30,8 +32,10 @@ namespace binon {
 		CodeByte mKeyCode;
 		TSKDict(std::any value, CodeByte keyCode = kIntObjCode);
 		TSKDict(CodeByte keyCode = kIntObjCode);
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TSKDict&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TSKDict&;
 		void printArgs(std::ostream& stream) const;
 	};
 	struct TSDict:
@@ -46,8 +50,10 @@ namespace binon {
 			CodeByte keyCode = kIntObjCode, CodeByte valCode = kIntObjCode
 			);
 		TSDict(CodeByte keyCode = kIntObjCode, CodeByte valCode = kIntObjCode);
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TSDict&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TSDict&;
 		void printArgs(std::ostream& stream) const;
 	};
 
