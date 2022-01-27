@@ -27,6 +27,13 @@ namespace binon {
 				mValue = false;
 		}
 	}
+	void TBoolObj::encodeData(TOStream& stream, bool requireIO) const {
+		std::byte byt = mValue ? 0x01_byte : 0x00_byte;
+		WriteWord(byt, stream, requireIO);
+	}
+	void TBoolObj::decodeData(TIStream& stream, bool requireIO) {
+		mValue = ReadWord<std::byte>(stream, requireIO) != 0x00_byte;
+	}
 	void TBoolObj::printArgs(std::ostream& stream) const {
 		stream << (mValue ? "true" : "false");
 	}

@@ -46,11 +46,32 @@ namespace binon {
 				throw BadCodeByte{typeCode};
 		}
 	}
-	void TVarObj::encode(TOStream& stream, bool requireIO) const {
+	auto TVarObj::encode(TOStream& stream, bool requireIO) const
+		-> const TVarObj&
+	{
 		std::visit(
 			[&](const auto& obj) { obj.encode(stream, requireIO); },
 		 	*this
 			);
+		return *this;
+	}
+	auto TVarObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const TVarObj&
+	{
+		std::visit(
+			[&](const auto& obj) { obj.encodeData(stream, requireIO); },
+			*this
+			);
+		return *this;
+	}
+	auto TVarObj::decodeData(TIStream& stream, bool requireIO)
+		-> TVarObj&
+	{
+		std::visit(
+			[&](auto& obj) { obj.decodeData(stream, requireIO); },
+			*this
+			);
+		return *this;
 	}
 	void TVarObj::print(OptRef<std::ostream> optStream) const {
 		auto& stream = optStream.value_or(std::cout).get();

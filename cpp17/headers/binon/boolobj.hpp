@@ -17,8 +17,8 @@ namespace binon {
 		constexpr TBoolObj(TValue v = false) noexcept: mValue{v} {}
 		void encode(TOStream& stream, bool requireIO = true) const;
 		void decode(CodeByte cb, TIStream& stream, bool requireIO = true);
-		void encodeData(TOStream&, bool requireIO = true) const {}
-		void decodeData(TIStream&, bool requireIO = true) {}
+		void encodeData(TOStream& stream, bool requireIO = true) const;
+		void decodeData(TIStream& stream, bool requireIO = true);
 		void printArgs(std::ostream& stream) const;
 	};
 

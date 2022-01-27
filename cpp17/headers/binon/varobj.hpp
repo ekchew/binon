@@ -37,7 +37,12 @@ namespace binon {
 		static auto FromTypeCode(CodeByte cb) -> TVarObj;
 		using TVarBase::variant;
 		auto typeCode() const -> CodeByte;
-		void encode(TOStream& stream, bool requireIO = true) const;
+		auto encode(TOStream& stream, bool requireIO = true) const
+			-> const TVarObj&;
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TVarObj&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TVarObj&;
 		void print(OptRef<std::ostream> stream = std::nullopt) const;
 	};
 	auto operator<< (std::ostream& stream, const TVarObj& obj) -> std::ostream&;

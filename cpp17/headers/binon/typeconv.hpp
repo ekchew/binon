@@ -159,18 +159,22 @@ namespace binon {
 		using TVarObjVal = typename TypeConv<std::decay_t<T>>::TVal;
 
 	/*
-	You can use move semantics with any type that is BinON-moveable.
-	BinON-moveable types include any native data type of a BinON object, as
-	well as the object type itself. For example, HyStr is moveable since it is
-	TStrObj's native value type (TStrObj::TValue). And TStrObj is itself also
-	moveable.
+	kIsBinONVal<T> evaluates true if your type T is the native value type of a
+	BinON object. This would be the type that is denoted TValue in the class.
+	For example, HyStr is a BinON value because it is TStrObj::TValue.
 
-	kBONMoveable<T> will tell you if your type T is BinON-moveable.
+	BinON value types are useful because if you specify one in the functions
+	below, you can access the value directly and even modify it in-place,
+	since it's not one of these data types that need to be converted first.
+	BinON value types can also be moved--not just copied--into/out of place.
 	*/
 	template<typename T>
-		constexpr bool kBONMoveable =
-			kIsBinONObj<T> || std::is_same_v<std::decay_t<T>, TVarObjVal<T>>;
-
+		constexpr bool kIsBinONVal =
+			std::is_same_v<
+				std::decay_t<T>,
+				typename TypeConv<std::decay_t<T>>::TObj::TValue
+				>;
+				
 	/*
 	MakeVarObj() returns a TVarObj based on the type you give it, provided said
 	type is known to TypeConv. (Otherwise, it will fail to compile.)
@@ -181,7 +185,7 @@ namespace binon {
 			auto MakeVarObj(T value) -> TVarObj;
 
 	In practice, it supports copy and--where available for the type
-	(see kBONMoveable)--move semantics on the T argument.
+	(see kIsBinONVal)--move semantics on the T argument.
 	*/
 
 	/*
@@ -193,29 +197,24 @@ namespace binon {
 		template<typename T>
 			auto VarObjVal(TVarObj varObj) -> TVarObjVal<T>;
 
-	As with MakeVarObj(), you can use move semantics if your type T is
-	BinON-Moveable. For example, you could write:
+	As with MakeVarObj(), you can use move semantics provided your type T is
+	a proper BinON value type (see kIsBinONVal). For example, you could write
+	things like:
 
-		auto&& str = VarObjVal<HyStr>(std::move(myVarObj));
-
-	This should clear out the string (if any) stored in myVarObj and relocate
-	it to your str variable. (See note about TypeConv::GetVal() regarding why
-	it's good to use && on return values. It applies to VarObjVal() as well.)
-
-	Alternatively, you can also get an L-value reference to any moveable type.
-	That means you can modify its value in-place within the TVarObj.
-
+		auto str = VarObjVal<HyStr>(std::move(myVarObj));
 		VarObjVal<HyStr>(myVarObj) = "new string value";
 
-	WARNING:
-		This will NOT work if the type you give is not the native value type!
-		It may be best to use the BinON class itself for the type T to avoid
-		confusion.
+	This only works with native BinON value types though. Don't try this say
+	with std::string instead of HyStr since it would require a conversion.
+	But you can still use copy semantics with std::string and do somthing
+	like this instead:
 
-			VarObjVal<TStrObj>(myVarObj)
-				= "should assign provided myVarObj contains a TStrObj";
-			VarObjVal<std::string>(myVarObj)
-				= "will not compile since TStrObj::TValue is not std::string";
+		auto str = VarObjVal<std::string>(myVarObj);
+		myVarObj = MakeVarObj<std::string>("new string value");
+
+	That approach should work with any data type recognized by TypeConv, albeit
+	with more overhead for any dynamically allocated types since there will be
+	a lot of buffer allocating/copying going on.
 	*/
 
 	//---- List object helper functions ----------------------------------------
@@ -376,7 +375,7 @@ namespace binon {
 			static auto GetVal(TVarObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const TVarObj& obj) -> TVal {
+			static auto GetVal(const TVarObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -388,7 +387,7 @@ namespace binon {
 			static auto GetVal(TVarObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const TVarObj& obj) -> TVal {
+			static auto GetVal(const TVarObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -400,7 +399,7 @@ namespace binon {
 			static auto GetVal(TVarObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const TVarObj& obj) -> TVal {
+			static auto GetVal(const TVarObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -412,7 +411,7 @@ namespace binon {
 			static auto GetVal(TVarObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const TVarObj& obj) -> TVal {
+			static auto GetVal(const TVarObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -424,7 +423,7 @@ namespace binon {
 			static auto GetVal(TVarObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const TVarObj& obj) -> TVal {
+			static auto GetVal(const TVarObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -496,7 +495,7 @@ namespace binon {
 			static auto GetVal(const TVarObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(TVarObj&& obj) ->TVal {
+			static auto GetVal(TVarObj&& obj) -> TVal {
 					return std::get<TObj>(std::forward<TVarObj>(obj)).value();
 				}
 		};
@@ -520,8 +519,8 @@ namespace binon {
 
 	//---- MakeVarObj ----------------------------------------------------------
 
-	inline auto MakeVarObj(const char* s) {
-		return typename TypeConv<decltype(s)>::TObj(s);
+	inline auto MakeVarObj(const char* s) -> TVarObj {
+		return TStrObj(s);
 	}
 	template<typename T>
 		auto MakeVarObj(const T& v)
@@ -531,7 +530,7 @@ namespace binon {
 		}
 	template<typename T>
 		auto MakeVarObj(T&& v) noexcept
-			-> std::enable_if_t<kBONMoveable<T>,TVarObj>
+			-> std::enable_if_t<kIsBinONVal<T>,TVarObj>
 		{
 			return typename TypeConv<T>::TObj(std::forward<T>(v));
 		}
@@ -540,28 +539,35 @@ namespace binon {
 
 	template<typename T>
 		auto VarObjVal(TVarObj& obj)
-			-> std::enable_if_t<kBONMoveable<T>, TVarObjVal<T>&>
+			-> std::enable_if_t<kIsBinONVal<T>, TVarObjVal<T>&>
 		{
 			return TypeConv<std::decay_t<T>>::GetVal(obj);
 		}
 	template<typename T>
-		auto VarObjVal(const TVarObj& obj) -> TVarObjVal<T>&& {
+		auto VarObjVal(const TVarObj& obj)
+			-> std::enable_if_t<kIsBinONVal<T>, const TVarObjVal<T>&>
+		{
 			return TypeConv<std::decay_t<T>>::GetVal(obj);
 		}
 	template<typename T>
 		auto VarObjVal(TVarObj&& obj)
-			-> std::enable_if_t<kBONMoveable<T>, TVarObjVal<T>&&>
+			-> std::enable_if_t<kIsBinONVal<T>, TVarObjVal<T>>
 		{
 			return 
 				TypeConv<std::decay_t<T>>::GetVal(std::forward<TVarObj>(obj));
 		}
-
+	template<typename T>
+		auto VarObjVal(const TVarObj& obj)
+			-> std::enable_if_t<!kIsBinONVal<T>, TVarObjVal<T>> {
+			return TypeConv<std::decay_t<T>>::GetVal(obj);
+		}
+		
 	//---- List object helper functions ----------------------------------------
 
 	template<typename T, typename List>
 		auto GetVal(List& list, std::size_t index)
 			-> std::enable_if_t<
-				kIsListType<List> && kBONMoveable<T>,
+				kIsListType<List> && kIsBinONVal<T>,
 				TVarObjVal<T>&
 				>
 		{
@@ -569,19 +575,32 @@ namespace binon {
 		}
 	template<typename T, typename List>
 		auto GetVal(const List& list, std::size_t index)
-			-> std::enable_if_t<kIsListType<List>, TVarObjVal<T>&&>
+			-> std::enable_if_t<
+				kIsListType<List> && kIsBinONVal<T>,
+				const TVarObjVal<T>&
+				>
 		{
 			return VarObjVal<T>(list.value().at(index));
 		}
 	template<typename T, typename List>
 		auto GetVal(List&& list, std::size_t index)
 			-> std::enable_if_t<
-				kIsListType<List> && kBONMoveable<T>,
-				TVarObjVal<T>&&
+				kIsListType<List> && kIsBinONVal<T>,
+				TVarObjVal<T>
 				>
 		{
 			return VarObjVal<T>(std::forward<List>(list).value().at(index));
 		}
+	template<typename T, typename List>
+		auto GetVal(const List& list, std::size_t index)
+			-> std::enable_if_t<
+				kIsListType<List> && !kIsBinONVal<T>,
+				TVarObjVal<T>
+				>
+		{
+			return VarObjVal<T>(list.value().at(index));
+		}
+		
 	template<
 		typename List,
 		typename std::enable_if_t<kIsListType<List>, int> = 0
@@ -599,12 +618,13 @@ namespace binon {
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<
-			kIsListType<List> && kBONMoveable<T> && !kIsCStr<T>, int
+			kIsListType<List> && kIsBinONVal<T> && !kIsCStr<T>, int
 			> = 0
 		>
 		void SetVal(List& list, std::size_t index, T&& v) {
 			list.value().at(index) = MakeVarObj(std::forward<T>(v));
 		}
+
 	template<
 		typename List,
 		typename std::enable_if_t<kIsListType<List>, int> = 0
@@ -622,7 +642,7 @@ namespace binon {
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<
-			kIsListType<List> && kBONMoveable<T> && !kIsCStr<T>, int
+			kIsListType<List> && kIsBinONVal<T> && !kIsCStr<T>, int
 			> = 0
 		>
 		void AppendVal(List& list, T&& v) {
@@ -652,7 +672,7 @@ namespace binon {
 	template<typename Dict, typename Key>
 		auto HasKey(const Dict& dict, Key&& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Key> && !kIsCStr<Key>, bool
+				kIsDictType<Dict> && kIsBinONVal<Key> && !kIsCStr<Key>, bool
 				>
 		{
 			auto& map = dict.value();
@@ -662,7 +682,7 @@ namespace binon {
 	template<typename Val, typename Dict>
 		auto GetVal(Dict& dict, const char* key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Val>,
+				kIsDictType<Dict> && kIsBinONVal<Val>,
 				TVarObjVal<Val>&
 				>
 		{
@@ -671,7 +691,7 @@ namespace binon {
 	template<typename Val, typename Dict, typename Key>
 		auto GetVal(Dict& dict, const Key& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Val> && !kIsCStr<Key>,
+				kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Key>,
 				TVarObjVal<Val>&
 				>
 		{
@@ -680,8 +700,8 @@ namespace binon {
 	template<typename Val, typename Dict, typename Key>
 		auto GetVal(Dict& dict, Key&& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Key>
-					&& kBONMoveable<Val> && !kIsCStr<Key>,
+				kIsDictType<Dict> && kIsBinONVal<Key>
+					&& kIsBinONVal<Val> && !kIsCStr<Key>,
 				TVarObjVal<Val>&
 				>
 		{
@@ -692,8 +712,8 @@ namespace binon {
 	template<typename Val, typename Dict>
 		auto GetVal(const Dict& dict, const char* key)
 			-> std::enable_if_t<
-				kIsDictType<Dict>,
-				TVarObjVal<Val>&&
+				kIsDictType<Dict> && kIsBinONVal<Val>,
+				const TVarObjVal<Val>&
 				>
 		{
 			return VarObjVal<Val>(dict.value().at(MakeVarObj(key)));
@@ -701,8 +721,8 @@ namespace binon {
 	template<typename Val, typename Dict, typename Key>
 		auto GetVal(const Dict& dict, const Key& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && !kIsCStr<Key>,
-				TVarObjVal<Val>&&
+				kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Key>,
+				const TVarObjVal<Val>&
 				>
 		{
 			return VarObjVal<Val>(dict.value().at(MakeVarObj(key)));
@@ -710,8 +730,9 @@ namespace binon {
 	template<typename Val, typename Dict, typename Key>
 		auto GetVal(const Dict& dict, Key&& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Key> && !kIsCStr<Key>,
-				TVarObjVal<Val>&&
+				kIsDictType<Dict> && kIsBinONVal<Key>
+					&& kIsBinONVal<Val> && !kIsCStr<Key>,
+				const TVarObjVal<Val>&
 				>
 		{
 			return VarObjVal<Val>(
@@ -721,8 +742,8 @@ namespace binon {
 	template<typename Val, typename Dict>
 		auto GetVal(Dict&& dict, const char* key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Val>,
-				TVarObjVal<Val>&&
+				kIsDictType<Dict> && kIsBinONVal<Val>,
+				TVarObjVal<Val>
 				>
 		{
 			return VarObjVal<Val>(
@@ -732,8 +753,8 @@ namespace binon {
 	template<typename Val, typename Dict, typename Key>
 		auto GetVal(Dict&& dict, const Key& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Val> && !kIsCStr<Key>,
-				TVarObjVal<Val>&&
+				kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Key>,
+				TVarObjVal<Val>
 				>
 		{
 			return VarObjVal<Val>(
@@ -743,9 +764,9 @@ namespace binon {
 	template<typename Val, typename Dict, typename Key>
 		auto GetVal(Dict&& dict, Key&& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Key>
-					&& kBONMoveable<Val> && !kIsCStr<Key>,
-				TVarObjVal<Val>&&
+				kIsDictType<Dict> && kIsBinONVal<Key>
+					&& kIsBinONVal<Val> && !kIsCStr<Key>,
+				TVarObjVal<Val>
 				>
 		{
 			return VarObjVal<Val>(
@@ -754,7 +775,37 @@ namespace binon {
 					)
 				);
 		}
-
+	template<typename Val, typename Dict>
+		auto GetVal(const Dict& dict, const char* key)
+			-> std::enable_if_t<
+				kIsDictType<Dict> && !kIsBinONVal<Val>,
+				TVarObjVal<Val>
+				>
+		{
+			return VarObjVal<Val>(dict.value().at(MakeVarObj(key)));
+		}
+	template<typename Val, typename Dict, typename Key>
+		auto GetVal(const Dict& dict, const Key& key)
+			-> std::enable_if_t<
+				kIsDictType<Dict> && !kIsBinONVal<Val> && !kIsCStr<Key>,
+				TVarObjVal<Val>
+				>
+		{
+			return VarObjVal<Val>(dict.value().at(MakeVarObj(key)));
+		}
+	template<typename Val, typename Dict, typename Key>
+		auto GetVal(const Dict& dict, Key&& key)
+			-> std::enable_if_t<
+				kIsDictType<Dict> && kIsBinONVal<Key>
+					&& !kIsBinONVal<Val> && !kIsCStr<Key>,
+				TVarObjVal<Val>
+				>
+		{
+			return VarObjVal<Val>(
+				dict.value().at(MakeVarObj(std::forward<Key>(key)))
+				);
+		}
+		
 	template<
 		typename Dict,
 		typename std::enable_if_t<kIsDictType<Dict>, int> = 0
@@ -788,7 +839,7 @@ namespace binon {
 	template<
 		typename Dict, typename Key,
 		typename std::enable_if_t<
-			kIsDictType<Dict> && kBONMoveable<Key> && !kIsCStr<Key>, int
+			kIsDictType<Dict> && kIsBinONVal<Key> && !kIsCStr<Key>, int
 			> = 0
 		>
 		void SetVal(Dict& dict, Key&& key, const char* val) {
@@ -799,7 +850,7 @@ namespace binon {
 	template<
 		typename Dict, typename Key, typename Val,
 		typename std::enable_if_t<
-			kIsDictType<Dict> && kBONMoveable<Key>
+			kIsDictType<Dict> && kIsBinONVal<Key>
 				&& !kIsCStr<Key> && !kIsCStr<Val>,
 			int
 			> = 0
@@ -812,7 +863,7 @@ namespace binon {
 	template<
 		typename Dict, typename Val,
 		typename std::enable_if_t<
-			kIsDictType<Dict> && kBONMoveable<Val> && !kIsCStr<Val>, int
+			kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Val>, int
 			> = 0
 		>
 		void SetVal(Dict& dict, const char* key, Val&& val) {
@@ -823,7 +874,7 @@ namespace binon {
 	template<
 		typename Dict, typename Key, typename Val,
 		typename std::enable_if_t<
-			kIsDictType<Dict> && kBONMoveable<Val>
+			kIsDictType<Dict> && kIsBinONVal<Val>
 				&& !kIsCStr<Key> && !kIsCStr<Val>,
 			int
 			> = 0
@@ -837,7 +888,7 @@ namespace binon {
 	template<
 		typename Dict, typename Key, typename Val,
 		typename std::enable_if_t<
-			kIsDictType<Dict> && kBONMoveable<Key> && kBONMoveable<Val>
+			kIsDictType<Dict> && kIsBinONVal<Key> && kIsBinONVal<Val>
 				 && !kIsCStr<Key> && !kIsCStr<Val>,
 			int
 			> = 0
@@ -880,7 +931,7 @@ namespace binon {
 	template<typename Dict, typename Key>
 		auto DelKey(Dict& dict, Key&& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kBONMoveable<Key> && !kIsCStr<Key>, bool
+				kIsDictType<Dict> && kIsBinONVal<Key> && !kIsCStr<Key>, bool
 				>
 		{
 			auto& map = dict.value();
