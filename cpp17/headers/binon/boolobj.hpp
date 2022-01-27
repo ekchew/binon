@@ -15,10 +15,14 @@ namespace binon {
 		static constexpr auto kTypeCode = kBoolObjCode;
 		static constexpr auto kClsName = std::string_view{"BoolObj"};
 		constexpr TBoolObj(TValue v = false) noexcept: mValue{v} {}
-		void encode(TOStream& stream, bool requireIO = true) const;
-		void decode(CodeByte cb, TIStream& stream, bool requireIO = true);
-		void encodeData(TOStream& stream, bool requireIO = true) const;
-		void decodeData(TIStream& stream, bool requireIO = true);
+		auto encode(TOStream& stream, bool requireIO = true) const
+			-> const TBoolObj&;
+		auto decode(CodeByte cb, TIStream& stream, bool requireIO = true)
+			-> TBoolObj&;
+		auto encodeData(TOStream& stream, bool requireIO = true) const
+			-> const TBoolObj&;
+		auto decodeData(TIStream& stream, bool requireIO = true)
+			-> TBoolObj&;
 		void printArgs(std::ostream& stream) const;
 	};
 
