@@ -542,17 +542,18 @@ namespace binon {
 		auto VarObjVal(TVarObj& obj)
 			-> std::enable_if_t<kBONMoveable<T>, TVarObjVal<T>&>
 		{
-			return TypeConv<std::decay<T>>::GetVal(obj);
+			return TypeConv<std::decay_t<T>>::GetVal(obj);
 		}
 	template<typename T>
 		auto VarObjVal(const TVarObj& obj) -> TVarObjVal<T>&& {
-			return TypeConv<std::decay<T>>::GetVal(obj);
+			return TypeConv<std::decay_t<T>>::GetVal(obj);
 		}
 	template<typename T>
 		auto VarObjVal(TVarObj&& obj)
 			-> std::enable_if_t<kBONMoveable<T>, TVarObjVal<T>&&>
 		{
-			return TypeConv<std::decay<T>>::GetVal(std::forward<TVarObj>(obj));
+			return 
+				TypeConv<std::decay_t<T>>::GetVal(std::forward<TVarObj>(obj));
 		}
 
 	//---- List object helper functions ----------------------------------------
