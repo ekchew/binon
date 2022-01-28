@@ -26,7 +26,6 @@ ${TEST_DIR}: ${HDR}/binon.hpp
 SRC := source/
 SRC_NAMES := \
 	boolobj \
-	binonobj \
 	bufferobj \
 	byteutil \
 	codebyte \
@@ -46,7 +45,6 @@ ${DEST_DIR}/lib/libbinon.a: ${OBJS}
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
 DEPS := \
-	${HDR}binonobj.hpp \
 	${HDR}boolobj.hpp \
 	${HDR}bufferobj.hpp \
 	${HDR}byteutil.hpp \
@@ -68,19 +66,15 @@ DEPS := \
 	${HDR}mixins.hpp \
 	${HDR}nullobj.hpp \
 	${HDR}optutil.hpp \
-	${HDR}pbinonobjt.hpp \
 	${HDR}packelems.hpp \
 	${HDR}refutil.hpp \
 	${HDR}strobj.hpp \
 	${HDR}typeconv.hpp \
-	${HDR}typeinfo.hpp \
 	${HDR}varobj.hpp \
 	makefile
 ${HDR}/binon.hpp: ${DEPS}
 	touch ${HDR}/binon.hpp
 
-${OBJ}binonobj.o: ${SRC}binonobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}binonobj.cpp -o ${OBJ}binonobj.o
 ${OBJ}boolobj.o: ${SRC}boolobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}boolobj.cpp -o ${OBJ}boolobj.o
 ${OBJ}bufferobj.o: ${SRC}bufferobj.cpp ${HDR}bufferobj.hpp \

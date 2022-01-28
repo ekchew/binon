@@ -5,7 +5,6 @@
 //	are altered and binon is rebuilt. That way, you can make this one header a
 //	dependency for any other projects that use libbinon.
 
-#include "binonobj.hpp"
 #include "boolobj.hpp"
 #include "bufferobj.hpp"
 #include "byteutil.hpp"
@@ -24,11 +23,9 @@
 #include "macros.hpp"
 #include "nullobj.hpp"
 #include "optutil.hpp"
-#include "pbinonobjt.hpp"
 #include "refutil.hpp"
 #include "strobj.hpp"
 #include "typeconv.hpp"
-#include "typeinfo.hpp"
 #include "varobj.hpp"
 
 #endif
