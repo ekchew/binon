@@ -23,9 +23,6 @@ namespace binon {
 	using TList = TVector<TSPBinONObj>;
 	using TDict = std::unordered_map<TSPBinONObj, TSPBinONObj>;
 
-	struct NullDeref: std::out_of_range {
-		using std::out_of_range::out_of_range;
-	};
 
 	constexpr bool kDeepCopy = true;
 

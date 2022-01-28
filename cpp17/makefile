@@ -53,6 +53,7 @@ DEPS := \
 	${HDR}codebyte.hpp \
 	${HDR}crtp.hpp \
 	${HDR}dictobj.hpp \
+	${HDR}errors.hpp \
 	${HDR}floatobj.hpp \
 	${HDR}floattypes.hpp \
 	${HDR}generator.hpp \

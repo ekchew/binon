@@ -2,16 +2,13 @@
 #define BINON_MIXINS_HPP
 
 #include "codebyte.hpp"
+#include "errors.hpp"
 #include "hashutil.hpp"
 #include "ioutil.hpp"
 #include <any>
 #include <sstream>
-#include <stdexcept>
 
 namespace binon {
-	struct TypeErr: std::logic_error {
-		using std::logic_error::logic_error;
-	};
 
 	template<typename Child>
 		struct TStdAcc {

@@ -12,6 +12,7 @@
 #include "crtp.hpp"
 #include "codebyte.hpp"
 #include "dictobj.hpp"
+#include "errors.hpp"
 #include "floatobj.hpp"
 #include "floattypes.hpp"
 #include "generator.hpp"
