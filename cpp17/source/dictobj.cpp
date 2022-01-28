@@ -14,7 +14,7 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		UIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
 		for(auto& [k, v]: u) {
 			k.encode(stream, kSkipRequireIO);
 		}
@@ -28,18 +28,18 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj sizeObj;
+		UIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
-		std::vector<TVarObj> ks;
+		std::vector<VarObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);
 		while(n-->0) {
-			ks.push_back(TVarObj::Decode(stream, kSkipRequireIO));
+			ks.push_back(VarObj::Decode(stream, kSkipRequireIO));
 		}
 		for(auto& k: ks) {
-			u[std::move(k)] = TVarObj::Decode(stream, kSkipRequireIO);
+			u[std::move(k)] = VarObj::Decode(stream, kSkipRequireIO);
 		}
 		return *this;
 	}
@@ -66,7 +66,7 @@ namespace binon {
 	//---- TSKDict -------------------------------------------------------------
 
 	TSKDict::TSKDict(std::any value, CodeByte keyCode):
-		TStdCtnr<TSKDict,TValue>{std::move(value)},
+		StdCtnr<TSKDict,TValue>{std::move(value)},
 		mKeyCode{keyCode}
 	{
 	}
@@ -80,13 +80,13 @@ namespace binon {
 		if(mKeyCode == kNoObjCode) {
 			std::ostringstream oss;
 			oss << "TSKDict is missing a key code (";
-			TVarObj{*this}.print(oss);
+			VarObj{*this}.print(oss);
 			oss << ')';
 			throw TypeErr{oss.str()};
 		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		UIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
 		mKeyCode.write(stream, kSkipRequireIO);
 		{
 			PackElems packKey{mKeyCode, stream};
@@ -104,11 +104,11 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj sizeObj;
+		UIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
 		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
-		std::vector<TVarObj> ks;
+		std::vector<VarObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);
@@ -117,7 +117,7 @@ namespace binon {
 			ks.push_back(unpackKey(kSkipRequireIO));
 		}
 		for(auto& k: ks) {
-			u[std::move(k)] = TVarObj::Decode(stream, kSkipRequireIO);
+			u[std::move(k)] = VarObj::Decode(stream, kSkipRequireIO);
 		}
 		return *this;
 	}
@@ -145,7 +145,7 @@ namespace binon {
 	//---- TSDict -------------------------------------------------------------
 
 	TSDict::TSDict(std::any value, CodeByte keyCode, CodeByte valCode):
-		TStdCtnr<TSDict,TValue>{std::move(value)},
+		StdCtnr<TSDict,TValue>{std::move(value)},
 		mKeyCode{keyCode},
 		mValCode{valCode}
 	{
@@ -171,13 +171,13 @@ namespace binon {
 				oss << " value";
 			}
 			oss << " code (";
-			TVarObj{*this}.print(oss);
+			VarObj{*this}.print(oss);
 			oss << ')';
 			throw TypeErr{oss.str()};
 		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		UIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
 		mKeyCode.write(stream, kSkipRequireIO);
 		{
 			PackElems packKey{mKeyCode, stream};
@@ -199,11 +199,11 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj sizeObj;
+		UIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
 		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
-		std::vector<TVarObj> ks;
+		std::vector<VarObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);

@@ -8,38 +8,38 @@
 
 namespace binon {
 
-	struct TBufferVal: BasicHyStr<std::byte> {
+	struct BufferVal: BasicHyStr<std::byte> {
 		using BasicHyStr<std::byte>::BasicHyStr;
-		TBufferVal(const HyStr& hyStr);
+		BufferVal(const HyStr& hyStr);
 	};
-	auto operator<< (std::ostream& stream, const TBufferVal& v)
+	auto operator<< (std::ostream& stream, const BufferVal& v)
 		-> std::ostream&;
 
-	struct TBufferObj:
-		TStdAcc<TBufferObj>,
-		TStdEq<TBufferObj>,
-		TStdHash<TBufferObj>,
-		TStdCodec<TBufferObj>
+	struct BufferObj:
+		StdAcc<BufferObj>,
+		StdEq<BufferObj>,
+		StdHash<BufferObj>,
+		StdCodec<BufferObj>
 	{
-		using TValue = TBufferVal;
+		using TValue = BufferVal;
 		static constexpr auto kTypeCode = kBufferObjCode;
-		static constexpr auto kClsName = std::string_view{"TBufferObj"};
+		static constexpr auto kClsName = std::string_view{"BufferObj"};
 		TValue mValue;
-		TBufferObj(const HyStr& hyStr);
-		TBufferObj(TValue v);
-		TBufferObj() = default;
+		BufferObj(const HyStr& hyStr);
+		BufferObj(TValue v);
+		BufferObj() = default;
 		auto hasDefVal() const noexcept -> bool;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TBufferObj&;
+			-> const BufferObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TBufferObj&;
+			-> BufferObj&;
 		void printArgs(std::ostream& stream) const;
 	};
 }
 
 namespace std {
-	template<> struct hash<binon::TBufferVal> {
-		auto operator () (const binon::TBufferVal& obj) const noexcept
+	template<> struct hash<binon::BufferVal> {
+		auto operator () (const binon::BufferVal& obj) const noexcept
 			-> std::size_t;
 	};
 }

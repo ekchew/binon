@@ -13,9 +13,9 @@ namespace binon {
 		std::variant
 			TIntBase:
 				TIntVal
-				TUIntVal
+				UIntVal
 
-	TIntVal and TUIntVal store the integer values used by TIntObj and TUIntObj,
+	TIntVal and UIntVal store the integer values used by IntObj and UIntObj,
 	respectively. They do so in a variant record containing either a 64-bit
 	C++ integer type or a byte buffer of arbitrary length for really big
 	numbers. In the latter case, the bytes are ordered big-endian.
@@ -26,11 +26,11 @@ namespace binon {
 			/*
 			TIntBase exposes all the functionality (including constructors)
 			of the std::variant it inherits from. It also has full access its
-			child classes--TIntVal and TUIntVal--through the CRTP paradigm.
+			child classes--TIntVal and UIntVal--through the CRTP paradigm.
 
 			The variant's Scalar type is supplied by the child class in the
 			2nd template argument, but is std::int64_t for TIntVal and
-			std::uint64_t for TUIntVal.
+			std::uint64_t for UIntVal.
 
 			The vector type is actually a string of std::byte. (It used to be
 			a std::vector<std::byte> but was changed to string due to several
@@ -66,7 +66,7 @@ namespace binon {
 			method.) Otherwise, it will throw std::bad_variant_access.
 
 			scalar() is also mapped onto an implicit conversion operator to
-			TScalar. This is to help TIntVal and TUIntVal to function in many
+			TScalar. This is to help TIntVal and UIntVal to function in many
 			situations where you would want to work with a std::int64_t or
 			std::uint64_t directly, but be aware of this potential for an
 			exception.
@@ -127,7 +127,7 @@ namespace binon {
 	struct TIntVal: TIntBase<TIntVal, std::int64_t> {
 
 		/*
-		You can convert both TIntVal and TUIntVal into a hexadecimal string by
+		You can convert both TIntVal and UIntVal into a hexadecimal string by
 		calling asHex(), or build either object by calling the FromHex()
 		class method.
 
@@ -172,64 +172,64 @@ namespace binon {
 		template<typename Int>
 			auto fits() const noexcept -> bool;
 	};
-	struct TUIntVal: TIntBase<TUIntVal, std::uint64_t> {
+	struct UIntVal: TIntBase<UIntVal, std::uint64_t> {
 
 		static auto FromHex(const HyStr& hex,
 			std::size_t wordSize = sizeof(TScalar)
-			) -> TUIntVal;
+			) -> UIntVal;
 		auto asHex(
 			bool zerox = true, std::size_t wordSize = sizeof(TScalar)
 			) const -> std::string;
 
 		template<typename, typename> friend struct TIntBase;
-		using TIntBase<TUIntVal,TScalar>::TIntBase;
+		using TIntBase<UIntVal,TScalar>::TIntBase;
 		auto asScalar() const noexcept -> TScalar;
 
 		template<typename UInt>
 			auto fits() const noexcept -> bool;
 	};
 
-	struct TIntObj:
-		TStdAcc<TIntObj>,
-		TStdEq<TIntObj>,
-		TStdHash<TIntObj>,
-		TStdHasDefVal<TIntObj>,
-		TStdPrintArgs<TIntObj>,
-		TStdCodec<TIntObj>
+	struct IntObj:
+		StdAcc<IntObj>,
+		StdEq<IntObj>,
+		StdHash<IntObj>,
+		StdHasDefVal<IntObj>,
+		StdPrintArgs<IntObj>,
+		StdCodec<IntObj>
 	{
 		using TValue = TIntVal;
 		static constexpr auto kTypeCode = kIntObjCode;
-		static constexpr auto kClsName = std::string_view{"TIntObj"};
+		static constexpr auto kClsName = std::string_view{"IntObj"};
 		TValue mValue;
-		TIntObj(TValue v);
-		TIntObj() = default;
+		IntObj(TValue v);
+		IntObj() = default;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TIntObj&;
+			-> const IntObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TIntObj&;
+			-> IntObj&;
 	};
-	struct TUIntObj:
-		TStdAcc<TUIntObj>,
-		TStdEq<TUIntObj>,
-		TStdHash<TUIntObj>,
-		TStdHasDefVal<TUIntObj>,
-		TStdPrintArgs<TUIntObj>,
-		TStdCodec<TUIntObj>
+	struct UIntObj:
+		StdAcc<UIntObj>,
+		StdEq<UIntObj>,
+		StdHash<UIntObj>,
+		StdHasDefVal<UIntObj>,
+		StdPrintArgs<UIntObj>,
+		StdCodec<UIntObj>
 	{
-		using TValue = TUIntVal; //std::uint64_t;
+		using TValue = UIntVal; //std::uint64_t;
 		static constexpr auto kTypeCode = kUIntCode;
-		static constexpr auto kClsName = std::string_view{"TUIntObj"};
+		static constexpr auto kClsName = std::string_view{"UIntObj"};
 		TValue mValue;
-		TUIntObj(TValue v);
-		TUIntObj() = default;
+		UIntObj(TValue v);
+		UIntObj() = default;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TUIntObj&;
+			-> const UIntObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TUIntObj&;
+			-> UIntObj&;
 	};
 
 	namespace types {
-		using UInt = TUIntObj;
+		using UInt = UIntObj;
 	}
 
 	//==== Template Implementation =============================================
@@ -331,10 +331,10 @@ namespace binon {
 			return get<TVect>(*this).size() <= sizeof(Int);
 		}
 
-	//---- TUIntVal -------------------------------------------------------------
+	//---- UIntVal -------------------------------------------------------------
 
 	template<typename UInt>
-		auto TUIntVal::fits() const noexcept -> bool {
+		auto UIntVal::fits() const noexcept -> bool {
 			if(canBeScalar()) {
 				auto i = scalar();
 				if(sizeof(UInt) >= sizeof(TScalar)) {
@@ -352,8 +352,8 @@ namespace std {
 		auto operator () (const binon::TIntVal& i) const noexcept
 			-> std::size_t;
 	};
-	template<> struct hash<binon::TUIntVal> {
-		auto operator () (const binon::TUIntVal& i) const noexcept
+	template<> struct hash<binon::UIntVal> {
+		auto operator () (const binon::UIntVal& i) const noexcept
 			-> std::size_t;
 	};
 }

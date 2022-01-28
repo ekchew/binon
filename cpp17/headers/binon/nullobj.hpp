@@ -5,15 +5,15 @@
 #include <cstddef>
 
 namespace binon {
-	struct TNullObj: TStdCodec<TNullObj> {
+	struct NullObj: StdCodec<NullObj> {
 		using TValue = std::nullptr_t;
 		TValue mValue = nullptr;
 		static constexpr auto kTypeCode = kNullObjCode;
-		static constexpr auto kClsName = std::string_view{"TNullObj"};
+		static constexpr auto kClsName = std::string_view{"NullObj"};
 		auto value() const { return mValue; }
 		auto& value() { return mValue; }
-		constexpr auto operator== (TNullObj) const noexcept { return true; }
-		constexpr auto operator!= (TNullObj) const noexcept { return false; }
+		constexpr auto operator== (NullObj) const noexcept { return true; }
+		constexpr auto operator!= (NullObj) const noexcept { return false; }
 		auto hash() const noexcept -> std::size_t {
 				return std::hash<CodeByte>{}(kTypeCode);
 			}

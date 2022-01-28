@@ -11,7 +11,7 @@
 namespace binon {
 
 	template<typename Child>
-		struct TStdAcc {
+		struct StdAcc {
 			auto& value() & {
 					return static_cast<Child*>(this)->mValue;
 				}
@@ -23,7 +23,7 @@ namespace binon {
 				}
 		};
 	template<typename Child>
-		struct TStdEq {
+		struct StdEq {
 			auto operator== (const Child& rhs) const noexcept {
 					return static_cast<const Child*>(this)->mValue
 						== rhs.mValue;
@@ -33,7 +33,7 @@ namespace binon {
 				}
 		};
 	template<typename Child>
-		struct TStdHash {
+		struct StdHash {
 			auto hash() const noexcept {
 					using TValue = typename Child::TValue;
 					auto& child = *static_cast<const Child*>(this);
@@ -43,19 +43,19 @@ namespace binon {
 				}
 		};
 	template<typename Child>
-		struct TStdHasDefVal {
+		struct StdHasDefVal {
 			auto hasDefVal() const noexcept {
 					return !static_cast<const Child*>(this)->mValue;
 				}
 		};
 	template<typename Child>
-		struct TStdPrintArgs {
+		struct StdPrintArgs {
 			void printArgs(std::ostream& stream) const {
 					stream << static_cast<const Child*>(this)->mValue;
 				}
 		};
 	template<typename Child>
-		struct TStdCodec {
+		struct StdCodec {
 			static void Encode(
 				const Child& child, TOStream& stream, bool requireIO = true
 				);
@@ -76,17 +76,17 @@ namespace binon {
 		using std::invalid_argument::invalid_argument;
 	};
 	template<typename Child, typename Ctnr>
-		struct TStdCtnr: TStdCodec<Child> {
+		struct StdCtnr: StdCodec<Child> {
 			using TValue = Ctnr;
-			TStdCtnr(std::any ctnr);
-			TStdCtnr() = default;
+			StdCtnr(std::any ctnr);
+			StdCtnr() = default;
 			auto value() & -> TValue&;
 			auto value() && -> TValue;
 			auto value() const& -> const TValue&;
 			auto hasDefVal() const -> bool;
 
-			auto operator== (const TStdCtnr& rhs) const -> bool;
-			auto operator!= (const TStdCtnr& rhs) const -> bool;
+			auto operator== (const StdCtnr& rhs) const -> bool;
+			auto operator!= (const StdCtnr& rhs) const -> bool;
 				 // throw NoComparing
 
 			auto hash() const -> std::size_t; // throws NoHashing
@@ -98,10 +98,10 @@ namespace binon {
 
 	//==== Template Implementation =============================================
 
-	//--- TStdCodec ------------------------------------------------------------
+	//--- StdCodec ------------------------------------------------------------
 
 	template<typename Child>
-		void TStdCodec<Child>::Encode(
+		void StdCodec<Child>::Encode(
 			const Child& child, TOStream& stream, bool requireIO
 			)
 		{
@@ -117,7 +117,7 @@ namespace binon {
 			}
 		}
 	template<typename Child>
-		void TStdCodec<Child>::Decode(
+		void StdCodec<Child>::Decode(
 			Child& child, CodeByte cb, TIStream& stream, bool requireIO
 			)
 		{
@@ -127,7 +127,7 @@ namespace binon {
 			}
 		}
 	template<typename Child>
-		auto TStdCodec<Child>::encode(
+		auto StdCodec<Child>::encode(
 			TOStream& stream, bool requireIO
 			) const -> const Child&
 		{
@@ -136,7 +136,7 @@ namespace binon {
 			return child;
 		}
 	template<typename Child>
-		auto TStdCodec<Child>::decode(
+		auto StdCodec<Child>::decode(
 			CodeByte cb, TIStream& stream, bool requireIO
 			) -> Child&
 		{
@@ -145,15 +145,15 @@ namespace binon {
 			return child;
 		}
 
-	//--- TStdCtnr ----------------------------------------------------------
+	//--- StdCtnr ----------------------------------------------------------
 
 	template<typename Child, typename Ctnr>
-		TStdCtnr<Child,Ctnr>::TStdCtnr(std::any ctnr):
+		StdCtnr<Child,Ctnr>::StdCtnr(std::any ctnr):
 			mValue{std::move(ctnr)}
 		{
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::value() & -> TValue& {
+		auto StdCtnr<Child,Ctnr>::value() & -> TValue& {
 			if(!mValue.has_value()) {
 				mValue = TValue();
 			}
@@ -166,7 +166,7 @@ namespace binon {
 
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::value() && -> TValue {
+		auto StdCtnr<Child,Ctnr>::value() && -> TValue {
 			if(!mValue.has_value()) {
 				mValue = TValue();
 			}
@@ -178,31 +178,31 @@ namespace binon {
 			}
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::value() const&
+		auto StdCtnr<Child,Ctnr>::value() const&
 			-> const TValue&
 		{
-			return const_cast<TStdCtnr*>(this)->value();
+			return const_cast<StdCtnr*>(this)->value();
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::operator== (const TStdCtnr&) const -> bool {
+		auto StdCtnr<Child,Ctnr>::operator== (const StdCtnr&) const -> bool {
 			throw NoComparing{"BinON container objects cannot be compared"};
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::operator!= (const TStdCtnr& rhs) const
+		auto StdCtnr<Child,Ctnr>::operator!= (const StdCtnr& rhs) const
 			-> bool
 		{
 			return !(*this == rhs);
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::hash() const -> std::size_t {
+		auto StdCtnr<Child,Ctnr>::hash() const -> std::size_t {
 			throw NoHashing{"BinON container objects cannot be hashed"};
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::hasDefVal() const -> bool {
+		auto StdCtnr<Child,Ctnr>::hasDefVal() const -> bool {
 			return value().size() == 0;
 		}
 	template<typename Child, typename Ctnr>
-		auto TStdCtnr<Child,Ctnr>::castError() const -> TypeErr {
+		auto StdCtnr<Child,Ctnr>::castError() const -> TypeErr {
 			std::ostringstream oss;
 			oss << Child::kClsName
 				<< " constructed with something other than the expected "

@@ -6,23 +6,23 @@
 
 namespace binon {
 
-	struct TStrObj:
-		TStdAcc<TStrObj>,
-		TStdEq<TStrObj>,
-		TStdHash<TStrObj>,
-		TStdCodec<TStrObj>
+	struct StrObj:
+		StdAcc<StrObj>,
+		StdEq<StrObj>,
+		StdHash<StrObj>,
+		StdCodec<StrObj>
 	{
 		using TValue = HyStr;
 		static constexpr auto kTypeCode = kStrObjCode;
-		static constexpr auto kClsName = std::string_view{"TStrObj"};
+		static constexpr auto kClsName = std::string_view{"StrObj"};
 		TValue mValue;
-		TStrObj(TValue v);
-		TStrObj() = default;
+		StrObj(TValue v);
+		StrObj() = default;
 		auto hasDefVal() const noexcept -> bool;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TStrObj&;
+			-> const StrObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TStrObj&;
+			-> StrObj&;
 		void printArgs(std::ostream& stream) const;
 	};
 }

@@ -12,7 +12,7 @@ namespace binon {
 		mIndex{0}
 	{
 	}
-	void PackElems::operator() (const TVarObj& varObj, bool requireIO) {
+	void PackElems::operator() (const VarObj& varObj, bool requireIO) {
 		RequireIO rio{mStream, requireIO};
 		if(varObj.typeCode() != mElemCode) {
 			std::ostringstream oss;
@@ -27,7 +27,7 @@ namespace binon {
 			throw TypeErr{oss.str()};
 		}
 		if(mElemCode == kBoolObjCode) {
-			auto v = std::get<TBoolObj>(varObj).mValue;
+			auto v = std::get<BoolObj>(varObj).mValue;
 			mByte <<= 1;
 			if(v) {
 				mByte |= 0x01_byte;
@@ -65,19 +65,19 @@ namespace binon {
 		mIndex{0}
 	{
 	}
-	auto UnpackElems::operator() (bool requireIO) -> TVarObj {
+	auto UnpackElems::operator() (bool requireIO) -> VarObj {
 		RequireIO rio{mStream, requireIO};
 		if(mElemCode == kBoolObjCode) {
 			if((mIndex & 0x7u) == 0x0) {
 				mByte = ReadWord<std::byte>(mStream, kSkipRequireIO);
 			}
-			TBoolObj boolObj{(mByte & 0x80_byte) != 0x00_byte};
+			BoolObj boolObj{(mByte & 0x80_byte) != 0x00_byte};
 			mByte <<= 1;
 			++mIndex;
 			return boolObj;
 		}
 		else {
-			auto varObj{TVarObj::FromTypeCode(mElemCode)};
+			auto varObj{VarObj::FromTypeCode(mElemCode)};
 			std::visit(
 				[this](auto& obj) {
 					obj.decodeData(mStream, kSkipRequireIO);

@@ -6,7 +6,7 @@
 namespace binon {
 	struct PackElems {
 		PackElems(CodeByte elemCode, TOStream& stream);
-		void operator() (const TVarObj& obj, bool requireIO = true);
+		void operator() (const VarObj& obj, bool requireIO = true);
 		~PackElems();
 	 private:
 		CodeByte mElemCode;
@@ -16,7 +16,7 @@ namespace binon {
 	};
 	struct UnpackElems {
 		UnpackElems(CodeByte elemCode, TIStream& stream);
-		auto operator() (bool requireIO = true) -> TVarObj;
+		auto operator() (bool requireIO = true) -> VarObj;
 	 private:
 		CodeByte mElemCode;
 		TIStream& mStream;

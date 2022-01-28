@@ -5,45 +5,45 @@
 
 namespace binon {
 
-	struct TFloatObj:
-		TStdAcc<TFloatObj>,
-		TStdEq<TFloatObj>,
-		TStdHash<TFloatObj>,
-		TStdHasDefVal<TFloatObj>,
-		TStdPrintArgs<TFloatObj>,
-		TStdCodec<TFloatObj>
+	struct FloatObj:
+		StdAcc<FloatObj>,
+		StdEq<FloatObj>,
+		StdHash<FloatObj>,
+		StdHasDefVal<FloatObj>,
+		StdPrintArgs<FloatObj>,
+		StdCodec<FloatObj>
 	{
 		using TValue = types::TFloat64;
 		static constexpr auto kTypeCode = kFloatObjCode;
-		static constexpr auto kClsName = std::string_view{"TFloatObj"};
+		static constexpr auto kClsName = std::string_view{"FloatObj"};
 		TValue mValue;
-		TFloatObj(TValue v = 0.0);
+		FloatObj(TValue v = 0.0);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TFloatObj&;
+			-> const FloatObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TFloatObj&;
+			-> FloatObj&;
 	};
-	struct TFloat32Obj:
-		TStdAcc<TFloat32Obj>,
-		TStdEq<TFloat32Obj>,
-		TStdHash<TFloat32Obj>,
-		TStdHasDefVal<TFloat32Obj>,
-		TStdPrintArgs<TFloat32Obj>,
-		TStdCodec<TFloat32Obj>
+	struct Float32Obj:
+		StdAcc<Float32Obj>,
+		StdEq<Float32Obj>,
+		StdHash<Float32Obj>,
+		StdHasDefVal<Float32Obj>,
+		StdPrintArgs<Float32Obj>,
+		StdCodec<Float32Obj>
 	{
 		using TValue = types::TFloat32;
 		static constexpr auto kTypeCode = kFloat32Code;
-		static constexpr auto kClsName = std::string_view{"TFloat32Obj"};
+		static constexpr auto kClsName = std::string_view{"Float32Obj"};
 		TValue mValue;
-		TFloat32Obj(TValue v = 0.0f);
+		Float32Obj(TValue v = 0.0f);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TFloat32Obj&;
+			-> const Float32Obj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TFloat32Obj&;
+			-> Float32Obj&;
 	};
 
 	namespace types {
-		using Float32 = TFloat32Obj;
+		using Float32 = Float32Obj;
 	}
 }
 

@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace binon {
-	auto TVarObj::Decode(TIStream& stream, bool requireIO) -> TVarObj {
+	auto VarObj::Decode(TIStream& stream, bool requireIO) -> VarObj {
 		RequireIO rio{stream, requireIO};
 		CodeByte cb = CodeByte::Read(stream, kSkipRequireIO);
 		auto varObj{FromTypeCode(cb.typeCode())};
@@ -13,25 +13,25 @@ namespace binon {
 			);
 		return varObj;
 	}
-	auto TVarObj::FromTypeCode(CodeByte typeCode) -> TVarObj {
+	auto VarObj::FromTypeCode(CodeByte typeCode) -> VarObj {
 		switch(typeCode.asUInt()) {
 			case kNullObjCode.asUInt():
-				return TNullObj{};
+				return NullObj{};
 			case kBoolObjCode.asUInt(): [[fallthrough]];
 			case kTrueObjCode.asUInt():
-				return TBoolObj{};
+				return BoolObj{};
 			case kIntObjCode.asUInt():
-				return TIntObj{};
+				return IntObj{};
 			case kUIntCode.asUInt():
-				return TUIntObj{};
+				return UIntObj{};
 			case kFloatObjCode.asUInt():
-				return TFloatObj{};
+				return FloatObj{};
 			case kFloat32Code.asUInt():
-				return TFloat32Obj{};
+				return Float32Obj{};
 			case kBufferObjCode.asUInt():
-				return TBufferObj{};
+				return BufferObj{};
 			case kStrObjCode.asUInt():
-				return TStrObj{};
+				return StrObj{};
 			case kListObjCode.asUInt():
 				return TListObj{};
 			case kSListCode.asUInt():
@@ -46,8 +46,8 @@ namespace binon {
 				throw BadCodeByte{typeCode};
 		}
 	}
-	auto TVarObj::encode(TOStream& stream, bool requireIO) const
-		-> const TVarObj&
+	auto VarObj::encode(TOStream& stream, bool requireIO) const
+		-> const VarObj&
 	{
 		std::visit(
 			[&](const auto& obj) { obj.encode(stream, requireIO); },
@@ -55,8 +55,8 @@ namespace binon {
 			);
 		return *this;
 	}
-	auto TVarObj::encodeData(TOStream& stream, bool requireIO) const
-		-> const TVarObj&
+	auto VarObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const VarObj&
 	{
 		std::visit(
 			[&](const auto& obj) { obj.encodeData(stream, requireIO); },
@@ -64,8 +64,8 @@ namespace binon {
 			);
 		return *this;
 	}
-	auto TVarObj::decodeData(TIStream& stream, bool requireIO)
-		-> TVarObj&
+	auto VarObj::decodeData(TIStream& stream, bool requireIO)
+		-> VarObj&
 	{
 		std::visit(
 			[&](auto& obj) { obj.decodeData(stream, requireIO); },
@@ -73,7 +73,7 @@ namespace binon {
 			);
 		return *this;
 	}
-	void TVarObj::print(OptRef<std::ostream> optStream) const {
+	void VarObj::print(OptRef<std::ostream> optStream) const {
 		auto& stream = optStream.value_or(std::cout).get();
 		std::visit(
 			[&stream](const auto& obj) {
@@ -84,14 +84,14 @@ namespace binon {
 			*this
 			);
 	}
-	auto TVarObj::typeCode() const -> CodeByte {
+	auto VarObj::typeCode() const -> CodeByte {
 		return std::visit(
 			[](const auto& obj) -> CodeByte { return obj.kTypeCode; },
 			*this
 			);
 	}
 	auto operator<< (
-		std::ostream& stream, const TVarObj& obj
+		std::ostream& stream, const VarObj& obj
 		) -> std::ostream&
 	{
 		obj.print(stream);

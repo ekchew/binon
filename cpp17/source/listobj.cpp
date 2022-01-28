@@ -24,7 +24,7 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		UIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
 		for(auto& v: u) {
 			v.encode(stream, kSkipRequireIO);
 		}
@@ -35,13 +35,13 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj sizeObj;
+		UIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
 		u.resize(0);
 		u.reserve(n);
 		while(n-->0) {
-			u.push_back(TVarObj::Decode(stream, kSkipRequireIO));
+			u.push_back(VarObj::Decode(stream, kSkipRequireIO));
 		}
 		return *this;
 	}
@@ -64,7 +64,7 @@ namespace binon {
 	//---- TSList --------------------------------------------------------------
 
 	TSList::TSList(std::any value, CodeByte elemCode):
-		TStdCtnr<TSList,TValue>{std::move(value)},
+		StdCtnr<TSList,TValue>{std::move(value)},
 		mElemCode{elemCode}
 	{
 	}
@@ -78,13 +78,13 @@ namespace binon {
 		if(mElemCode == kNoObjCode) {
 			std::ostringstream oss;
 			oss << "TSList is missing an element code (";
-			TVarObj{*this}.print(oss);
+			VarObj{*this}.print(oss);
 			oss << ')';
 			throw TypeErr{oss.str()};
 		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
+		UIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
 		mElemCode.write(stream, kSkipRequireIO);
 		PackElems pack{mElemCode, stream};
 		for(auto& v: u) {
@@ -97,7 +97,7 @@ namespace binon {
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
-		TUIntObj sizeObj;
+		UIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.mValue.scalar();
 		mElemCode = CodeByte::Read(stream, kSkipRequireIO);

@@ -2,39 +2,39 @@
 
 namespace binon {
 
-	//---- TFloatObj -----------------------------------------------------------
+	//---- FloatObj -----------------------------------------------------------
 
-	TFloatObj::TFloatObj(TValue v):
+	FloatObj::FloatObj(TValue v):
 		mValue{v}
 	{
 	}
-	auto TFloatObj::encodeData(TOStream& stream, bool requireIO) const
-		-> const TFloatObj&
+	auto FloatObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const FloatObj&
 	{
 		WriteWord(mValue, stream, requireIO);
 		return *this;
 	}
-	auto TFloatObj::decodeData(TIStream& stream, bool requireIO)
-		-> TFloatObj&
+	auto FloatObj::decodeData(TIStream& stream, bool requireIO)
+		-> FloatObj&
 	{
 		mValue = ReadWord<TValue>(stream, requireIO);
 		return *this;
 	}
 
-	//---- TFloat32Obj ---------------------------------------------------------
+	//---- Float32Obj ---------------------------------------------------------
 
-	TFloat32Obj::TFloat32Obj(TValue v):
+	Float32Obj::Float32Obj(TValue v):
 		mValue{v}
 	{
 	}
-	auto TFloat32Obj::encodeData(TOStream& stream, bool requireIO) const
-		-> const TFloat32Obj&
+	auto Float32Obj::encodeData(TOStream& stream, bool requireIO) const
+		-> const Float32Obj&
 	{
 		WriteWord(mValue, stream, requireIO);
 		return *this;
 	}
-	auto TFloat32Obj::decodeData(TIStream& stream, bool requireIO)
-		-> TFloat32Obj&
+	auto Float32Obj::decodeData(TIStream& stream, bool requireIO)
+		-> Float32Obj&
 	{
 		mValue = ReadWord<TValue>(stream, requireIO);
 		return *this;

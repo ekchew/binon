@@ -171,7 +171,7 @@ namespace binon {
 		};
 	}
 	static auto SigByteGen(
-		const std::variant<TUIntVal::TScalar,TUIntVal::TVect>& var
+		const std::variant<UIntVal::TScalar,UIntVal::TVect>& var
 		)
 		-> std::function<std::optional<std::byte>()>
 	{
@@ -222,7 +222,7 @@ namespace binon {
 		};
 	}
 	static auto PaddedByteGen(
-		const std::variant<TUIntVal::TScalar,TUIntVal::TVect>& var,
+		const std::variant<UIntVal::TScalar,UIntVal::TVect>& var,
 		std::size_t wordSize
 		)
 		-> std::function<std::optional<std::byte>()>
@@ -279,16 +279,16 @@ namespace binon {
 		return i;
 	}
 
-	//---- TUIntVal -------------------------------------------------------------
+	//---- UIntVal -------------------------------------------------------------
 
-	auto TUIntVal::FromHex(const HyStr& hex, std::size_t wordSize) -> TUIntVal {
+	auto UIntVal::FromHex(const HyStr& hex, std::size_t wordSize) -> UIntVal {
 		auto u = PaddedBytes(hex, wordSize);
 		if(u.size() <= sizeof(TScalar)) {
-			return TUIntVal{u}.asScalar();
+			return UIntVal{u}.asScalar();
 		}
 		return u;
 	}
-	auto TUIntVal::asHex(
+	auto UIntVal::asHex(
 		bool zerox, std::size_t wordSize
 		) const -> std::string
 	{
@@ -305,7 +305,7 @@ namespace binon {
 		}
 		return oss.str();
 	}
-	auto TUIntVal::asScalar() const noexcept -> TScalar {
+	auto UIntVal::asScalar() const noexcept -> TScalar {
 		TScalar i = 0;
 		auto pbg = PaddedByteGen(*this, sizeof(TScalar));
 		auto optByte = pbg();
@@ -316,14 +316,14 @@ namespace binon {
 		return i;
 	}
 
-	//---- TIntObj -------------------------------------------------------------
+	//---- IntObj -------------------------------------------------------------
 
-	TIntObj::TIntObj(TValue v):
+	IntObj::IntObj(TValue v):
 		mValue{v}
 	{
 	}
-	auto TIntObj::encodeData(TOStream& stream, bool requireIO) const
-		-> const TIntObj&
+	auto IntObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const IntObj&
 	{
 		RequireIO rio{stream, requireIO};
 		if(mValue.canBeScalar()) {
@@ -364,8 +364,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	auto TIntObj::decodeData(TIStream& stream, bool requireIO)
-		-> TIntObj&
+	auto IntObj::decodeData(TIStream& stream, bool requireIO)
+		-> IntObj&
 	{
 		auto signExtend = [](std::int64_t v, std::int64_t msbMask) {
 			auto sigBits = msbMask | msbMask - 1;
@@ -384,10 +384,10 @@ namespace binon {
 			v = signExtend(ReadWord<std::int8_t>(&byte0), 0x40);
 		}
 		else if(byte0 == 0xf1_byte) {
-			TUIntObj sizeObj;
+			UIntObj sizeObj;
 			sizeObj.decodeData(stream, kSkipRequireIO);
 			auto n = sizeObj.value().scalar();
-			TUIntVal::TVect u;
+			UIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
 				u.push_back(ReadWord<std::byte>(stream));
@@ -426,14 +426,14 @@ namespace binon {
 		return *this;
 	}
 
-	//---- TUIntObj ------------------------------------------------------------
+	//---- UIntObj ------------------------------------------------------------
 
-	TUIntObj::TUIntObj(TValue v):
+	UIntObj::UIntObj(TValue v):
 		mValue{v}
 	{
 	}
-	auto TUIntObj::encodeData(TOStream& stream, bool requireIO) const
-		-> const TUIntObj&
+	auto UIntObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const UIntObj&
 	{
 		RequireIO rio{stream, requireIO};
 		if(mValue.canBeScalar()) {
@@ -473,8 +473,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	auto TUIntObj::decodeData(TIStream& stream, bool requireIO)
-		-> TUIntObj&
+	auto UIntObj::decodeData(TIStream& stream, bool requireIO)
+		-> UIntObj&
 	{
 		RequireIO rio{stream, requireIO};
 		TValue v;
@@ -483,10 +483,10 @@ namespace binon {
 			v = ReadWord<std::uint8_t>(&byte0);
 		}
 		else if(byte0 == 0xf1_byte) {
-			TUIntObj sizeObj;
+			UIntObj sizeObj;
 			sizeObj.decodeData(stream, kSkipRequireIO);
 			auto n = sizeObj.value().scalar();
-			TUIntVal::TVect u;
+			UIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
 				u.push_back(ReadWord<std::byte>(stream));
@@ -533,14 +533,14 @@ auto std::hash<binon::TIntVal>::operator() (
 	}
 	return std::hash<binon::TIntVal::TVect>{}(iv.vect());
 }
-auto std::hash<binon::TUIntVal>::operator() (
-	const binon::TUIntVal& iv
+auto std::hash<binon::UIntVal>::operator() (
+	const binon::UIntVal& iv
 	) const noexcept -> std::size_t
 {
-	using binon::TUIntVal;
+	using binon::UIntVal;
 	using std::string_view;
 	if(iv.canBeScalar()) {
-		return std::hash<binon::TUIntVal::TScalar>{}(iv.scalar());
+		return std::hash<binon::UIntVal::TScalar>{}(iv.scalar());
 	}
-	return std::hash<binon::TUIntVal::TVect>{}(iv.vect());
+	return std::hash<binon::UIntVal::TVect>{}(iv.vect());
 }

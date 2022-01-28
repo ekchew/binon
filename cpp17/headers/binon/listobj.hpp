@@ -13,17 +13,17 @@
 #include "mixins.hpp"
 
 namespace binon {
-	struct TVarObj;
+	struct VarObj;
 
 	struct TCtnrType {};
 	struct TListType: TCtnrType {};
 	struct TListObj:
 		TListType,
-		TStdCtnr<TListObj, std::vector<TVarObj>>
+		StdCtnr<TListObj, std::vector<VarObj>>
 	{
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"TListObj"};
-		using TStdCtnr<TListObj,TValue>::TStdCtnr;
+		using StdCtnr<TListObj,TValue>::StdCtnr;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const TListObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
@@ -32,7 +32,7 @@ namespace binon {
 	};
 	struct TSList:
 		TListType,
-		TStdCtnr<TSList, std::vector<TVarObj>>
+		StdCtnr<TSList, std::vector<VarObj>>
 	{
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"TSList"};

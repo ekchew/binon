@@ -17,39 +17,39 @@
 
 namespace binon {
 	using TVarBase = std::variant<
-		TNullObj,
-		TBoolObj,
-		TIntObj,
-		TUIntObj,
-		TFloatObj,
-		TFloat32Obj,
-		TBufferObj,
-		TStrObj,
+		NullObj,
+		BoolObj,
+		IntObj,
+		UIntObj,
+		FloatObj,
+		Float32Obj,
+		BufferObj,
+		StrObj,
 		TListObj,
 		TSList,
 		TDictObj,
 		TSKDict,
 		TSDict
 		>;
-	struct TVarObj: TVarBase
+	struct VarObj: TVarBase
 	{
-		static auto Decode(TIStream& stream, bool requireIO = true) -> TVarObj;
-		static auto FromTypeCode(CodeByte cb) -> TVarObj;
+		static auto Decode(TIStream& stream, bool requireIO = true) -> VarObj;
+		static auto FromTypeCode(CodeByte cb) -> VarObj;
 		using TVarBase::variant;
 		auto typeCode() const -> CodeByte;
 		auto encode(TOStream& stream, bool requireIO = true) const
-			-> const TVarObj&;
+			-> const VarObj&;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TVarObj&;
+			-> const VarObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TVarObj&;
+			-> VarObj&;
 		void print(OptRef<std::ostream> stream = std::nullopt) const;
 	};
-	auto operator<< (std::ostream& stream, const TVarObj& obj) -> std::ostream&;
+	auto operator<< (std::ostream& stream, const VarObj& obj) -> std::ostream&;
 }
 namespace std {
-	template<> struct hash<binon::TVarObj> {
-		auto operator() (const binon::TVarObj& obj) const -> std::size_t {
+	template<> struct hash<binon::VarObj> {
+		auto operator() (const binon::VarObj& obj) const -> std::size_t {
 			return std::visit(
 				[](const auto& obj) -> std::size_t { return obj.hash(); },
 				obj

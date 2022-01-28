@@ -2,10 +2,10 @@
 
 namespace binon {
 
-	//---- TBoolObj ------------------------------------------------------------
+	//---- BoolObj ------------------------------------------------------------
 
-	auto TBoolObj::encode(TOStream& stream, bool requireIO) const
-		-> const TBoolObj&
+	auto BoolObj::encode(TOStream& stream, bool requireIO) const
+		-> const BoolObj&
 	{
 		CodeByte cb;
 		if(mValue) {
@@ -18,8 +18,8 @@ namespace binon {
 		cb.write(stream, requireIO);
 		return *this;
 	}
-	auto TBoolObj::decode(CodeByte cb, TIStream& stream, bool requireIO)
-		-> TBoolObj&
+	auto BoolObj::decode(CodeByte cb, TIStream& stream, bool requireIO)
+		-> BoolObj&
 	{
 		switch(cb.asUInt()) {
 			case kBoolObjCode.asUInt():
@@ -33,20 +33,20 @@ namespace binon {
 		}
 		return *this;
 	}
-	auto TBoolObj::encodeData(TOStream& stream, bool requireIO) const
-		-> const TBoolObj&
+	auto BoolObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const BoolObj&
 	{
 		std::byte byt = mValue ? 0x01_byte : 0x00_byte;
 		WriteWord(byt, stream, requireIO);
 		return *this;
 	}
-	auto TBoolObj::decodeData(TIStream& stream, bool requireIO)
-		-> TBoolObj&
+	auto BoolObj::decodeData(TIStream& stream, bool requireIO)
+		-> BoolObj&
 	{
 		mValue = ReadWord<std::byte>(stream, requireIO) != 0x00_byte;
 		return *this;
 	}
-	void TBoolObj::printArgs(std::ostream& stream) const {
+	void BoolObj::printArgs(std::ostream& stream) const {
 		stream << (mValue ? "true" : "false");
 	}
 }
