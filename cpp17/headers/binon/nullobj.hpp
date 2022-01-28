@@ -2,13 +2,17 @@
 #define BINON_NULLOBJ_HPP
 
 #include "binonobj.hpp"
+#include <cstddef>
 
 namespace binon {
 
 	struct TNullObj: TStdCodec<TNullObj> {
-		using TValue = void;
+		using TValue = std::nullptr_t;
+		TValue mValue = nullptr;
 		static constexpr auto kTypeCode = kNullObjCode;
 		static constexpr auto kClsName = std::string_view{"TNullObj"};
+		auto value() const { return mValue; }
+		auto& value() { return mValue; }
 		constexpr auto operator== (TNullObj) const noexcept { return true; }
 		constexpr auto operator!= (TNullObj) const noexcept { return false; }
 		auto hash() const noexcept -> std::size_t {
