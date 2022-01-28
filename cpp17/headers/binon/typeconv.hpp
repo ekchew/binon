@@ -534,13 +534,13 @@ namespace binon {
 		auto MakeVarObj(const T& v)
 			-> std::enable_if_t<!kIsCStr<T>, TVarObj>
 		{
-			return typename TypeConv<std::decay_t<T>>::TObj(v);
+			return TValObj<T>(v);
 		}
 	template<typename T>
 		auto MakeVarObj(T&& v) noexcept
 			-> std::enable_if_t<kIsBinONVal<T>,TVarObj>
 		{
-			return typename TypeConv<std::decay_t<T>>::TObj(std::forward<T>(v));
+			return TValObj<T>(std::forward<T>(v));
 		}
 
 	//---- VarObjVal -----------------------------------------------------------
