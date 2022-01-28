@@ -103,7 +103,7 @@ namespace binon {
 				friend auto operator << (
 					std::basic_ostream<C,T>& os,
 					const BasicHyStr<C,T,A>& hs) -> std::basic_ostream<C,T>&;
-			
+
 			//---- Constructors ------------------------------------------------
 
 			/**
@@ -174,7 +174,7 @@ namespace binon {
 					bool: true if object contains a string (vs. a string_view)
 			**/
 			constexpr auto isStr() const noexcept -> bool;
-			
+
 			/**
 			asView method, operator TView:
 				An implicit conversion from BasicHyStr to TView is available
@@ -185,7 +185,7 @@ namespace binon {
 			**/
 			constexpr auto asView() const noexcept -> TView;
 			constexpr operator TView() const noexcept;
-			
+
 			/**
 			asStr method:
 				This method will convert the internal string view into a string
@@ -196,7 +196,7 @@ namespace binon {
 			**/
 			auto asStr() const -> const TStr&;
 			auto asStr() -> TStr&;
-			
+
 			/**
 			hash method:
 				This method is called by a specialization of std::hash for
