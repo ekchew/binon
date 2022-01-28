@@ -75,6 +75,13 @@ namespace binon {
 	auto TSList::encodeData(TOStream& stream, bool requireIO) const
 		-> const TSList&
 	{
+		if(mElemCode == kNoObjCode) {
+			std::ostringstream oss;
+			oss << "TSList is missing an element code (";
+			TVarObj{*this}.print(oss);
+			oss << ')';
+			throw TypeErr{oss.str()};
+		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);

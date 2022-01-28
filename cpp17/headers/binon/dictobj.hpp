@@ -30,8 +30,8 @@ namespace binon {
 		static constexpr auto kTypeCode = kSKDictCode;
 		static constexpr auto kClsName = std::string_view{"TSKDict"};
 		CodeByte mKeyCode;
-		TSKDict(std::any value, CodeByte keyCode = kIntObjCode);
-		TSKDict(CodeByte keyCode = kIntObjCode);
+		TSKDict(std::any value, CodeByte keyCode = kNoObjCode);
+		TSKDict(CodeByte keyCode = kNoObjCode);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const TSKDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
@@ -47,9 +47,9 @@ namespace binon {
 		CodeByte mKeyCode;
 		CodeByte mValCode;
 		TSDict(std::any value,
-			CodeByte keyCode = kIntObjCode, CodeByte valCode = kIntObjCode
+			CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode
 			);
-		TSDict(CodeByte keyCode = kIntObjCode, CodeByte valCode = kIntObjCode);
+		TSDict(CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const TSDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

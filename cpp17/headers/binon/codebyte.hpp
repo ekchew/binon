@@ -125,6 +125,11 @@ namespace binon {
 		kSKDictCode{0x92_byte},
 		kSDictCode{0x93_byte};
 
+	//	Place-holder code for when the default constructor is invoked in
+	//	simple list or dict types.
+	constexpr CodeByte
+		kNoObjCode{0xff_byte};
+
 	class BadCodeByte: public std::range_error {
 	 public:
 		BadCodeByte(CodeByte cb): std::range_error{WhatStr(cb)} {}

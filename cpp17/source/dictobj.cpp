@@ -77,6 +77,13 @@ namespace binon {
 	auto TSKDict::encodeData(TOStream& stream, bool requireIO) const
 		-> const TSKDict&
 	{
+		if(mKeyCode == kNoObjCode) {
+			std::ostringstream oss;
+			oss << "TSKDict is missing a key code (";
+			TVarObj{*this}.print(oss);
+			oss << ')';
+			throw TypeErr{oss.str()};
+		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
@@ -151,6 +158,23 @@ namespace binon {
 	auto TSDict::encodeData(TOStream& stream, bool requireIO) const
 		-> const TSDict&
 	{
+		if(mKeyCode == kNoObjCode || mValCode == kNoObjCode) {
+			std::ostringstream oss;
+			oss << "TSDict is missing a";
+			if(mKeyCode == kNoObjCode) {
+				oss << " key";
+				if(mValCode == kNoObjCode) {
+					oss << " and value";
+				}
+			}
+			else {
+				oss << " value";
+			}
+			oss << " code (";
+			TVarObj{*this}.print(oss);
+			oss << ')';
+			throw TypeErr{oss.str()};
+		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
 		TUIntObj{u.size()}.encodeData(stream, kSkipRequireIO);
