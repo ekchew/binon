@@ -150,6 +150,14 @@ namespace binon {
 		};
 
 	/*
+	TValObj<T> gives you the BinON object type corresponding to your type T.
+	For example, TValObj<int> is TIntObj. It is equivalent to TypeConv<T>::TObj
+	except it decays T first to remove any const/reference qualifiers and such.
+	*/
+	template<typename T>
+		using TValObj = typename TypeConv<std::decay_t<T>>::TObj;
+
+	/*
 	TVarObjVal<T> is the core type returned by the VarObjVal<T>() function.
 	(It is equivalent to the TVal type inside TypeConv except that the type
 	you pass to TVarObjVal is decayed first to remove const/reference
