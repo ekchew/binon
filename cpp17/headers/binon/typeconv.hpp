@@ -228,9 +228,9 @@ namespace binon {
 		template<typename T, typename List>
 			auto GetVal(List list, std::size_t index) -> TVarObjVal<T>;
 		template<typename List, typename T>
-			void SetVal(List& list, std::size_t index, T value);
+			auto SetVal(List& list, std::size_t index, T value) -> List&;
 		template<typename T, typename List>
-			void AppendVal(List& list, T value);
+			auto AppendVal(List& list, T value) -> List&;
 
 	They basically let you deal with more natural types. Rather than having
 	to go
@@ -262,7 +262,7 @@ namespace binon {
 	template<typename Val, typename Dict, typename Key>
 		auto GetVal(Dict dict, Key key) -> TVarObjVal<Val>;
 	template<typename Dict, typename Key, typename Val>
-		void SetVal(Dict& dict, Key key, Val val);
+		auto SetVal(Dict& dict, Key key, Val val) -> Dict&;
 	template<typename Dict, typename Key>
 		auto DelKey(Dict& dict, Key key) -> bool;
 
@@ -605,15 +605,17 @@ namespace binon {
 		typename List,
 		typename std::enable_if_t<kIsListType<List>, int> = 0
 		>
-		void SetVal(List& list, std::size_t index, const char* s) {
+		auto& SetVal(List& list, std::size_t index, const char* s) {
 			list.value().at(index) = MakeVarObj(s);
+			return list;
 		}
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<kIsListType<List> && !kIsCStr<T>, int> = 0
 		>
-		void SetVal(List& list, std::size_t index, const T& v) {
+		auto& SetVal(List& list, std::size_t index, const T& v) {
 			list.value().at(index) = MakeVarObj(v);
+			return list;
 		}
 	template<
 		typename List, typename T,
@@ -621,23 +623,26 @@ namespace binon {
 			kIsListType<List> && kIsBinONVal<T> && !kIsCStr<T>, int
 			> = 0
 		>
-		void SetVal(List& list, std::size_t index, T&& v) {
+		auto& SetVal(List& list, std::size_t index, T&& v) {
 			list.value().at(index) = MakeVarObj(std::forward<T>(v));
+			return list;
 		}
 
 	template<
 		typename List,
 		typename std::enable_if_t<kIsListType<List>, int> = 0
 		>
-		void AppendVal(List& list, const char* s) {
+		auto& AppendVal(List& list, const char* s) {
 			list.value().push_back(MakeVarObj(s));
+			return list;
 		}
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<kIsListType<List> && !kIsCStr<T>, int> = 0
 		>
-		void AppendVal(List& list, const T& v) {
+		auto& AppendVal(List& list, const T& v) {
 			list.value().push_back(MakeVarObj(v));
+			return list;
 		}
 	template<
 		typename List, typename T,
@@ -645,8 +650,9 @@ namespace binon {
 			kIsListType<List> && kIsBinONVal<T> && !kIsCStr<T>, int
 			> = 0
 		>
-		void AppendVal(List& list, T&& v) {
+		auto& AppendVal(List& list, T&& v) {
 			list.value().push_back(MakeVarObj(std::forward<T>(v)));
+			return list;
 		}
 
 	//---- Dict object helper functions ----------------------------------------
@@ -810,22 +816,25 @@ namespace binon {
 		typename Dict,
 		typename std::enable_if_t<kIsDictType<Dict>, int> = 0
 		>
-		void SetVal(Dict& dict, const char* key, const char* val) {
+		auto& SetVal(Dict& dict, const char* key, const char* val) {
 			dict.value().insert_or_assign(MakeVarObj(key), MakeVarObj(val));
+			return dict;
 		}
 	template<
 		typename Dict, typename Val,
 		typename std::enable_if_t<kIsDictType<Dict> && !kIsCStr<Val>, int> = 0
 		>
-		void SetVal(Dict& dict, const char* key, const Val& val) {
+		auto& SetVal(Dict& dict, const char* key, const Val& val) {
 			dict.value().insert_or_assign(MakeVarObj(key), MakeVarObj(val));
+			return dict;
 		}
 	template<
 		typename Dict, typename Key,
 		typename std::enable_if_t<kIsDictType<Dict> && !kIsCStr<Key>, int> = 0
 		>
-		void SetVal(Dict& dict, const Key& key, const char* val) {
+		auto& SetVal(Dict& dict, const Key& key, const char* val) {
 			dict.value().insert_or_assign(MakeVarObj(key), MakeVarObj(val));
+			return dict;
 		}
 	template<
 		typename Dict, typename Key, typename Val,
@@ -833,8 +842,9 @@ namespace binon {
 			kIsDictType<Dict> && !kIsCStr<Key> && !kIsCStr<Val>, int
 			> = 0
 		>
-		void SetVal(Dict& dict, const Key& key, const Val& val) {
+		auto& SetVal(Dict& dict, const Key& key, const Val& val) {
 			dict.value().insert_or_assign(MakeVarObj(key), MakeVarObj(val));
+			return dict;
 		}
 	template<
 		typename Dict, typename Key,
@@ -842,10 +852,11 @@ namespace binon {
 			kIsDictType<Dict> && kIsBinONVal<Key> && !kIsCStr<Key>, int
 			> = 0
 		>
-		void SetVal(Dict& dict, Key&& key, const char* val) {
+		auto& SetVal(Dict& dict, Key&& key, const char* val) {
 			dict.value().insert_or_assign(
 				MakeVarObj(std::forward<Key>(key)), MakeVarObj(val)
 				);
+			return dict;
 		}
 	template<
 		typename Dict, typename Key, typename Val,
@@ -855,10 +866,11 @@ namespace binon {
 			int
 			> = 0
 		>
-		void SetVal(Dict& dict, Key&& key, const Val& val) {
+		auto& SetVal(Dict& dict, Key&& key, const Val& val) {
 			dict.value().insert_or_assign(
 				MakeVarObj(std::forward<Key>(key)), MakeVarObj(val)
 				);
+			return dict;
 		}
 	template<
 		typename Dict, typename Val,
@@ -866,10 +878,11 @@ namespace binon {
 			kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Val>, int
 			> = 0
 		>
-		void SetVal(Dict& dict, const char* key, Val&& val) {
+		auto& SetVal(Dict& dict, const char* key, Val&& val) {
 			dict.value().insert_or_assign(
 				MakeVarObj(key), MakeVarObj(std::forward<Val>(val))
 				);
+			return dict;
 		}
 	template<
 		typename Dict, typename Key, typename Val,
@@ -879,11 +892,12 @@ namespace binon {
 			int
 			> = 0
 		>
-		void SetVal(Dict& dict, const Key& key, Val&& val) {
+		auto& SetVal(Dict& dict, const Key& key, Val&& val) {
 			dict.value().insert_or_assign(
 				MakeVarObj(key),
 				MakeVarObj(std::forward<Val>(val))
 				);
+			return dict;
 		}
 	template<
 		typename Dict, typename Key, typename Val,
@@ -893,11 +907,12 @@ namespace binon {
 			int
 			> = 0
 		>
-		void SetVal(Dict& dict, Key&& key, Val&& val) {
+		auto& SetVal(Dict& dict, Key&& key, Val&& val) {
 			dict.value().insert_or_assign(
 				MakeVarObj(std::forward<Key>(key)),
 				MakeVarObj(std::forward<Val>(val))
 				);
+			return dict;
 		}
 
 	template<typename Dict>
