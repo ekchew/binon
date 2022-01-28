@@ -26,9 +26,6 @@ namespace binon {
 	struct NullDeref: std::out_of_range {
 		using std::out_of_range::out_of_range;
 	};
-	struct TypeErr: std::logic_error {
-		using std::logic_error::logic_error;
-	};
 
 	constexpr bool kDeepCopy = true;
 
@@ -55,7 +52,7 @@ namespace binon {
 		//	Returns false is object has the default value for its type or
 		//	true otherwise.
 		explicit virtual operator bool() const noexcept { return false; }
-		
+
 		virtual auto typeCode() const noexcept -> CodeByte = 0;
 
 		//	These methods are needed to support BinON objects as dictionary

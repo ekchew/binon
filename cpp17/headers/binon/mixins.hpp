@@ -5,9 +5,14 @@
 #include "hashutil.hpp"
 #include "ioutil.hpp"
 #include <any>
+#include <sstream>
 #include <stdexcept>
 
 namespace binon {
+	struct TypeErr: std::logic_error {
+		using std::logic_error::logic_error;
+	};
+
 	template<typename Child>
 		struct TStdAcc {
 			auto& value() & {
@@ -88,9 +93,10 @@ namespace binon {
 				 // throw NoComparing
 
 			auto hash() const -> std::size_t; // throws NoHashing
-			
+
 		private:
 			std::any mValue;
+			auto castError() const -> TypeErr;
 		};
 
 	//==== Template Implementation =============================================
@@ -154,14 +160,25 @@ namespace binon {
 			if(!mValue.has_value()) {
 				mValue = TValue();
 			}
-			return std::any_cast<TValue&>(mValue);
+			try {
+				return std::any_cast<TValue&>(mValue);
+			}
+			catch(std::bad_any_cast&) {
+				throw castError();
+			}
+
 		}
 	template<typename Child, typename Ctnr>
 		auto TStdCtnr<Child,Ctnr>::value() && -> TValue {
 			if(!mValue.has_value()) {
 				mValue = TValue();
 			}
-			return std::any_cast<TValue&&>(std::move(mValue));
+			try {
+				return std::any_cast<TValue&&>(std::move(mValue));
+			}
+			catch(std::bad_any_cast&) {
+				throw castError();
+			}
 		}
 	template<typename Child, typename Ctnr>
 		auto TStdCtnr<Child,Ctnr>::value() const&
@@ -186,6 +203,14 @@ namespace binon {
 	template<typename Child, typename Ctnr>
 		auto TStdCtnr<Child,Ctnr>::hasDefVal() const -> bool {
 			return value().size() == 0;
+		}
+	template<typename Child, typename Ctnr>
+		auto TStdCtnr<Child,Ctnr>::castError() const -> TypeErr {
+			std::ostringstream oss;
+			oss << Child::kClsName
+				<< " constructed with something other than the expected "
+				<< Child::kClsName << "::TValue";
+			return TypeErr{oss.str()};
 		}
 }
 
