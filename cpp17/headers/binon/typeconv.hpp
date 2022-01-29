@@ -46,31 +46,31 @@ namespace binon {
 		____________         _________    _____
 
 		bool                 BoolObj     native value type
-		BoolObj             BoolObj
+		BoolObj              BoolObj
 		int8_t               IntObj
 		int16_t              IntObj
 		int32_t              IntObj
 		int64_t              IntObj
 		TIntVal              IntObj      native value type
-		IntObj              IntObj
+		IntObj               IntObj
 		uint8_t              UIntObj
 		uint16_t             UIntObj
 		uint32_t             UIntObj
 		uint64_t             UIntObj
-		UIntVal             IntObj      native value type
-		UIntObj             UIntObj
+		UIntVal              IntObj      native value type
+		UIntObj              UIntObj
 		TFloat32             Float32Obj  native value type, see floattypes.hpp
-		Float32Obj          Float32Obj
+		Float32Obj           Float32Obj
 		TFloat64             FloatObj    native value type, see floattypes.hpp
-		FloatObj            FloatObj
-		BufferVal           BufferObj   native value type
-		BufferObj           BufferObj
+		FloatObj             FloatObj
+		BufferVal            BufferObj   native value type
+		BufferObj            BufferObj
 		std::string          StrObj
 		std::string_view     StrObj
 		HyStr                StrObj      native value type, see hystr.hpp
 		const char*          StrObj      VarObjVal() returns std::string_view
 		TStringObj           StrObj
-		std::vector<VarObj> TListObj     native value type
+		std::vector<VarObj>  TListObj     native value type
 		TListObj             TListObj
 		TSList               TSList
 		std::unordered_map<VarObj,VarObj>

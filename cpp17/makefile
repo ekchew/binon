@@ -49,7 +49,6 @@ DEPS := \
 	${HDR}bufferobj.hpp \
 	${HDR}byteutil.hpp \
 	${HDR}codebyte.hpp \
-	${HDR}crtp.hpp \
 	${HDR}dictobj.hpp \
 	${HDR}errors.hpp \
 	${HDR}floatobj.hpp \

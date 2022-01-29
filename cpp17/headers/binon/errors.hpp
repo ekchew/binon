@@ -4,6 +4,12 @@
 #include <stdexcept>
 
 namespace binon {
+	struct NoComparing: std::invalid_argument {
+		using std::invalid_argument::invalid_argument;
+	};
+	struct NoHashing: std::invalid_argument {
+		using std::invalid_argument::invalid_argument;
+	};
 	struct NullDeref: std::out_of_range {
 		using std::out_of_range::out_of_range;
 	};

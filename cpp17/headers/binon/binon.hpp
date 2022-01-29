@@ -8,7 +8,6 @@
 #include "boolobj.hpp"
 #include "bufferobj.hpp"
 #include "byteutil.hpp"
-#include "crtp.hpp"
 #include "codebyte.hpp"
 #include "dictobj.hpp"
 #include "errors.hpp"

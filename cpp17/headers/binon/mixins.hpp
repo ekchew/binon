@@ -69,12 +69,6 @@ namespace binon {
 				-> Child&;
 		};
 
-	struct NoComparing: std::invalid_argument {
-		using std::invalid_argument::invalid_argument;
-	};
-	struct NoHashing: std::invalid_argument {
-		using std::invalid_argument::invalid_argument;
-	};
 	template<typename Child, typename Ctnr>
 		struct StdCtnr: StdCodec<Child> {
 			using TValue = Ctnr;
