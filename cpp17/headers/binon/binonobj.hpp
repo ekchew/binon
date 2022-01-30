@@ -1,5 +1,5 @@
-#ifndef BINON_VAROBJ_HPP
-#define BINON_VAROBJ_HPP
+#ifndef BINON_BINONOBJ_HPP
+#define BINON_BINONOBJ_HPP
 
 #include "nullobj.hpp"
 #include "boolobj.hpp"
@@ -16,7 +16,7 @@
 #include <variant>
 
 namespace binon {
-	using TVarBase = std::variant<
+	using BinONVariant = std::variant<
 		NullObj,
 		BoolObj,
 		IntObj,
@@ -31,25 +31,26 @@ namespace binon {
 		TSKDict,
 		TSDict
 		>;
-	struct VarObj: TVarBase
+	struct BinONObj: BinONVariant
 	{
-		static auto Decode(TIStream& stream, bool requireIO = true) -> VarObj;
-		static auto FromTypeCode(CodeByte cb) -> VarObj;
-		using TVarBase::variant;
+		static auto Decode(TIStream& stream, bool requireIO = true) -> BinONObj;
+		static auto FromTypeCode(CodeByte cb) -> BinONObj;
+		using BinONVariant::variant;
 		auto typeCode() const -> CodeByte;
 		auto encode(TOStream& stream, bool requireIO = true) const
-			-> const VarObj&;
+			-> const BinONObj&;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const VarObj&;
+			-> const BinONObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> VarObj&;
+			-> BinONObj&;
 		void print(OptRef<std::ostream> stream = std::nullopt) const;
 	};
-	auto operator<< (std::ostream& stream, const VarObj& obj) -> std::ostream&;
+	auto operator<< (std::ostream& stream, const BinONObj& obj)
+		-> std::ostream&;
 }
 namespace std {
-	template<> struct hash<binon::VarObj> {
-		auto operator() (const binon::VarObj& obj) const -> std::size_t {
+	template<> struct hash<binon::BinONObj> {
+		auto operator() (const binon::BinONObj& obj) const -> std::size_t {
 			return std::visit(
 				[](const auto& obj) -> std::size_t { return obj.hash(); },
 				obj

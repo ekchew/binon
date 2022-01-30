@@ -1,9 +1,9 @@
-#include "binon/varobj.hpp"
+#include "binon/binonobj.hpp"
 
 #include <iostream>
 
 namespace binon {
-	auto VarObj::Decode(TIStream& stream, bool requireIO) -> VarObj {
+	auto BinONObj::Decode(TIStream& stream, bool requireIO) -> BinONObj {
 		RequireIO rio{stream, requireIO};
 		CodeByte cb = CodeByte::Read(stream, kSkipRequireIO);
 		auto varObj{FromTypeCode(cb.typeCode())};
@@ -13,7 +13,7 @@ namespace binon {
 			);
 		return varObj;
 	}
-	auto VarObj::FromTypeCode(CodeByte typeCode) -> VarObj {
+	auto BinONObj::FromTypeCode(CodeByte typeCode) -> BinONObj {
 		switch(typeCode.asUInt()) {
 			case kNullObjCode.asUInt():
 				return NullObj{};
@@ -46,8 +46,8 @@ namespace binon {
 				throw BadCodeByte{typeCode};
 		}
 	}
-	auto VarObj::encode(TOStream& stream, bool requireIO) const
-		-> const VarObj&
+	auto BinONObj::encode(TOStream& stream, bool requireIO) const
+		-> const BinONObj&
 	{
 		std::visit(
 			[&](const auto& obj) { obj.encode(stream, requireIO); },
@@ -55,8 +55,8 @@ namespace binon {
 			);
 		return *this;
 	}
-	auto VarObj::encodeData(TOStream& stream, bool requireIO) const
-		-> const VarObj&
+	auto BinONObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const BinONObj&
 	{
 		std::visit(
 			[&](const auto& obj) { obj.encodeData(stream, requireIO); },
@@ -64,8 +64,8 @@ namespace binon {
 			);
 		return *this;
 	}
-	auto VarObj::decodeData(TIStream& stream, bool requireIO)
-		-> VarObj&
+	auto BinONObj::decodeData(TIStream& stream, bool requireIO)
+		-> BinONObj&
 	{
 		std::visit(
 			[&](auto& obj) { obj.decodeData(stream, requireIO); },
@@ -73,7 +73,7 @@ namespace binon {
 			);
 		return *this;
 	}
-	void VarObj::print(OptRef<std::ostream> optStream) const {
+	void BinONObj::print(OptRef<std::ostream> optStream) const {
 		auto& stream = optStream.value_or(std::cout).get();
 		std::visit(
 			[&stream](const auto& obj) {
@@ -84,14 +84,14 @@ namespace binon {
 			*this
 			);
 	}
-	auto VarObj::typeCode() const -> CodeByte {
+	auto BinONObj::typeCode() const -> CodeByte {
 		return std::visit(
 			[](const auto& obj) -> CodeByte { return obj.kTypeCode; },
 			*this
 			);
 	}
 	auto operator<< (
-		std::ostream& stream, const VarObj& obj
+		std::ostream& stream, const BinONObj& obj
 		) -> std::ostream&
 	{
 		obj.print(stream);

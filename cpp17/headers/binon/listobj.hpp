@@ -13,13 +13,13 @@
 #include "mixins.hpp"
 
 namespace binon {
-	struct VarObj;
+	struct BinONObj;
 
 	struct TCtnrType {};
 	struct TListType: TCtnrType {};
 	struct TListObj:
 		TListType,
-		StdCtnr<TListObj, std::vector<VarObj>>
+		StdCtnr<TListObj, std::vector<BinONObj>>
 	{
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"TListObj"};
@@ -32,7 +32,7 @@ namespace binon {
 	};
 	struct TSList:
 		TListType,
-		StdCtnr<TSList, std::vector<VarObj>>
+		StdCtnr<TSList, std::vector<BinONObj>>
 	{
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"TSList"};

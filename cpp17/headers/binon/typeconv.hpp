@@ -1,7 +1,7 @@
 #ifndef BINON_TYPECONV_HPP
 #define BINON_TYPECONV_HPP
 
-#include "varobj.hpp"
+#include "binonobj.hpp"
 
 #include <sstream>
 
@@ -32,7 +32,7 @@ namespace binon {
 	*/
 	template<typename T>
 		constexpr bool kIsBinONObj
-			= kIsVariantMember<std::decay_t<T>,TVarBase>;
+			= kIsVariantMember<std::decay_t<T>,BinONVariant>;
 
 	/*
 	The TypeConv struct maps common types onto BinON object types for easy
@@ -70,10 +70,10 @@ namespace binon {
 		HyStr                StrObj      native value type, see hystr.hpp
 		const char*          StrObj      VarObjVal() returns std::string_view
 		TStringObj           StrObj
-		std::vector<VarObj>  TListObj     native value type
+		std::vector<BinONObj>  TListObj     native value type
 		TListObj             TListObj
 		TSList               TSList
-		std::unordered_map<VarObj,VarObj>
+		std::unordered_map<BinONObj,BinONObj>
 		                     TDictObj     native value type
 		TDictObj             TDictObj
 		TSKDict              TSKDict
@@ -84,7 +84,7 @@ namespace binon {
 	only way to specify them in the functions found here is to supply the object
 	type directly. That's because they all share the same value type as the base
 	type. For example, TListObj::TValue and TSList::TValue are the same type:
-	std::vector<VarObj>. (That means technically, you could mix object types
+	std::vector<BinONObj>. (That means technically, you could mix object types
 	even in a TSList, but when you go to encode it, you will get a
 	binon::TypeErr exception. So don't!)
 
@@ -94,7 +94,7 @@ namespace binon {
 	types get special treatment in that they can be moved (not just copied)
 	into and out of objects since there is no need to convert the data type.
 	Also, getter functions (e.g. VarObjVal()) can return the value by reference
-	rather than value. Provided the VarObj in question is not a constant, you
+	rather than value. Provided the BinONObj in question is not a constant, you
 	can even modify the value in-place.
 	*/
 	template<typename T, typename Enable = void>
@@ -111,7 +111,7 @@ namespace binon {
 			using TObj = ...
 			using TVal = ...
 			static auto ValTypeName() -> HyStr;
-			static auto GetVal(VarObj) -> TVal;
+			static auto GetVal(BinONObj) -> TVal;
 
 			TObj is the data type of the BinON object that would wrap the type
 			you supply. So for example, TypeConv<bool>::TObj would be BoolObj.
@@ -134,7 +134,7 @@ namespace binon {
 			that you can also get the name of a BinON class from its kClsName
 			field (e.g. BoolObj::kClsName is HyStr{"BoolObj"}).
 
-			The GetVal() class method takes a VarObj and attempts to extract
+			The GetVal() class method takes a BinONObj and attempts to extract
 			a value of type TVal from it. Typically, you would call VarObjVal()
 			instead, which would call TypeConv::GetVal() internally. Though it's
 			shown in its most general form above, it is often overloaded in
@@ -184,13 +184,13 @@ namespace binon {
 				>;
 
 	/*
-	MakeVarObj() returns a VarObj based on the type you give it, provided said
+	MakeVarObj() returns a BinONObj based on the type you give it, provided said
 	type is known to TypeConv. (Otherwise, it will fail to compile.)
 
 	Conceptually, it looks like this:
 
 		template<typename T>
-			auto MakeVarObj(T value) -> VarObj;
+			auto MakeVarObj(T value) -> BinONObj;
 
 	In practice, it supports copy and--where available for the type
 	(see kIsBinONVal)--move semantics on the T argument.
@@ -198,12 +198,12 @@ namespace binon {
 
 	/*
 	VarObjVal() is essentially the opposite of MakeVarObj(). It extracts the
-	value inside a VarObj and returns it to you as the type you specify.
+	value inside a BinONObj and returns it to you as the type you specify.
 
 	So it looks something like this:
 
 		template<typename T>
-			auto VarObjVal(VarObj varObj) -> TVarObjVal<T>;
+			auto VarObjVal(BinONObj varObj) -> TVarObjVal<T>;
 
 	As with MakeVarObj(), you can use move semantics provided your type T is
 	a proper BinON value type (see kIsBinONVal). For example, you could write
@@ -298,14 +298,14 @@ namespace binon {
 			static auto ValTypeName() -> HyStr {
 					return TypeConv<T>::ValTypeName();
 				}
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return TypeConv<T>::GetVal(obj);
 				}
-			static auto GetVal(const VarObj& obj) -> TVal {
+			static auto GetVal(const BinONObj& obj) -> TVal {
 					return TypeConv<T>::GetVal(obj);
 				}
-			static auto GetVal(VarObj&& obj) -> TVal {
-					return TypeConv<T>::GetVal(std::forward<VarObj>(obj));
+			static auto GetVal(BinONObj&& obj) -> TVal {
+					return TypeConv<T>::GetVal(std::forward<BinONObj>(obj));
 				}
 		};
 	template<typename T>
@@ -313,14 +313,14 @@ namespace binon {
 			using TObj = T;
 			using TVal = typename TObj::TValue;
 			static auto ValTypeName() -> HyStr { return TObj::kClsName; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(VarObj&& obj) -> TVal {
-					return std::get<TObj>(std::forward<VarObj>(obj)).value();
+			static auto GetVal(BinONObj&& obj) -> TVal {
+					return std::get<TObj>(std::forward<BinONObj>(obj)).value();
 				}
 		};
 	template<typename T>
@@ -343,7 +343,7 @@ namespace binon {
 						}
 					}
 				}
-			static auto GetVal(const VarObj& obj) -> TVal {
+			static auto GetVal(const BinONObj& obj) -> TVal {
 					return static_cast<TVal>(
 						std::get<TObj>(obj).value().scalar()
 						);
@@ -369,7 +369,7 @@ namespace binon {
 						}
 					}
 				}
-			static auto GetVal(const VarObj& obj) -> TVal {
+			static auto GetVal(const BinONObj& obj) -> TVal {
 					return static_cast<TVal>(
 						std::get<TObj>(obj).value().scalar()
 						);
@@ -380,10 +380,10 @@ namespace binon {
 			using TObj = IntObj;
 			using TVal = TIntVal;
 			static auto ValTypeName() -> HyStr { return "TIntVal"; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -392,10 +392,10 @@ namespace binon {
 			using TObj = UIntObj;
 			using TVal = UIntVal;
 			static auto ValTypeName() -> HyStr { return "UIntVal"; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -404,10 +404,10 @@ namespace binon {
 			using TObj = BoolObj;
 			using TVal = bool;
 			static auto ValTypeName() -> HyStr { return "bool"; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -416,10 +416,10 @@ namespace binon {
 			using TObj = FloatObj;
 			using TVal = types::TFloat64;
 			static auto ValTypeName() -> HyStr { return "TFloat64"; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -428,10 +428,10 @@ namespace binon {
 			using TObj = Float32Obj;
 			using TVal = types::TFloat32;
 			static auto ValTypeName() -> HyStr { return "TFloat32"; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
 		};
@@ -440,14 +440,14 @@ namespace binon {
 			using TObj = StrObj;
 			using TVal = HyStr;
 			static auto ValTypeName() -> HyStr { return "HyStr"; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(VarObj&& obj) -> TVal {
-					return std::get<TObj>(std::forward<VarObj>(obj)).value();
+			static auto GetVal(BinONObj&& obj) -> TVal {
+					return std::get<TObj>(std::forward<BinONObj>(obj)).value();
 				}
 		};
 	template<>
@@ -455,7 +455,7 @@ namespace binon {
 			using TObj = StrObj;
 			using TVal = std::string;
 			static auto ValTypeName() -> HyStr { return "string"; }
-			static auto GetVal(const VarObj& obj) -> TVal {
+			static auto GetVal(const BinONObj& obj) -> TVal {
 					return std::get<TObj>(obj).value().asStr();
 				}
 		};
@@ -464,7 +464,7 @@ namespace binon {
 			using TObj = StrObj;
 			using TVal = std::string_view;
 			static auto ValTypeName() -> HyStr { return "string_view"; }
-			static auto GetVal(const VarObj& obj) -> TVal {
+			static auto GetVal(const BinONObj& obj) -> TVal {
 					return std::get<TObj>(obj).value().asView();
 				}
 		};
@@ -473,7 +473,7 @@ namespace binon {
 			using TObj = StrObj;
 			using TVal = std::string_view;
 			static auto ValTypeName() -> HyStr { return "const char*"; }
-			static auto GetVal(const VarObj& obj) -> TVal {
+			static auto GetVal(const BinONObj& obj) -> TVal {
 					return std::get<TObj>(obj).value().asView();
 				}
 		};
@@ -482,29 +482,29 @@ namespace binon {
 			using TObj = BufferObj;
 			using TVal = BufferVal;
 			static auto ValTypeName() -> HyStr { return "BufferVal"; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(VarObj&& obj) -> TVal {
-					return std::get<TObj>(std::forward<VarObj>(obj)).value();
+			static auto GetVal(BinONObj&& obj) -> TVal {
+					return std::get<TObj>(std::forward<BinONObj>(obj)).value();
 				}
 		};
 	template<>
 		struct TypeConv<TListObj::TValue> {
 			using TObj = TListObj;
 			using TVal = TListObj::TValue;
-			static auto ValTypeName() -> HyStr { return "vector<VarObj>"; }
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto ValTypeName() -> HyStr { return "vector<BinONObj>"; }
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(VarObj&& obj) -> TVal {
-					return std::get<TObj>(std::forward<VarObj>(obj)).value();
+			static auto GetVal(BinONObj&& obj) -> TVal {
+					return std::get<TObj>(std::forward<BinONObj>(obj)).value();
 				}
 		};
 	template<>
@@ -512,33 +512,33 @@ namespace binon {
 			using TObj = TDictObj;
 			using TVal = TDictObj::TValue;
 			static auto ValTypeName() -> HyStr {
-					return "unordered_map<VarObj,VarObj>";
+					return "unordered_map<BinONObj,BinONObj>";
 				}
-			static auto GetVal(VarObj& obj) -> TVal& {
+			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(const VarObj& obj) -> const TVal& {
+			static auto GetVal(const BinONObj& obj) -> const TVal& {
 					return std::get<TObj>(obj).value();
 				}
-			static auto GetVal(VarObj&& obj) -> TVal {
-					return std::get<TObj>(std::forward<VarObj>(obj)).value();
+			static auto GetVal(BinONObj&& obj) -> TVal {
+					return std::get<TObj>(std::forward<BinONObj>(obj)).value();
 				}
 		};
 
 	//---- MakeVarObj ----------------------------------------------------------
 
-	inline auto MakeVarObj(const char* s) -> VarObj {
+	inline auto MakeVarObj(const char* s) -> BinONObj {
 		return StrObj(s);
 	}
 	template<typename T>
 		auto MakeVarObj(const T& v)
-			-> std::enable_if_t<!kIsCStr<T>, VarObj>
+			-> std::enable_if_t<!kIsCStr<T>, BinONObj>
 		{
 			return TValObj<T>(v);
 		}
 	template<typename T>
 		auto MakeVarObj(T&& v) noexcept
-			-> std::enable_if_t<kIsBinONVal<T>,VarObj>
+			-> std::enable_if_t<kIsBinONVal<T>,BinONObj>
 		{
 			return TValObj<T>(std::forward<T>(v));
 		}
@@ -546,26 +546,26 @@ namespace binon {
 	//---- VarObjVal -----------------------------------------------------------
 
 	template<typename T>
-		auto VarObjVal(VarObj& obj)
+		auto VarObjVal(BinONObj& obj)
 			-> std::enable_if_t<kIsBinONVal<T>, TVarObjVal<T>&>
 		{
 			return TypeConv<std::decay_t<T>>::GetVal(obj);
 		}
 	template<typename T>
-		auto VarObjVal(const VarObj& obj)
+		auto VarObjVal(const BinONObj& obj)
 			-> std::enable_if_t<kIsBinONVal<T>, const TVarObjVal<T>&>
 		{
 			return TypeConv<std::decay_t<T>>::GetVal(obj);
 		}
 	template<typename T>
-		auto VarObjVal(VarObj&& obj)
+		auto VarObjVal(BinONObj&& obj)
 			-> std::enable_if_t<kIsBinONVal<T>, TVarObjVal<T>>
 		{
 			return
-				TypeConv<std::decay_t<T>>::GetVal(std::forward<VarObj>(obj));
+				TypeConv<std::decay_t<T>>::GetVal(std::forward<BinONObj>(obj));
 		}
 	template<typename T>
-		auto VarObjVal(const VarObj& obj)
+		auto VarObjVal(const BinONObj& obj)
 			-> std::enable_if_t<!kIsBinONVal<T>, TVarObjVal<T>> {
 			return TypeConv<std::decay_t<T>>::GetVal(obj);
 		}

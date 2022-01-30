@@ -1,12 +1,12 @@
 #ifndef BINON_PACKELEMS_HPP
 #define BINON_PACKELEMS_HPP
 
-#include "varobj.hpp"
+#include "binonobj.hpp"
 
 namespace binon {
 	struct PackElems {
 		PackElems(CodeByte elemCode, TOStream& stream);
-		void operator() (const VarObj& obj, bool requireIO = true);
+		void operator() (const BinONObj& obj, bool requireIO = true);
 		~PackElems();
 	 private:
 		CodeByte mElemCode;
@@ -16,7 +16,7 @@ namespace binon {
 	};
 	struct UnpackElems {
 		UnpackElems(CodeByte elemCode, TIStream& stream);
-		auto operator() (bool requireIO = true) -> VarObj;
+		auto operator() (bool requireIO = true) -> BinONObj;
 	 private:
 		CodeByte mElemCode;
 		TIStream& mStream;

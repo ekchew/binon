@@ -1,7 +1,7 @@
 #include "binon/dictobj.hpp"
 #include "binon/listobj.hpp"
 #include "binon/packelems.hpp"
-#include "binon/varobj.hpp"
+#include "binon/binonobj.hpp"
 
 #include <iostream>
 
@@ -31,15 +31,15 @@ namespace binon {
 		UIntObj sizeObj;
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
-		std::vector<VarObj> ks;
+		std::vector<BinONObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);
 		while(n-->0) {
-			ks.push_back(VarObj::Decode(stream, kSkipRequireIO));
+			ks.push_back(BinONObj::Decode(stream, kSkipRequireIO));
 		}
 		for(auto& k: ks) {
-			u[std::move(k)] = VarObj::Decode(stream, kSkipRequireIO);
+			u[std::move(k)] = BinONObj::Decode(stream, kSkipRequireIO);
 		}
 		return *this;
 	}
@@ -80,7 +80,7 @@ namespace binon {
 		if(mKeyCode == kNoObjCode) {
 			std::ostringstream oss;
 			oss << "TSKDict is missing a key code (";
-			VarObj{*this}.print(oss);
+			BinONObj{*this}.print(oss);
 			oss << ')';
 			throw TypeErr{oss.str()};
 		}
@@ -108,7 +108,7 @@ namespace binon {
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
 		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
-		std::vector<VarObj> ks;
+		std::vector<BinONObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);
@@ -117,7 +117,7 @@ namespace binon {
 			ks.push_back(unpackKey(kSkipRequireIO));
 		}
 		for(auto& k: ks) {
-			u[std::move(k)] = VarObj::Decode(stream, kSkipRequireIO);
+			u[std::move(k)] = BinONObj::Decode(stream, kSkipRequireIO);
 		}
 		return *this;
 	}
@@ -171,7 +171,7 @@ namespace binon {
 				oss << " value";
 			}
 			oss << " code (";
-			VarObj{*this}.print(oss);
+			BinONObj{*this}.print(oss);
 			oss << ')';
 			throw TypeErr{oss.str()};
 		}
@@ -203,7 +203,7 @@ namespace binon {
 		sizeObj.decodeData(stream, kSkipRequireIO);
 		auto n = sizeObj.value().scalar();
 		mKeyCode = CodeByte::Read(stream, kSkipRequireIO);
-		std::vector<VarObj> ks;
+		std::vector<BinONObj> ks;
 		ks.reserve(n);
 		u.clear();
 		u.reserve(n);

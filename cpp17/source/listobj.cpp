@@ -2,7 +2,7 @@
 #include "binon/boolobj.hpp"
 #include "binon/intobj.hpp"
 #include "binon/packelems.hpp"
-#include "binon/varobj.hpp"
+#include "binon/binonobj.hpp"
 
 #include <sstream>
 #if BINON_LIB_EXECUTION
@@ -41,7 +41,7 @@ namespace binon {
 		u.resize(0);
 		u.reserve(n);
 		while(n-->0) {
-			u.push_back(VarObj::Decode(stream, kSkipRequireIO));
+			u.push_back(BinONObj::Decode(stream, kSkipRequireIO));
 		}
 		return *this;
 	}
@@ -78,7 +78,7 @@ namespace binon {
 		if(mElemCode == kNoObjCode) {
 			std::ostringstream oss;
 			oss << "TSList is missing an element code (";
-			VarObj{*this}.print(oss);
+			BinONObj{*this}.print(oss);
 			oss << ')';
 			throw TypeErr{oss.str()};
 		}

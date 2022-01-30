@@ -25,6 +25,7 @@ ${TEST_DIR}: ${HDR}/binon.hpp
 
 SRC := source/
 SRC_NAMES := \
+	binonobj \
 	boolobj \
 	bufferobj \
 	byteutil \
@@ -35,8 +36,7 @@ SRC_NAMES := \
 	ioutil \
 	listobj \
 	packelems \
-	strobj \
-	varobj
+	strobj
 OBJ := ${DEST_DIR}/obj/
 OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
 OBJS := ${addsuffix .o,${OBJS}}
@@ -69,11 +69,13 @@ DEPS := \
 	${HDR}refutil.hpp \
 	${HDR}strobj.hpp \
 	${HDR}typeconv.hpp \
-	${HDR}varobj.hpp \
+	${HDR}binonobj.hpp \
 	makefile
 ${HDR}/binon.hpp: ${DEPS}
 	touch ${HDR}/binon.hpp
 
+${OBJ}binonobj.o: ${SRC}binonobj.cpp ${DEPS}
+	${CXX} ${FLAGS} ${SRC}binonobj.cpp -o ${OBJ}binonobj.o
 ${OBJ}boolobj.o: ${SRC}boolobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}boolobj.cpp -o ${OBJ}boolobj.o
 ${OBJ}bufferobj.o: ${SRC}bufferobj.cpp ${HDR}bufferobj.hpp \
@@ -97,5 +99,3 @@ ${OBJ}packelems.o: ${SRC}packelems.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}packelems.cpp -o ${OBJ}packelems.o
 ${OBJ}strobj.o: ${SRC}strobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}strobj.cpp -o ${OBJ}strobj.o
-${OBJ}varobj.o: ${SRC}varobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}varobj.cpp -o ${OBJ}varobj.o

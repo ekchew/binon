@@ -12,7 +12,7 @@ namespace binon {
 		mIndex{0}
 	{
 	}
-	void PackElems::operator() (const VarObj& varObj, bool requireIO) {
+	void PackElems::operator() (const BinONObj& varObj, bool requireIO) {
 		RequireIO rio{mStream, requireIO};
 		if(varObj.typeCode() != mElemCode) {
 			std::ostringstream oss;
@@ -65,7 +65,7 @@ namespace binon {
 		mIndex{0}
 	{
 	}
-	auto UnpackElems::operator() (bool requireIO) -> VarObj {
+	auto UnpackElems::operator() (bool requireIO) -> BinONObj {
 		RequireIO rio{mStream, requireIO};
 		if(mElemCode == kBoolObjCode) {
 			if((mIndex & 0x7u) == 0x0) {
@@ -77,7 +77,7 @@ namespace binon {
 			return boolObj;
 		}
 		else {
-			auto varObj{VarObj::FromTypeCode(mElemCode)};
+			auto varObj{BinONObj::FromTypeCode(mElemCode)};
 			std::visit(
 				[this](auto& obj) {
 					obj.decodeData(mStream, kSkipRequireIO);
