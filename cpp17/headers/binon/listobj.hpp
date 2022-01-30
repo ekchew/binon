@@ -15,34 +15,34 @@
 namespace binon {
 	struct BinONObj;
 
-	struct TCtnrType {};
-	struct TListType: TCtnrType {};
-	struct TListObj:
-		TListType,
-		StdCtnr<TListObj, std::vector<BinONObj>>
+	struct CtnrType {};
+	struct ListType: CtnrType {};
+	struct ListObj:
+		ListType,
+		StdCtnr<ListObj, std::vector<BinONObj>>
 	{
 		static constexpr auto kTypeCode = kListObjCode;
-		static constexpr auto kClsName = std::string_view{"TListObj"};
-		using StdCtnr<TListObj,TValue>::StdCtnr;
+		static constexpr auto kClsName = std::string_view{"ListObj"};
+		using StdCtnr<ListObj,TValue>::StdCtnr;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TListObj&;
+			-> const ListObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TListObj&;
+			-> ListObj&;
 		void printArgs(std::ostream& stream) const;
 	};
-	struct TSList:
-		TListType,
-		StdCtnr<TSList, std::vector<BinONObj>>
+	struct SList:
+		ListType,
+		StdCtnr<SList, std::vector<BinONObj>>
 	{
 		static constexpr auto kTypeCode = kSListCode;
-		static constexpr auto kClsName = std::string_view{"TSList"};
+		static constexpr auto kClsName = std::string_view{"SList"};
 		CodeByte mElemCode;
-		TSList(std::any value, CodeByte elemCode = kNoObjCode);
-		TSList(CodeByte elemCode = kNullObjCode);
+		SList(std::any value, CodeByte elemCode = kNoObjCode);
+		SList(CodeByte elemCode = kNullObjCode);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TSList&;
+			-> const SList&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TSList&;
+			-> SList&;
 		void printArgs(std::ostream& stream) const;
 	};
 

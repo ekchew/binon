@@ -33,15 +33,15 @@ namespace binon {
 			case kStrObjCode.asUInt():
 				return StrObj{};
 			case kListObjCode.asUInt():
-				return TListObj{};
+				return ListObj{};
 			case kSListCode.asUInt():
-				return TSList{};
+				return SList{};
 			case kDictObjCode.asUInt():
-				return TDictObj{};
+				return DictObj{};
 			case kSKDictCode.asUInt():
-				return TSKDict{};
+				return SKDict{};
 			case kSDictCode.asUInt():
-				return TSDict{};
+				return SDict{};
 			default:
 				throw BadCodeByte{typeCode};
 		}

@@ -17,10 +17,10 @@
 
 namespace binon {
 
-	//---- TListObj ------------------------------------------------------------
+	//---- ListObj ------------------------------------------------------------
 
-	auto TListObj::encodeData(TOStream& stream, bool requireIO) const
-		-> const TListObj&
+	auto ListObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const ListObj&
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -30,8 +30,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	auto TListObj::decodeData(TIStream& stream, bool requireIO)
-		-> TListObj&
+	auto ListObj::decodeData(TIStream& stream, bool requireIO)
+		-> ListObj&
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -45,8 +45,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	void TListObj::printArgs(std::ostream& stream) const {
-		stream << "TListObj::TValue{";
+	void ListObj::printArgs(std::ostream& stream) const {
+		stream << "ListObj::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& v: u) {
@@ -61,23 +61,23 @@ namespace binon {
 		stream << "}";
 	}
 
-	//---- TSList --------------------------------------------------------------
+	//---- SList --------------------------------------------------------------
 
-	TSList::TSList(std::any value, CodeByte elemCode):
-		StdCtnr<TSList,TValue>{std::move(value)},
+	SList::SList(std::any value, CodeByte elemCode):
+		StdCtnr<SList,TValue>{std::move(value)},
 		mElemCode{elemCode}
 	{
 	}
-	TSList::TSList(CodeByte elemCode):
+	SList::SList(CodeByte elemCode):
 		mElemCode{elemCode}
 	{
 	}
-	auto TSList::encodeData(TOStream& stream, bool requireIO) const
-		-> const TSList&
+	auto SList::encodeData(TOStream& stream, bool requireIO) const
+		-> const SList&
 	{
 		if(mElemCode == kNoObjCode) {
 			std::ostringstream oss;
-			oss << "TSList is missing an element code (";
+			oss << "SList is missing an element code (";
 			BinONObj{*this}.print(oss);
 			oss << ')';
 			throw TypeErr{oss.str()};
@@ -92,8 +92,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	auto TSList::decodeData(TIStream& stream, bool requireIO)
-		-> TSList&
+	auto SList::decodeData(TIStream& stream, bool requireIO)
+		-> SList&
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -108,8 +108,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	void TSList::printArgs(std::ostream& stream) const {
-		stream << "TSList::TValue{";
+	void SList::printArgs(std::ostream& stream) const {
+		stream << "SList::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& v: u) {

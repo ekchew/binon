@@ -7,10 +7,10 @@
 
 namespace binon {
 
-	//---- TDictObj ------------------------------------------------------------
+	//---- DictObj ------------------------------------------------------------
 
-	auto TDictObj::encodeData(TOStream& stream, bool requireIO) const
-		-> const TDictObj&
+	auto DictObj::encodeData(TOStream& stream, bool requireIO) const
+		-> const DictObj&
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -23,8 +23,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	auto TDictObj::decodeData(TIStream& stream, bool requireIO)
-		-> TDictObj&
+	auto DictObj::decodeData(TIStream& stream, bool requireIO)
+		-> DictObj&
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -43,8 +43,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	void TDictObj::printArgs(std::ostream& stream) const {
-		stream << "TDictObj::TValue{";
+	void DictObj::printArgs(std::ostream& stream) const {
+		stream << "DictObj::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& [k, v]: u) {
@@ -63,23 +63,23 @@ namespace binon {
 		stream << "}";
 	}
 
-	//---- TSKDict -------------------------------------------------------------
+	//---- SKDict -------------------------------------------------------------
 
-	TSKDict::TSKDict(std::any value, CodeByte keyCode):
-		StdCtnr<TSKDict,TValue>{std::move(value)},
+	SKDict::SKDict(std::any value, CodeByte keyCode):
+		StdCtnr<SKDict,TValue>{std::move(value)},
 		mKeyCode{keyCode}
 	{
 	}
-	TSKDict::TSKDict(CodeByte keyCode):
+	SKDict::SKDict(CodeByte keyCode):
 		mKeyCode{keyCode}
 	{
 	}
-	auto TSKDict::encodeData(TOStream& stream, bool requireIO) const
-		-> const TSKDict&
+	auto SKDict::encodeData(TOStream& stream, bool requireIO) const
+		-> const SKDict&
 	{
 		if(mKeyCode == kNoObjCode) {
 			std::ostringstream oss;
-			oss << "TSKDict is missing a key code (";
+			oss << "SKDict is missing a key code (";
 			BinONObj{*this}.print(oss);
 			oss << ')';
 			throw TypeErr{oss.str()};
@@ -99,8 +99,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	auto TSKDict::decodeData(TIStream& stream, bool requireIO)
-		-> TSKDict&
+	auto SKDict::decodeData(TIStream& stream, bool requireIO)
+		-> SKDict&
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -121,8 +121,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	void TSKDict::printArgs(std::ostream& stream) const {
-		stream << "TSKDict::TValue{";
+	void SKDict::printArgs(std::ostream& stream) const {
+		stream << "SKDict::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& [k, v]: u) {
@@ -142,25 +142,25 @@ namespace binon {
 		mKeyCode.printRepr(stream);
 	}
 
-	//---- TSDict -------------------------------------------------------------
+	//---- SDict -------------------------------------------------------------
 
-	TSDict::TSDict(std::any value, CodeByte keyCode, CodeByte valCode):
-		StdCtnr<TSDict,TValue>{std::move(value)},
+	SDict::SDict(std::any value, CodeByte keyCode, CodeByte valCode):
+		StdCtnr<SDict,TValue>{std::move(value)},
 		mKeyCode{keyCode},
 		mValCode{valCode}
 	{
 	}
-	TSDict::TSDict(CodeByte keyCode, CodeByte valCode):
+	SDict::SDict(CodeByte keyCode, CodeByte valCode):
 		mKeyCode{keyCode},
 		mValCode{valCode}
 	{
 	}
-	auto TSDict::encodeData(TOStream& stream, bool requireIO) const
-		-> const TSDict&
+	auto SDict::encodeData(TOStream& stream, bool requireIO) const
+		-> const SDict&
 	{
 		if(mKeyCode == kNoObjCode || mValCode == kNoObjCode) {
 			std::ostringstream oss;
-			oss << "TSDict is missing a";
+			oss << "SDict is missing a";
 			if(mKeyCode == kNoObjCode) {
 				oss << " key";
 				if(mValCode == kNoObjCode) {
@@ -194,8 +194,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	auto TSDict::decodeData(TIStream& stream, bool requireIO)
-		-> TSDict&
+	auto SDict::decodeData(TIStream& stream, bool requireIO)
+		-> SDict&
 	{
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -218,8 +218,8 @@ namespace binon {
 		}
 		return *this;
 	}
-	void TSDict::printArgs(std::ostream& stream) const {
-		stream << "TSDict::TValue{";
+	void SDict::printArgs(std::ostream& stream) const {
+		stream << "SDict::TValue{";
 		auto& u = value();
 		bool first = true;
 		for(auto& [k, v]: u) {

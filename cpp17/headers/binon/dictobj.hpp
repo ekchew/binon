@@ -10,51 +10,51 @@
 #include <unordered_map>
 
 namespace binon {
-	struct TDictType: TCtnrType {};
-	struct TDictObj:
-		TDictType,
-		StdCtnr<TDictObj, std::unordered_map<BinONObj,BinONObj>>
+	struct DictType: CtnrType {};
+	struct DictObj:
+		DictType,
+		StdCtnr<DictObj, std::unordered_map<BinONObj,BinONObj>>
 	{
-		using StdCtnr<TDictObj, std::unordered_map<BinONObj,BinONObj>>::StdCtnr;
+		using StdCtnr<DictObj, std::unordered_map<BinONObj,BinONObj>>::StdCtnr;
 		static constexpr auto kTypeCode = kDictObjCode;
-		static constexpr auto kClsName = std::string_view{"TDictObj"};
+		static constexpr auto kClsName = std::string_view{"DictObj"};
 		auto encodeData(TOStream&, bool requireIO = true) const
-			-> const TDictObj&;
+			-> const DictObj&;
 		auto decodeData(TIStream&, bool requireIO = true)
-			-> TDictObj&;
+			-> DictObj&;
 		void printArgs(std::ostream&) const;
 	};
-	struct TSKDict:
-		TDictType,
-		StdCtnr<TSKDict, std::unordered_map<BinONObj,BinONObj>>
+	struct SKDict:
+		DictType,
+		StdCtnr<SKDict, std::unordered_map<BinONObj,BinONObj>>
 	{
 		static constexpr auto kTypeCode = kSKDictCode;
-		static constexpr auto kClsName = std::string_view{"TSKDict"};
+		static constexpr auto kClsName = std::string_view{"SKDict"};
 		CodeByte mKeyCode;
-		TSKDict(std::any value, CodeByte keyCode = kNoObjCode);
-		TSKDict(CodeByte keyCode = kNoObjCode);
+		SKDict(std::any value, CodeByte keyCode = kNoObjCode);
+		SKDict(CodeByte keyCode = kNoObjCode);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TSKDict&;
+			-> const SKDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TSKDict&;
+			-> SKDict&;
 		void printArgs(std::ostream& stream) const;
 	};
-	struct TSDict:
-		TDictType,
-		StdCtnr<TSDict, std::unordered_map<BinONObj,BinONObj>>
+	struct SDict:
+		DictType,
+		StdCtnr<SDict, std::unordered_map<BinONObj,BinONObj>>
 	{
 		static constexpr auto kTypeCode = kSDictCode;
-		static constexpr auto kClsName = std::string_view{"TSDict"};
+		static constexpr auto kClsName = std::string_view{"SDict"};
 		CodeByte mKeyCode;
 		CodeByte mValCode;
-		TSDict(std::any value,
+		SDict(std::any value,
 			CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode
 			);
-		TSDict(CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode);
+		SDict(CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
-			-> const TSDict&;
+			-> const SDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
-			-> TSDict&;
+			-> SDict&;
 		void printArgs(std::ostream& stream) const;
 	};
 }
