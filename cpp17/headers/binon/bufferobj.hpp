@@ -8,6 +8,14 @@
 
 namespace binon {
 
+	/*
+	The value of a BufferObj is implemented as hybrid string (see hystr.hpp)
+	similar to StrObj except that each "character" is a std::byte rather than
+	a char.
+
+	Printing a BufferVal will display the string as escaped hexadecimal codes
+	along the lines "\xc0\xff\xee".
+	*/
 	struct BufferVal: BasicHyStr<std::byte> {
 		using BasicHyStr<std::byte>::BasicHyStr;
 		BufferVal(const HyStr& hyStr);
@@ -15,6 +23,9 @@ namespace binon {
 	auto operator<< (std::ostream& stream, const BufferVal& v)
 		-> std::ostream&;
 
+	/*
+	Note: The common interface to all BinONObj types is described in mixins.hpp.
+	*/
 	struct BufferObj:
 		StdAcc<BufferObj>,
 		StdEq<BufferObj>,

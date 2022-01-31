@@ -27,7 +27,7 @@ namespace binon {
 	//
 	//-------------------------------------------------------------------------
 
-	/**
+	/*
 	ToByte function template
 
 	While you can easily convert a std::byte to an integer by calling
@@ -46,11 +46,11 @@ namespace binon {
 			This option defaults to true only in debug builds. When true,
 			ToByte may throw a std::out_of_range if i's value lies outside of
 			what can be represented by a byte. To put it another way, i must lie
-			in the range [-0x80,0xff].
+			in the range [-128,255].
 
 	Returns:
 		std::byte: the byte form of i
-	**/
+	*/
 	template<typename I> constexpr auto ToByte(
 		I i, bool assertRange=BINON_DEBUG
 		) -> std::byte
@@ -63,7 +63,7 @@ namespace binon {
 			return std::byte{static_cast<unsigned char>(i)};
 		}
 
-	/**
+	/*
 	AsHexC function
 
 	This is a low-level function to convert a std::byte into a zero-padded
@@ -76,15 +76,16 @@ namespace binon {
 
 	Returns:
 		std::array<char,3>: 2 hexadecimal digits followed by null terminator
-	**/
+	*/
 	auto AsHexC(std::byte value, bool capitalize=false) noexcept
 		-> std::array<char,3>;
 
-	/**
+	/*
 	AsHex function
 
-	This is like AsHexC except it returns a std::string. This may require some
-	dynamic allocation which the former avoids, but tends to be easier to use.
+	This is like AsHexC except it returns a std::string. This might be somewhat
+	less efficient, though thanks to the small string optimization, it may not
+	necessarily require any dynamic allocation at least.
 
 	Args:
 		value (std::byte): byte to convert
@@ -93,10 +94,10 @@ namespace binon {
 
 	Returns:
 		std::string: 2 hexadecimal digits
-	**/
+	*/
 	auto AsHex(std::byte value, bool capitalize=false) -> std::string;
 
-	/**
+	/*
 	PrintByte function
 
 	This function prints a std::byte as 2 hexadecimal digits to a text stream.
@@ -106,7 +107,7 @@ namespace binon {
 		stream (std::ostream&): target text output stream
 		capitalize (bool, optional): return "AB" rather than "ab"?
 			Defaults to false.
-	**/
+	*/
 	void PrintByte(std::byte value, std::ostream& stream,
 		bool capitalize=false);
 
@@ -116,7 +117,7 @@ namespace binon {
 	//
 	//-------------------------------------------------------------------------
 
-	/**
+	/*
 	LittleEndian function
 
 	C++20 can determine the byte order convention at compile time, while C++17
@@ -125,20 +126,20 @@ namespace binon {
 
 	Returns:
 		bool: compiler target uses little-endian byte order?
-	**/
-#if BINON_CPP20
+	*/
+ #if BINON_CPP20
 	constexpr auto LittleEndian() noexcept -> bool {
 		return std::endian::native == std::endian::little;
 	}
-#else
+ #else
 	auto LittleEndian() noexcept -> bool;
-#endif
+ #endif
 
-	/**
+	/*
 	WriteWord function template - byte buffer variant
 
-	Writes a scalar value such as an integer into a byte buffer following using
-	a big-endian byte order (regardless of what the compiler target prefers).
+	Writes a scalar value such as an integer into a byte buffer following
+	a big-endian byte order.
 
 	Template Args:
 		Word (type, inferred)
@@ -155,7 +156,7 @@ namespace binon {
 		std::byte*: buffer
 			This is the same address you input, but of course now it should be
 			pointing at your serialized word data.
-	**/
+	*/
 	template<typename Word>
 		auto WriteWord(Word word, std::byte* buffer) noexcept -> std::byte* {
 			if constexpr(sizeof word == 1U) {
@@ -169,7 +170,7 @@ namespace binon {
 			}
 			return buffer;
 		}
-	/**
+	/*
 	WriteWord function template - stream variant
 
 	In this case, your word is written to a binary output stream instead of a
@@ -182,7 +183,7 @@ namespace binon {
 		word (Word): see WriteWOrd byte buffer variant
 		stream (TOStream): binary output stream
 		requireIO (bool, optional): see PackBools - stream variant
-	**/
+	*/
 	template<typename Word>
 		void WriteWord(Word word, TOStream& stream, bool requireIO=true) {
 			RequireIO rio{stream, requireIO};
@@ -199,7 +200,7 @@ namespace binon {
 			}
 		}
 
-	/**
+	/*
 	ReadWord function template - byte buffer variant
 
 	Reads back the word you wrote into a byte buffer with WriteWord.
@@ -212,7 +213,7 @@ namespace binon {
 
 	Returns:
 		Word: reconstituted word value
-	**/
+	*/
 	template<typename Word>
 		auto ReadWord(const std::byte* buffer) noexcept -> Word {
 			Word word;
@@ -228,7 +229,7 @@ namespace binon {
 			}
 			return word;
 		}
-	/**
+	/*
 	ReadWord function template - stream variant
 
 	Template Args:
@@ -240,7 +241,7 @@ namespace binon {
 
 		Returns:
 			Word: reconstituted word value
-	**/
+	*/
 	template<typename Word>
 		auto ReadWord(TIStream& stream, bool requireIO=true) -> Word {
 			Word word{};
@@ -257,98 +258,6 @@ namespace binon {
 				word = ReadWord<Word>(buffer.data());
 			}
 			return word;
-		}
-
-	//-------------------------------------------------------------------------
-	//
-	//	Bool-Packing Functions
-	//
-	//-------------------------------------------------------------------------
-
-	/**
-	PackedBoolsGen function template
-
-	This function returns a generator that produced bytes from bools, with up to
-	8 bools packed into each byte.
-
-	Template Args:
-		BoolGen (type, inferred)
-
-	Args:
-		boolGen (BoolGen): Generator of bool or bool-like values
-			Technically, any type that can evaluate as boolean for the purposes
-			of an if statement should work here.
-
-	Returns:
-		Generator of std::byte:
-			This is an iterable to a series of bytes generated from the input
-			bools. Each byte contains up to 8 bools packed into its bits. The
-			packing algorithm follows a big-endian bit order. In other words,
-			the first bool goes into the most-significant bit.
-
-			If there are not enough bools to fill the final byte, the remaining
-			least-significant bits will be cleared.
-
-			Note that you can dereference the returned Generator (*myGen) after
-			your iteration loop to see how many bools were packed. (This would
-			be useful to know when you eventually call UnpackedBoolsGen.)
-	**/
-	template<typename BoolGen>
-		auto PackedBoolsGen(BoolGen boolGen) {
-			auto byteGen = [](auto& gen, auto& it, auto& n) {
-				auto byt = 0x00_byte;
-				auto i = 0u;
-				for(; it != gen.end() && i < 8u; ++it, ++i) {
-					byt <<= 1;
-					byt |= *it ? 0x01_byte : 0x00_byte;
-				}
-				if(i < 8u) {
-					byt <<= 8u - i;
-				}
-				n += i;
-				return MakeOpt<std::byte>(i, [byt] { return byt; });
-			};
-			return PipeGen<std::byte,std::size_t>(boolGen, byteGen, 0u);
-		}
-	template<typename BoolIt, typename EndIt>
-		auto PackedBoolsGen(BoolIt boolIt, EndIt endIt) {
-			return PackedBoolsGen(IterGen{boolIt, endIt});
-		}
-
-	/**
-	UnpackedBoolsGen function template
-
-	This function takes bools previously packed into bytes by PackedBoolsGen and
-	returns a generator that reproduces those bools.
-
-	Template Args:
-		ByteIt (type, inferred)
-
-	Args:
-		byteIt (ByteIt): an input iterator with a value_type of std::byte
-		boolCnt (std::size_t): number of bools to unpack
-
-	Returns:
-		Generator of bool
-	**/
-	template<typename ByteGen>
-		auto UnpackedBoolsGen(ByteGen byteGen, std::size_t boolCnt) {
-			using Size = decltype(boolCnt);
-			Size i = 0u;
-			auto nextBool = [](auto& it, Size i, std::byte& byt) mutable {
-				if((i & 0x7u) == 0x0u) {
-					byt = i > 0u ? *++it : *it;
-				}
-				else { byt <<= 1; }
-				return (byt & 0x80_byte) != 0x00_byte;
-			};
-			auto nextOptBool = [boolCnt, i, byt = 0x00_byte, nextBool](
-				auto&, auto& it) mutable
-			{
-				auto j = i++;
-				return MakeOpt<bool>(j < boolCnt, nextBool, it, j, byt);
-			};
-			return PipeGen<bool>(std::move(byteGen), nextOptBool);
 		}
 }
 
