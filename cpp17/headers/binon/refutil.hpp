@@ -3,11 +3,11 @@
 
 #include <functional>
 
-/**
+/*
 refutil module
 
 Contains type definitions related to std::reference_wrapper.
-**/
+*/
 
 namespace binon {
 
@@ -23,7 +23,7 @@ namespace binon {
 		};
 	}
 
-	/**
+	/*
 	Type Definitions:
 		TRefBase<T>:
 			This is equivalent to T in all cases except when T is a
@@ -31,7 +31,7 @@ namespace binon {
 			(Note: If the reference_wrapper is const, U will also be const.)
 		TUnwrappedRef<T>: equivalent to TRefBase<T>&
 		TUnwrappedRRef<T>: equivalent to TRefBase<T>&&
-	**/
+	*/
 	template<typename T>
 		using TRefBase = typename details::Ref<T>::Base;
 	template<typename T>

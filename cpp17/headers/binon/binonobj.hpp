@@ -9,6 +9,7 @@
 #include "strobj.hpp"
 #include "listobj.hpp"
 #include "dictobj.hpp"
+#include "optutil.hpp"
 #include <functional>
 #include <optional>
 #include <ostream>

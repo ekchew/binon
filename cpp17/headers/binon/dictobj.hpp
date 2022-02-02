@@ -10,12 +10,13 @@
 #include <unordered_map>
 
 namespace binon {
-	struct DictType: CtnrType {};
-	struct DictObj:
-		DictType,
-		StdCtnr<DictObj, std::unordered_map<BinONObj,BinONObj>>
-	{
-		using StdCtnr<DictObj, std::unordered_map<BinONObj,BinONObj>>::StdCtnr;
+	using TDict = std::unordered_map<
+		BinONObj, BinONObj, std::hash<BinONObj>, std::equal_to<BinONObj>,
+		BINON_ALLOCATOR<std::pair<const BinONObj, BinONObj>>
+		>;
+	struct DictType{};
+	struct DictObj: DictType, StdCtnr<DictObj, TDict> {
+		using StdCtnr<DictObj, TDict>::StdCtnr;
 		static constexpr auto kTypeCode = kDictObjCode;
 		static constexpr auto kClsName = std::string_view{"DictObj"};
 		auto encodeData(TOStream&, bool requireIO = true) const
@@ -24,10 +25,7 @@ namespace binon {
 			-> DictObj&;
 		void printArgs(std::ostream&) const;
 	};
-	struct SKDict:
-		DictType,
-		StdCtnr<SKDict, std::unordered_map<BinONObj,BinONObj>>
-	{
+	struct SKDict: DictType, StdCtnr<SKDict,TDict> {
 		static constexpr auto kTypeCode = kSKDictCode;
 		static constexpr auto kClsName = std::string_view{"SKDict"};
 		CodeByte mKeyCode;
@@ -39,10 +37,7 @@ namespace binon {
 			-> SKDict&;
 		void printArgs(std::ostream& stream) const;
 	};
-	struct SDict:
-		DictType,
-		StdCtnr<SDict, std::unordered_map<BinONObj,BinONObj>>
-	{
+	struct SDict: DictType, StdCtnr<SDict,TDict> {
 		static constexpr auto kTypeCode = kSDictCode;
 		static constexpr auto kClsName = std::string_view{"SDict"};
 		CodeByte mKeyCode;

@@ -1,11 +1,11 @@
 #ifndef BINON_OPTUTIL_HPP
 #define BINON_OPTUTIL_HPP
 
-/**
+/*
 optutil module
 
 Contains utility functions related to std::optional.
-**/
+*/
 
 #include "refutil.hpp"
 
@@ -15,16 +15,16 @@ Contains utility functions related to std::optional.
 
 namespace binon {
 
-	/**
+	/*
 	OptRef type template
 
 	OptRef<T> is equivalent to std::optional<std::reference_wrapper<T>>.
 	This can be a very useful construct, but boy is it a mouthful!
-	**/
+	*/
 	template<typename T>
 		using OptRef = std::optional<std::reference_wrapper<T>>;
 
-	/**
+	/*
 	MakeOpt function template
 
 	Depending on the bool you pass to this function, it will return either a
@@ -45,7 +45,7 @@ namespace binon {
 		std::optional<T>: an optional value
 			Derived from either getValue's return value or std::nullopt
 			depending on whether hasValue is true.
-	**/
+	*/
 	template<typename T, typename GetT, typename... GetTArgs> constexpr
 		auto MakeOpt(bool hasValue, GetT&& getValue, GetTArgs&&... args)
 			-> std::optional<T>
@@ -57,7 +57,7 @@ namespace binon {
 				: std::nullopt;
 		}
 
-	/**
+	/*
 	EqualOpts function template
 
 	In many cases, you can compare two std::optional with nothing more than the
@@ -76,7 +76,7 @@ namespace binon {
 
 	Returns:
 		bool: true if optA equals optB
-	**/
+	*/
 	template<typename T> constexpr
 		auto EqualOpts(
 			const std::optional<T>& optA,
@@ -89,7 +89,7 @@ namespace binon {
 				));
 		}
 
-	/**
+	/*
 	DerefOpt function template
 
 	This function returns the value contained within a std::optional. Should
@@ -109,7 +109,7 @@ namespace binon {
 		TUnwrappedRef<T>:
 			This should be a reference with any std::reference_wrapper stripped
 			off.
-	**/
+	*/
 	template<typename T> constexpr
 		auto DerefOpt(std::optional<T>& opt) -> TUnwrappedRef<T> {
 			return BINON_IF_DBG_REL(opt.value(), *opt);

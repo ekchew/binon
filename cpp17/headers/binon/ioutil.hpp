@@ -1,7 +1,6 @@
 #ifndef BINON_IOUTIL_HPP
 #define BINON_IOUTIL_HPP
 
-#include "generator.hpp"
 #include "macros.hpp"
 
 #include <cstddef>
@@ -15,7 +14,7 @@ namespace binon {
 
 	//---- Binary Stream Type Definitions --------------------------------------
 
-	/**
+	/*
 	Type definitions built around BINON_STREAM_BYTE
 
 	BINON_STREAM_BYTE defaults to std::ios::char_type, which is used by the
@@ -37,7 +36,7 @@ namespace binon {
 
 	With default BINON_... macros, TIStream should be equivalent to
 	std::istream, TString to std::string, and so on.
-	**/
+	*/
 	using TStreamByte = BINON_STREAM_BYTE;
 	using TStreamTraits = std::char_traits<TStreamByte>;
 	using TIOS = std::basic_ios<TStreamByte,TStreamTraits>;
@@ -54,7 +53,7 @@ namespace binon {
 
 	//---- Stream Exception Bit Management -------------------------------------
 
-	/**
+	/*
 	RequireIO class
 
 	To borrow a Python term, RequireIO is a context manager. When you declare a
@@ -64,10 +63,10 @@ namespace binon {
 
 	Note that you can move instances of RequireIO but NOT copy them. (The class
 	would need some recursive logic to make that possible.)
-	**/
+	*/
 	struct RequireIO {
 
-		/**
+		/*
 		Constructor - stream arg variant
 
 		There is also a move constructor (and move assignment operator), but no
@@ -79,7 +78,7 @@ namespace binon {
 				This defaults to true, but if you know the bits have already
 				been set by a previous instance of RequireIO, you can pass false
 				or kSkipRequireIO to effectively disable the current instance.
-		**/
+		*/
 		RequireIO(TIOS& stream, bool enable=true);
 
 		RequireIO(const RequireIO& rio) = delete;
@@ -93,75 +92,6 @@ namespace binon {
 		TIOS::iostate mEx0;
 	};
 	constexpr bool kSkipRequireIO = false;
-
-	//---- Byte Streaming ------------------------------------------------------
-
-	/**
-	StreamBytes function template
-
-	StreamBytes writes all the output of a byte generator to binary output
-	stream.
-
-	Template Args:
-		ByteGen (type, inferred)
-
-	Args:
-		byteGen (ByteGen): Generator of std::byte
-		stream (TOStream&): binary output stream
-		requireIO (bool, optional): set stream exception bits? (default=true)
-			This is done using an instance of RequireIO, so the bits should be
-			restored before StreamBytes returns. You can pass kSkipRequireIO in
-			this argument to set it false in a more explicit way.
-
-	Returns:
-		std::size_t: number of bytes streamed
-	**/
-	template<typename ByteGen>
-		auto StreamBytes(ByteGen byteGen, TOStream& stream,
-			bool requireIO=true) -> std::size_t
-		{
-			RequireIO rio{stream, requireIO};
-			std::size_t count = 0u;
-			for(auto byt: byteGen) {
-				static_assert(sizeof byt == 1u,
-					"binon::StreamBytes generator not yielding bytes");
-				stream.write(reinterpret_cast<const TStreamByte*>(&byt), 1u);
-				++count;
-			}
-			return count;
-		}
-
-	/**
-	StreamedBytesGen function
-
-	This function returns a byte generator that reads its input from a binary
-	stream.
-
-	Note that StreamedBytesGen has a RequireIO Data member. This means you can
-	only move -- not copy -- StreamedBytesGen instances. Keep this in mind if
-	you chain a StreamBytesGen to another Generator.
-
-	Args:
-		stream (TIStream&): binary input stream
-		count (std::size_t): number of bytes to read/generate
-		requireIO (bool, optional): set stream exception bits? (default=true)
-
-	Returns:
-		Generator of std::byte
-	**/
-	inline auto StreamedBytesGen(TIStream& stream, std::size_t count,
-		bool requireIO=true)
-		{
-			auto nextByte = [&stream]() {
-				TStreamByte byt;
-				stream.read(&byt, 1u);
-				return reinterpret_cast<std::byte&>(byt);
-			};
-			return MakeGen<std::byte, RequireIO>(
-				[count, sb=std::move(nextByte)](RequireIO&) mutable {
-					return MakeOpt<std::byte>(count-->0u, sb);
-				}, stream, requireIO);
-		}
 }
 
 #endif

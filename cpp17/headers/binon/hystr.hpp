@@ -1,6 +1,8 @@
 #ifndef BINON_HYSTR_HPP
 #define BINON_HYSTR_HPP
 
+#include "macros.hpp"
+
 #include <functional>
 #include <istream>
 #include <ostream>
@@ -11,7 +13,7 @@
 
 namespace binon {
 
-	/**
+	/*
 	BasicHyStr class template
 
 	This class attempts to get the best of both worlds between strings and
@@ -75,11 +77,11 @@ namespace binon {
 		traits_type: see std::basic_string
 		allocator_type: see std::basic_string
 		size_type: see std::basic_string
-	**/
+	*/
 	template<
 		typename CharT,
 		typename Traits = std::char_traits<CharT>,
-		typename Allocator = std::allocator<CharT>
+		typename Allocator = BINON_ALLOCATOR<CharT>
 		>
 		struct BasicHyStr {
 
@@ -106,18 +108,18 @@ namespace binon {
 
 			//---- Constructors ------------------------------------------------
 
-			/**
+			/*
 			constructor - string variants
 
 			Loads the BasicHyStr with a string.
 
 			Args:
 				s (const TStr& or TStr&&)
-			**/
+			*/
 			BasicHyStr(const TStr& s);
 			BasicHyStr(TStr&& s) noexcept;
 
-			/**
+			/*
 			constructor - string view variants
 
 			Loads the BasicHyStr with a string view. The default constructor
@@ -127,7 +129,7 @@ namespace binon {
 				s (const TView& or const char*, optional):
 					If you arg is a const char*, BasciHyStr assumes it points to
 					a C string.
-			**/
+			*/
 			constexpr BasicHyStr(const TView& sv) noexcept;
 			constexpr BasicHyStr(const TChr* cStr) noexcept;
 			constexpr BasicHyStr() noexcept = default;
@@ -168,43 +170,43 @@ namespace binon {
 
 			//---- Methods Unique To BasicHyStr --------------------------------
 
-			/**
+			/*
 			isStr method:
 				Returns:
 					bool: true if object contains a string (vs. a string_view)
-			**/
+			*/
 			constexpr auto isStr() const noexcept -> bool;
 
-			/**
+			/*
 			asView method, operator TView:
 				An implicit conversion from BasicHyStr to TView is available
 				when needed.
 
 				Returns:
 					TView: string view of current object returned by value
-			**/
+			*/
 			constexpr auto asView() const noexcept -> TView;
 			constexpr operator TView() const noexcept;
 
-			/**
+			/*
 			asStr method:
 				This method will convert the internal string view into a string
 				if necessary before returning it.
 
 				Returns:
 					TStr&: reference to internal string
-			**/
+			*/
 			auto asStr() const -> const TStr&;
 			auto asStr() -> TStr&;
 
-			/**
+			/*
 			hash method:
 				This method is called by a specialization of std::hash for
 				BasicHyStr types.
 
 				Returns:
 					std::size_t: a hash of the internal string/view
-			**/
+			*/
 			constexpr auto hash() const noexcept -> std::size_t;
 
 		 private:

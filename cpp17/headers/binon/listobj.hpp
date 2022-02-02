@@ -15,25 +15,20 @@
 namespace binon {
 	struct BinONObj;
 
-	struct CtnrType {};
-	struct ListType: CtnrType {};
-	struct ListObj:
-		ListType,
-		StdCtnr<ListObj, std::vector<BinONObj>>
-	{
+	using TList = std::vector<BinONObj,BINON_ALLOCATOR<BinONObj>>;
+
+	struct ListType{};
+	struct ListObj: ListType, StdCtnr<ListObj,TList> {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"ListObj"};
-		using StdCtnr<ListObj,TValue>::StdCtnr;
+		using StdCtnr<ListObj,TList>::StdCtnr;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const ListObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
 			-> ListObj&;
 		void printArgs(std::ostream& stream) const;
 	};
-	struct SList:
-		ListType,
-		StdCtnr<SList, std::vector<BinONObj>>
-	{
+	struct SList: ListType, StdCtnr<SList,TList> {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"SList"};
 		CodeByte mElemCode;
