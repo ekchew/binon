@@ -23,7 +23,7 @@ namespace binon {
 	//	DictType is a trivial base type of all dictionary objects. It is used by
 	//	dictionary helper functions in typeconv.hpp to ascertain if a given type
 	//	T is a DictObj, SKDict, or SDict.
-	struct DictType{};
+	struct DictType: CtnrType{};
 
 	//	The 3 dictionary types: DictObj, SKDict, and SDict. See the note above
 	//	StdCtnr regarding how values are managed in container types.
@@ -65,7 +65,7 @@ namespace binon {
 		void printArgs(std::ostream& stream) const;
 	};
 
-	//	See also list helper functions defined in typeconv.hpp.
+	//	See also dict helper functions defined in dicthelpers.hpp.
 }
 
 #endif

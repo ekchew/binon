@@ -142,6 +142,8 @@ namespace binon {
 	};
 	auto operator<< (std::ostream& stream, const BinONObj& obj)
 		-> std::ostream&;
+
+	//	See also BinON object helper functions in objhelpers.hpp.
 }
 
 namespace std {

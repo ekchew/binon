@@ -35,6 +35,7 @@ SRC_NAMES := \
 	intobj \
 	ioutil \
 	listobj \
+	objhelpers \
 	packelems \
 	strobj
 OBJ := ${DEST_DIR}/obj/
@@ -49,6 +50,7 @@ DEPS := \
 	${HDR}bufferobj.hpp \
 	${HDR}byteutil.hpp \
 	${HDR}codebyte.hpp \
+	${HDR}dicthelpers.hpp \
 	${HDR}dictobj.hpp \
 	${HDR}errors.hpp \
 	${HDR}floatobj.hpp \
@@ -59,10 +61,12 @@ DEPS := \
 	${HDR}intobj.hpp \
 	${HDR}ioutil.hpp \
 	${HDR}listobj.hpp \
+	${HDR}listhelpers.hpp \
 	${HDR}literals.hpp \
 	${HDR}macros.hpp \
 	${HDR}mixins.hpp \
 	${HDR}nullobj.hpp \
+	${HDR}objhelpers.hpp \
 	${HDR}optutil.hpp \
 	${HDR}packelems.hpp \
 	${HDR}refutil.hpp \
@@ -92,6 +96,8 @@ ${OBJ}intobj.o: ${SRC}intobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}intobj.cpp -o ${OBJ}intobj.o
 ${OBJ}ioutil.o: ${SRC}ioutil.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}ioutil.cpp -o ${OBJ}ioutil.o
+${OBJ}objhelpers.o: ${SRC}objhelpers.cpp ${DEPS}
+	${CXX} ${FLAGS} ${SRC}objhelpers.cpp -o ${OBJ}objhelpers.o
 ${OBJ}listobj.o: ${SRC}listobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}listobj.cpp -o ${OBJ}listobj.o
 ${OBJ}packelems.o: ${SRC}packelems.cpp ${DEPS}

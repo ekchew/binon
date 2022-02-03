@@ -17,7 +17,8 @@ namespace binon {
 
 	using TList = std::vector<BinONObj,BINON_ALLOCATOR<BinONObj>>;
 
-	struct ListType{};
+	struct CtnrType{};
+	struct ListType: CtnrType{};
 	struct ListObj: ListType, StdCtnr<ListObj,TList> {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"ListObj"};
@@ -41,7 +42,7 @@ namespace binon {
 		void printArgs(std::ostream& stream) const;
 	};
 
-	//	See also list helper functions defined in typeconv.hpp.
+	//	See also list helper functions defined in listhelpers.hpp.
 }
 
 #endif
