@@ -46,6 +46,7 @@ ${DEST_DIR}/lib/libbinon.a: ${OBJS}
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
 DEPS := \
+	${HDR}binonobj.hpp \
 	${HDR}boolobj.hpp \
 	${HDR}bufferobj.hpp \
 	${HDR}byteutil.hpp \
@@ -72,7 +73,7 @@ DEPS := \
 	${HDR}refutil.hpp \
 	${HDR}strobj.hpp \
 	${HDR}typeconv.hpp \
-	${HDR}binonobj.hpp \
+	${HDR}typeutil.hpp \
 	makefile
 ${HDR}/binon.hpp: ${DEPS}
 	touch ${HDR}/binon.hpp

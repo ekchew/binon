@@ -28,5 +28,6 @@
 #include "refutil.hpp"
 #include "strobj.hpp"
 #include "typeconv.hpp"
+#include "typeutil.hpp"
 
 #endif

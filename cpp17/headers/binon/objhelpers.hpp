@@ -60,7 +60,32 @@ namespace binon {
 	template<typename T>
 		using TBinONObjVal = typename TypeConv<std::decay_t<T>>::TVal;
 
+	//	ObjWrapper offers an alternative to MakeBinONObj as a means of
+	//	converting an arbitrary value into a BinONObj. You can have one of these
+	//	be a function argument. The caller can then supply any value that is
+	//	convertible and your function should receive a BinONObj as its argument.
+	struct ObjWrapper: BinONObj {
+		ObjWrapper(const BinONObj& obj);
+		ObjWrapper(BinONObj&& obj) noexcept;
+		ObjWrapper(const char* cStr);
+		template<typename T>
+			ObjWrapper(const T& val);
+		template<typename T, typename std::enable_if_t<kIsBinONVal<T>,int> = 0>
+			ObjWrapper(T&& val);
+	};
+
 	//==== Template Implementation =============================================
+
+	template<typename T>
+		ObjWrapper::ObjWrapper(const T& val):
+			BinONObj{TValObj<T>(val)}
+		{
+		}
+	template<typename T, typename std::enable_if_t<kIsBinONVal<T>,int>>
+		ObjWrapper::ObjWrapper(T&& val):
+			BinONObj{TValObj<T>(std::move(val))}
+		{
+		}
 
 	//---- MakeBinONObj --------------------------------------------------------
 	//
