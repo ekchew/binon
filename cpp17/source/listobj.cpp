@@ -1,53 +1,84 @@
 #include "binon/listobj.hpp"
 #include "binon/boolobj.hpp"
 #include "binon/intobj.hpp"
+#include "binon/macros.hpp"
 #include "binon/packelems.hpp"
 #include "binon/binonobj.hpp"
 
+#include <algorithm>
 #include <sstream>
-#if BINON_LIB_EXECUTION
-	#include <execution>
-	#define BINON_PAR_UNSEQ std::execution::par_unseq,
-#else
-	#if BINON_EXEC_POLICIES
-		#pragma message "C++17 execution policies unavailable"
-	#endif
-	#define BINON_PAR_UNSEQ
-#endif
 
 namespace binon {
 
-	//---- ListObj ------------------------------------------------------------
+	//---- CtnrBase ------------------------------------------------------------
 
-	auto ListObj::hasDefVal() const -> bool {
+	CtnrBase::CtnrBase(const std::any& ctnr):
+		mValue{ctnr}
+	{
+	}
+	CtnrBase::CtnrBase(std::any&& ctnr) noexcept:
+		mValue{std::move(ctnr)}
+	{
+	}
+	[[noreturn]] void CtnrBase::CastError() {
+		throw TypeErr{
+			"BinON container object constructed with unexpected value type"
+		};
+	}
+
+	//---- ListBase ------------------------------------------------------------
+
+	auto ListBase::operator == (const ListBase& rhs) const -> bool {
+		auto& a = value();
+		auto& b = rhs.value();
+		return std::equal(BINON_PAR
+			a.begin(), a.end(), b.begin(), b.end()
+		);
+	}
+	auto ListBase::operator != (const ListBase& rhs) const -> bool {
+		return !(*this == rhs);
+	}
+	auto ListBase::hasDefVal() const -> bool {
 		return value().size() == 0;
 	}
-	auto ListObj::value() & -> TValue& {
+	auto ListBase::value() & -> TList& {
 		if(!mValue.has_value()) {
-			mValue = TValue();
+			mValue = TList();
 		}
 		try {
-			return std::any_cast<TValue&>(mValue);
+			return std::any_cast<TList&>(mValue);
 		}
 		catch(std::bad_any_cast&) {
-			throw castError();
+			CastError();
 		}
 
 	}
-	auto ListObj::value() && -> TValue {
+	auto ListBase::value() && -> TList {
 		if(!mValue.has_value()) {
 			mValue = TValue();
 		}
 		try {
-			return std::any_cast<TValue&&>(std::move(mValue));
+			return std::any_cast<TList&&>(std::move(mValue));
 		}
 		catch(std::bad_any_cast&) {
-			throw castError();
+			CastError();
 		}
 	}
-	auto ListObj::value() const& -> const TValue& {
-		return const_cast<ListObj*>(this)->value();
+	auto ListBase::value() const& -> const TList& {
+		return const_cast<ListBase*>(this)->value();
 	}
+	auto ListBase::size() const -> std::size_t {
+		return value().size();
+	}
+	auto ListBase::valueHash(std::size_t seed) const -> std::size_t {
+		for(auto& elem: value()) {
+			seed = HashCombine(seed, std::hash<BinONObj>{}(elem));
+		}
+		return seed;
+	}
+
+	//---- ListObj -------------------------------------------------------------
+
 	auto ListObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const ListObj&
 	{
@@ -74,6 +105,9 @@ namespace binon {
 		}
 		return *this;
 	}
+	auto ListObj::hash() const -> std::size_t {
+		return valueHash(std::hash<std::string_view>{}(kClsName));
+	}
 	void ListObj::printArgs(std::ostream& stream) const {
 		stream << "ListObj::TValue{";
 		auto& u = value();
@@ -93,42 +127,13 @@ namespace binon {
 	//---- SList --------------------------------------------------------------
 
 	SList::SList(std::any value, CodeByte elemCode):
-		StdCtnr<SList,TValue>{std::move(value)},
+		ListBase::ListBase{std::move(value)},
 		mElemCode{elemCode}
 	{
 	}
 	SList::SList(CodeByte elemCode):
 		mElemCode{elemCode}
 	{
-	}
-	auto SList::hasDefVal() const -> bool {
-		return value().size() == 0;
-	}
-	auto SList::value() & -> TValue& {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&>(mValue);
-		}
-		catch(std::bad_any_cast&) {
-			throw castError();
-		}
-
-	}
-	auto SList::value() && -> TValue {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&&>(std::move(mValue));
-		}
-		catch(std::bad_any_cast&) {
-			throw castError();
-		}
-	}
-	auto SList::value() const& -> const TValue& {
-		return const_cast<SList*>(this)->value();
 	}
 	auto SList::encodeData(TOStream& stream, bool requireIO) const
 		-> const SList&
@@ -165,6 +170,9 @@ namespace binon {
 			u.push_back(unpack(kSkipRequireIO));
 		}
 		return *this;
+	}
+	auto SList::hash() const -> std::size_t {
+		return valueHash(std::hash<std::string_view>{}(kClsName));
 	}
 	void SList::printArgs(std::ostream& stream) const {
 		stream << "SList::TValue{";

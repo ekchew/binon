@@ -12,12 +12,12 @@ namespace binon {
 		constexpr bool kIsCtnrType
 			= std::is_base_of_v<CtnrType, std::decay_t<T>>;
 
-	//	kIsListType<T> indicates whether (the decayed form of) type T is a
+	//	kIsListBase<T> indicates whether (the decayed form of) type T is a
 	//	ListObj or SList. It is used by several functions defined in this
 	//	header.
 	template<typename T>
-		constexpr bool kIsListType
-			= std::is_base_of_v<ListType, std::decay_t<T>>;
+		constexpr bool kIsListBase
+			= std::is_base_of_v<ListBase, std::decay_t<T>>;
 
 	//	Size() returns the number of elements in a list or dictionary object.
 	//
@@ -94,7 +94,7 @@ namespace binon {
 	template<typename T, typename List>
 		auto GetVal(List& list, std::size_t index)
 		-> std::enable_if_t<
-			kIsListType<List> && kIsBinONVal<T>,
+			kIsListBase<List> && kIsBinONVal<T>,
 			TBinONObjVal<T>&
 			>
 	{
@@ -103,7 +103,7 @@ namespace binon {
 	template<typename T, typename List>
 		auto GetVal(const List& list, std::size_t index)
 		-> std::enable_if_t<
-			kIsListType<List> && kIsBinONVal<T>,
+			kIsListBase<List> && kIsBinONVal<T>,
 			const TBinONObjVal<T>&
 			>
 	{
@@ -112,7 +112,7 @@ namespace binon {
 	template<typename T, typename List>
 		auto GetVal(List&& list, std::size_t index)
 		-> std::enable_if_t<
-			kIsListType<List> && kIsBinONVal<T>,
+			kIsListBase<List> && kIsBinONVal<T>,
 			TBinONObjVal<T>
 			>
 	{
@@ -121,7 +121,7 @@ namespace binon {
 	template<typename T, typename List>
 		auto GetVal(const List& list, std::size_t index)
 		-> std::enable_if_t<
-			kIsListType<List> && !kIsBinONVal<T>,
+			kIsListBase<List> && !kIsBinONVal<T>,
 			TBinONObjVal<T>
 			>
 	{
@@ -132,7 +132,7 @@ namespace binon {
 
 	template<
 		typename List,
-		typename std::enable_if_t<kIsListType<List>, int> = 0
+		typename std::enable_if_t<kIsListBase<List>, int> = 0
 		>
 		auto& SetVal(List& list, std::size_t index, const char* s)
 	{
@@ -141,7 +141,7 @@ namespace binon {
 	}
 	template<
 		typename List, typename T,
-		typename std::enable_if_t<kIsListType<List> && !kIsCStr<T>, int> = 0
+		typename std::enable_if_t<kIsListBase<List> && !kIsCStr<T>, int> = 0
 		>
 		auto& SetVal(List& list, std::size_t index, const T& v)
 	{
@@ -151,7 +151,7 @@ namespace binon {
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<
-			kIsListType<List> && kIsBinONVal<T> && !kIsCStr<T>, int
+			kIsListBase<List> && kIsBinONVal<T> && !kIsCStr<T>, int
 			> = 0
 		>
 		auto& SetVal(List& list, std::size_t index, T&& v)
@@ -164,7 +164,7 @@ namespace binon {
 
 	template<
 		typename List,
-		typename std::enable_if_t<kIsListType<List>, int> = 0
+		typename std::enable_if_t<kIsListBase<List>, int> = 0
 		>
 		auto& AppendVal(List& list, const char* s)
 	{
@@ -173,7 +173,7 @@ namespace binon {
 	}
 	template<
 		typename List, typename T,
-		typename std::enable_if_t<kIsListType<List> && !kIsCStr<T>, int> = 0
+		typename std::enable_if_t<kIsListBase<List> && !kIsCStr<T>, int> = 0
 		>
 		auto& AppendVal(List& list, const T& v)
 	{
@@ -183,7 +183,7 @@ namespace binon {
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<
-			kIsListType<List> && kIsBinONVal<T> && !kIsCStr<T>, int
+			kIsListBase<List> && kIsBinONVal<T> && !kIsCStr<T>, int
 			> = 0
 		>
 		auto& AppendVal(List& list, T&& v)

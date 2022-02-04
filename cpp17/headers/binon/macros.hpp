@@ -102,6 +102,21 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 	#define BINON_IF_CONCEPTS(code)
 #endif
 
+//	Defines to help use execution policies where available
+#if BINON_LIB_EXECUTION
+	#include <execution>
+	#define BINON_PAR std::execution::par,
+	#define BINON_PAR_UNSEQ std::execution::par_unseq,
+	#define BINON_UNSEQ std::execution::unseq,
+#else
+	#if BINON_EXEC_POLICIES
+		#pragma message "C++17 execution policies unavailable"
+	#endif
+	#define BINON_PAR
+	#define BINON_PAR_UNSEQ
+	#define BINON_UNSEQ
+#endif
+
 //	Comma escape for macros that take arguments.
 #define BINON_COMMA ,
 
