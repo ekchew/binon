@@ -23,6 +23,10 @@ namespace binon {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"ListObj"};
 		using StdCtnr<ListObj,TList>::StdCtnr;
+		auto hasDefVal() const -> bool;
+		auto value() & -> TValue&;
+		auto value() && -> TValue;
+		auto value() const& -> const TValue&;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const ListObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
@@ -35,6 +39,10 @@ namespace binon {
 		CodeByte mElemCode;
 		SList(std::any value, CodeByte elemCode = kNoObjCode);
 		SList(CodeByte elemCode = kNullObjCode);
+		auto hasDefVal() const -> bool;
+		auto value() & -> TValue&;
+		auto value() && -> TValue;
+		auto value() const& -> const TValue&;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SList&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

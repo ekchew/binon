@@ -19,6 +19,35 @@ namespace binon {
 
 	//---- ListObj ------------------------------------------------------------
 
+	auto ListObj::hasDefVal() const -> bool {
+		return value().size() == 0;
+	}
+	auto ListObj::value() & -> TValue& {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&>(mValue);
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+
+	}
+	auto ListObj::value() && -> TValue {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&&>(std::move(mValue));
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+	}
+	auto ListObj::value() const& -> const TValue& {
+		return const_cast<ListObj*>(this)->value();
+	}
 	auto ListObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const ListObj&
 	{
@@ -71,6 +100,35 @@ namespace binon {
 	SList::SList(CodeByte elemCode):
 		mElemCode{elemCode}
 	{
+	}
+	auto SList::hasDefVal() const -> bool {
+		return value().size() == 0;
+	}
+	auto SList::value() & -> TValue& {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&>(mValue);
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+
+	}
+	auto SList::value() && -> TValue {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&&>(std::move(mValue));
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+	}
+	auto SList::value() const& -> const TValue& {
+		return const_cast<SList*>(this)->value();
 	}
 	auto SList::encodeData(TOStream& stream, bool requireIO) const
 		-> const SList&

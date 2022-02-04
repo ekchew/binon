@@ -9,6 +9,35 @@ namespace binon {
 
 	//---- DictObj ------------------------------------------------------------
 
+	auto DictObj::hasDefVal() const -> bool {
+		return value().size() == 0;
+	}
+	auto DictObj::value() & -> TValue& {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&>(mValue);
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+
+	}
+	auto DictObj::value() && -> TValue {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&&>(std::move(mValue));
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+	}
+	auto DictObj::value() const& -> const TValue& {
+		return const_cast<DictObj*>(this)->value();
+	}
 	auto DictObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const DictObj&
 	{
@@ -73,6 +102,35 @@ namespace binon {
 	SKDict::SKDict(CodeByte keyCode):
 		mKeyCode{keyCode}
 	{
+	}
+	auto SKDict::hasDefVal() const -> bool {
+		return value().size() == 0;
+	}
+	auto SKDict::value() & -> TValue& {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&>(mValue);
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+
+	}
+	auto SKDict::value() && -> TValue {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&&>(std::move(mValue));
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+	}
+	auto SKDict::value() const& -> const TValue& {
+		return const_cast<SKDict*>(this)->value();
 	}
 	auto SKDict::encodeData(TOStream& stream, bool requireIO) const
 		-> const SKDict&
@@ -154,6 +212,35 @@ namespace binon {
 		mKeyCode{keyCode},
 		mValCode{valCode}
 	{
+	}
+	auto SDict::hasDefVal() const -> bool {
+		return value().size() == 0;
+	}
+	auto SDict::value() & -> TValue& {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&>(mValue);
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+
+	}
+	auto SDict::value() && -> TValue {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&&>(std::move(mValue));
+		}
+		catch(std::bad_any_cast&) {
+			throw castError();
+		}
+	}
+	auto SDict::value() const& -> const TValue& {
+		return const_cast<SDict*>(this)->value();
 	}
 	auto SDict::encodeData(TOStream& stream, bool requireIO) const
 		-> const SDict&

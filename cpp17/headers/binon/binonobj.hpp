@@ -158,12 +158,7 @@ namespace std {
 	//	return a suitable hash code (other than for the aforementioned container
 	//	types whose hash() methods will throw an exception instead).
 	template<> struct hash<binon::BinONObj> {
-		auto operator() (const binon::BinONObj& obj) const -> std::size_t {
-			return std::visit(
-				[](const auto& obj) -> std::size_t { return obj.hash(); },
-				obj
-				);
-		}
+		auto operator() (const binon::BinONObj& obj) const -> std::size_t;
 	};
 
 }

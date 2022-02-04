@@ -31,6 +31,10 @@ namespace binon {
 		using StdCtnr<DictObj, TDict>::StdCtnr;
 		static constexpr auto kTypeCode = kDictObjCode;
 		static constexpr auto kClsName = std::string_view{"DictObj"};
+		auto hasDefVal() const -> bool;
+		auto value() & -> TValue&;
+		auto value() && -> TValue;
+		auto value() const& -> const TValue&;
 		auto encodeData(TOStream&, bool requireIO = true) const
 			-> const DictObj&;
 		auto decodeData(TIStream&, bool requireIO = true)
@@ -43,6 +47,10 @@ namespace binon {
 		CodeByte mKeyCode;
 		SKDict(std::any value, CodeByte keyCode = kNoObjCode);
 		SKDict(CodeByte keyCode = kNoObjCode);
+		auto hasDefVal() const -> bool;
+		auto value() & -> TValue&;
+		auto value() && -> TValue;
+		auto value() const& -> const TValue&;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SKDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
@@ -58,6 +66,10 @@ namespace binon {
 			CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode
 			);
 		SDict(CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode);
+		auto hasDefVal() const -> bool;
+		auto value() & -> TValue&;
+		auto value() && -> TValue;
+		auto value() const& -> const TValue&;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

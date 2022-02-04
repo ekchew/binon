@@ -142,10 +142,6 @@ namespace binon {
 			using TValue = Ctnr;
 			StdCtnr(std::any ctnr);
 			StdCtnr() = default;
-			auto value() & -> TValue&;
-			auto value() && -> TValue;
-			auto value() const& -> const TValue&;
-			auto hasDefVal() const -> bool;
 
 			auto operator== (const StdCtnr& rhs) const -> bool;
 			auto operator!= (const StdCtnr& rhs) const -> bool;
@@ -153,7 +149,7 @@ namespace binon {
 
 			auto hash() const -> std::size_t; // throws NoHashing
 
-		private:
+		protected:
 			std::any mValue;
 			auto castError() const -> TypeErr;
 		};
@@ -215,37 +211,6 @@ namespace binon {
 		{
 		}
 	template<typename Child, typename Ctnr>
-		auto StdCtnr<Child,Ctnr>::value() & -> TValue& {
-			if(!mValue.has_value()) {
-				mValue = TValue();
-			}
-			try {
-				return std::any_cast<TValue&>(mValue);
-			}
-			catch(std::bad_any_cast&) {
-				throw castError();
-			}
-
-		}
-	template<typename Child, typename Ctnr>
-		auto StdCtnr<Child,Ctnr>::value() && -> TValue {
-			if(!mValue.has_value()) {
-				mValue = TValue();
-			}
-			try {
-				return std::any_cast<TValue&&>(std::move(mValue));
-			}
-			catch(std::bad_any_cast&) {
-				throw castError();
-			}
-		}
-	template<typename Child, typename Ctnr>
-		auto StdCtnr<Child,Ctnr>::value() const&
-			-> const TValue&
-		{
-			return const_cast<StdCtnr*>(this)->value();
-		}
-	template<typename Child, typename Ctnr>
 		auto StdCtnr<Child,Ctnr>::operator== (const StdCtnr&) const -> bool {
 			throw NoComparing{"BinON container objects cannot be compared"};
 		}
@@ -258,10 +223,6 @@ namespace binon {
 	template<typename Child, typename Ctnr>
 		auto StdCtnr<Child,Ctnr>::hash() const -> std::size_t {
 			throw NoHashing{"BinON container objects cannot be hashed"};
-		}
-	template<typename Child, typename Ctnr>
-		auto StdCtnr<Child,Ctnr>::hasDefVal() const -> bool {
-			return value().size() == 0;
 		}
 	template<typename Child, typename Ctnr>
 		auto StdCtnr<Child,Ctnr>::castError() const -> TypeErr {

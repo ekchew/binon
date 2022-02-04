@@ -9,7 +9,7 @@ namespace binon {
 		auto varObj{FromTypeCode(cb.typeCode())};
 		std::visit(
 			[&](auto& obj) { obj.decode(cb, stream, kSkipRequireIO); },
-			varObj
+			static_cast<BinONVariant&>(varObj)
 			);
 		return varObj;
 	}
@@ -51,7 +51,7 @@ namespace binon {
 	{
 		std::visit(
 			[&](const auto& obj) { obj.encode(stream, requireIO); },
-		 	*this
+		 	*static_cast<const BinONVariant*>(this)
 			);
 		return *this;
 	}
@@ -60,7 +60,7 @@ namespace binon {
 	{
 		std::visit(
 			[&](const auto& obj) { obj.encodeData(stream, requireIO); },
-			*this
+			*static_cast<const BinONVariant*>(this)
 			);
 		return *this;
 	}
@@ -69,7 +69,7 @@ namespace binon {
 	{
 		std::visit(
 			[&](auto& obj) { obj.decodeData(stream, requireIO); },
-			*this
+			*static_cast<BinONVariant*>(this)
 			);
 		return *this;
 	}
@@ -81,13 +81,13 @@ namespace binon {
 					obj.printArgs(stream);
 					stream << ')';
 				},
-			*this
+			*static_cast<const BinONVariant*>(this)
 			);
 	}
 	auto BinONObj::typeCode() const -> CodeByte {
 		return std::visit(
 			[](const auto& obj) -> CodeByte { return obj.kTypeCode; },
-			*this
+			*static_cast<const BinONVariant*>(this)
 			);
 	}
 	auto operator<< (
@@ -97,4 +97,13 @@ namespace binon {
 		obj.print(stream);
 		return stream;
 	}
+}
+
+auto std::hash<binon::BinONObj>::operator() (const binon::BinONObj& obj) const
+	-> std::size_t
+{
+	return std::visit(
+		[](const auto& obj) -> std::size_t { return obj.hash(); },
+		static_cast<const binon::BinONVariant&>(obj)
+		);
 }

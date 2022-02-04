@@ -38,12 +38,7 @@ namespace binon {
 			}
 		}
 		else {
-			std::visit(
-				[this](const auto& obj) {
-					obj.encodeData(mStream, kSkipRequireIO);
-				},
-				varObj
-				);
+			varObj.encodeData(mStream, kSkipRequireIO);
 			++mIndex;
 		}
 	}
@@ -78,12 +73,7 @@ namespace binon {
 		}
 		else {
 			auto varObj{BinONObj::FromTypeCode(mElemCode)};
-			std::visit(
-				[this](auto& obj) {
-					obj.decodeData(mStream, kSkipRequireIO);
-				},
-				varObj
-				);
+			varObj.decodeData(mStream, kSkipRequireIO);
 			++mIndex;
 			return varObj;
 		}

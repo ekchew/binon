@@ -531,7 +531,14 @@ auto std::hash<binon::TIntVal>::operator() (
 	if(iv.canBeScalar()) {
 		return std::hash<binon::TIntVal::TScalar>{}(iv.scalar());
 	}
-	return std::hash<binon::TIntVal::TVect>{}(iv.vect());
+	//	Works in clang++, broken in g++
+	//return std::hash<binon::TIntVal::TVect>{}(iv.vect());
+	auto& vect = iv.vect();
+	std::string_view sv{
+		reinterpret_cast<const char*>(vect.data()),
+		vect.size()
+	};
+	return std::hash<string_view>{}(sv);
 }
 auto std::hash<binon::UIntVal>::operator() (
 	const binon::UIntVal& iv
@@ -542,5 +549,12 @@ auto std::hash<binon::UIntVal>::operator() (
 	if(iv.canBeScalar()) {
 		return std::hash<binon::UIntVal::TScalar>{}(iv.scalar());
 	}
-	return std::hash<binon::UIntVal::TVect>{}(iv.vect());
+	//	Works in clang++, broken in g++
+	//return std::hash<binon::TIntVal::TVect>{}(iv.vect());
+	auto& vect = iv.vect();
+	std::string_view sv{
+		reinterpret_cast<const char*>(vect.data()),
+		vect.size()
+	};
+	return std::hash<string_view>{}(sv);
 }
