@@ -2,13 +2,14 @@
 #define BINON_HASHUTIL_HPP
 
 #include "byteutil.hpp" // for the CHAR_BIT assertion
+#include "typeutil.hpp"
 
 #include <functional>
 
 namespace binon {
 
 	namespace details {
-		
+
 		//	This low-level function for combining 2 hash values is based on the
 		//	boost implementation, but extends the magic number (apparently based
 		//	on the golden ratio) if std::size_t is 64 bits.
@@ -20,19 +21,23 @@ namespace binon {
 				return a ^ (b + kMagic + (a << 6) + (a >> 2));
 			}
 	}
-	
+
 	//	Combines 2 or more hash values you generated using std::hash into a
 	//	single value and returns it.
 	template<typename... Vs> constexpr
-		auto HashCombine(std::size_t v, Vs... vs) noexcept -> std::size_t {
-			if constexpr(sizeof...(Vs) == 0) {
-				return v;
-			}
-			else {
-				return details::HashCombine2(HashCombine(vs...), v);
-			}
+		auto HashCombine(std::size_t v, Vs... vs) noexcept
+			-> std::enable_if_t<kArgsOfType<std::size_t, Vs...>, std::size_t>
+		{
+			using std::size_t;
+			constexpr auto pred = [](size_t a, size_t b) {
+				return details::HashCombine2(a, b);
+			};
+			return (
+				BinPred(v, pred) + ... +
+				BinPred(static_cast<size_t>(vs), pred)
+			);
 		}
-	
+
 	//	This is a high-level function that calls the std::hash functor on one
 	//	or more values and returns a combined hash value for all of them.
 	template<typename V> constexpr
