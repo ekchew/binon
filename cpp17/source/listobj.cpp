@@ -41,36 +41,36 @@ namespace binon {
 	auto ListBase::hasDefVal() const -> bool {
 		return value().size() == 0;
 	}
-	auto ListBase::value() & -> TList& {
+	auto ListBase::value() & -> TValue& {
 		if(!mValue.has_value()) {
-			mValue = TList();
+			mValue = TValue();
 		}
 		try {
-			return std::any_cast<TList&>(mValue);
+			return std::any_cast<TValue&>(mValue);
 		}
 		catch(std::bad_any_cast&) {
 			CastError();
 		}
 
 	}
-	auto ListBase::value() && -> TList {
+	auto ListBase::value() && -> TValue {
 		if(!mValue.has_value()) {
 			mValue = TValue();
 		}
 		try {
-			return std::any_cast<TList&&>(std::move(mValue));
+			return std::any_cast<TValue&&>(std::move(mValue));
 		}
 		catch(std::bad_any_cast&) {
 			CastError();
 		}
 	}
-	auto ListBase::value() const& -> const TList& {
+	auto ListBase::value() const& -> const TValue& {
 		return const_cast<ListBase*>(this)->value();
 	}
 	auto ListBase::size() const -> std::size_t {
 		return value().size();
 	}
-	auto ListBase::valueHash(std::size_t seed) const -> std::size_t {
+	auto ListBase::calcHash(std::size_t seed) const -> std::size_t {
 		for(auto& elem: value()) {
 			seed = HashCombine(seed, std::hash<BinONObj>{}(elem));
 		}
@@ -106,7 +106,7 @@ namespace binon {
 		return *this;
 	}
 	auto ListObj::hash() const -> std::size_t {
-		return valueHash(std::hash<std::string_view>{}(kClsName));
+		return calcHash(std::hash<std::string_view>{}(kClsName));
 	}
 	void ListObj::printArgs(std::ostream& stream) const {
 		stream << "ListObj::TValue{";
@@ -172,7 +172,7 @@ namespace binon {
 		return *this;
 	}
 	auto SList::hash() const -> std::size_t {
-		return valueHash(std::hash<std::string_view>{}(kClsName));
+		return calcHash(std::hash<std::string_view>{}(kClsName));
 	}
 	void SList::printArgs(std::ostream& stream) const {
 		stream << "SList::TValue{";

@@ -36,16 +36,11 @@ namespace binon {
 		}
 
 	//	This is a high-level function that calls the std::hash functor on one
-	//	or more values and returns a combined hash value for all of them.
-	template<typename V> constexpr
-		auto Hash(const V& v) -> std::size_t {
-			return std::hash<V>{}(v);
+	//	or more values and returns a combined hash value for all of them.	/*
+	template<typename... Vs> constexpr
+		auto Hash(const Vs&... vs) -> std::size_t {
+			return HashCombine(std::hash<Vs>{}(vs)...);
 		}
-	template<typename V, typename... Vs> constexpr
-		auto Hash(const V& v, const Vs&... vs) -> std::size_t {
-			return details::HashCombine2(Hash(vs...), std::hash<V>{}(v));
-		}
-
 }
 
 #endif

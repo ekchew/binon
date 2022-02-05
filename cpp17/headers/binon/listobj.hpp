@@ -37,7 +37,7 @@ namespace binon {
 		auto value() const& -> const TValue&;
 		auto size() const -> std::size_t;
 	 protected:
-		auto valueHash(std::size_t seed) const -> std::size_t;
+		auto calcHash(std::size_t seed) const -> std::size_t;
 	};
 	struct ListObj: ListBase, StdCodec<ListObj>  {
 		static constexpr auto kTypeCode = kListObjCode;

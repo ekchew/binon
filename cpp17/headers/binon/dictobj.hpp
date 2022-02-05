@@ -24,6 +24,19 @@ namespace binon {
 	//	dictionary helper functions in typeconv.hpp to ascertain if a given type
 	//	T is a DictObj, SKDict, or SDict.
 	struct DictType: CtnrType{};
+	struct DictBase: CtnrBase, CtnrType {
+		using TValue = TDict;
+		using CtnrBase::CtnrBase;
+		auto operator == (const DictBase& rhs) const -> bool;
+		auto operator != (const DictBase& rhs) const -> bool;
+		auto hasDefVal() const -> bool;
+		auto value() & -> TValue&;
+		auto value() && -> TValue;
+		auto value() const& -> const TValue&;
+		auto size() const -> std::size_t;
+	 protected:
+	   auto calcHash(std::size_t seed) const -> std::size_t;
+	};
 
 	//	The 3 dictionary types: DictObj, SKDict, and SDict. See the note above
 	//	StdCtnr regarding how values are managed in container types.

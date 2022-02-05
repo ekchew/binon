@@ -7,7 +7,65 @@
 
 namespace binon {
 
-	//---- DictObj ------------------------------------------------------------
+	//---- DictBase ------------------------------------------------------------
+
+	auto DictBase::operator == (const DictBase& rhs) const -> bool {
+		auto& da = value();
+		auto& db = rhs.value();
+		if(da.size() != db.size()) {
+			return false;
+		}
+		for(auto& a: da) {
+			auto pb = db.find(a.first);
+			if(pb == db.end() || a.second != pb->second) {
+				return false;
+			}
+		}
+		return true;
+	}
+	auto DictBase::operator != (const DictBase& rhs) const -> bool {
+		return !(*this == rhs);
+	}
+	auto DictBase::hasDefVal() const -> bool {
+		return value().size() == 0;
+	}
+	auto DictBase::value() & -> TValue& {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&>(mValue);
+		}
+		catch(std::bad_any_cast&) {
+			CastError();
+		}
+
+	}
+	auto DictBase::value() && -> TValue {
+		if(!mValue.has_value()) {
+			mValue = TValue();
+		}
+		try {
+			return std::any_cast<TValue&&>(std::move(mValue));
+		}
+		catch(std::bad_any_cast&) {
+			CastError();
+		}
+	}
+	auto DictBase::value() const& -> const TValue& {
+		return const_cast<DictBase*>(this)->value();
+	}
+	auto DictBase::size() const -> std::size_t {
+		return value().size();
+	}
+	auto DictBase::calcHash(std::size_t seed) const -> std::size_t {
+		for(auto& pair: value()) {
+			seed ^= Hash(pair.first, pair.second);
+		}
+		return seed;
+	}
+
+	//---- DictObj -------------------------------------------------------------
 
 	auto DictObj::hasDefVal() const -> bool {
 		return value().size() == 0;
@@ -92,7 +150,7 @@ namespace binon {
 		stream << "}";
 	}
 
-	//---- SKDict -------------------------------------------------------------
+	//---- SKDict --------------------------------------------------------------
 
 	SKDict::SKDict(std::any value, CodeByte keyCode):
 		StdCtnr<SKDict,TValue>{std::move(value)},
@@ -200,7 +258,7 @@ namespace binon {
 		mKeyCode.printRepr(stream);
 	}
 
-	//---- SDict -------------------------------------------------------------
+	//---- SDict ---------------------------------------------------------------
 
 	SDict::SDict(std::any value, CodeByte keyCode, CodeByte valCode):
 		StdCtnr<SDict,TValue>{std::move(value)},
