@@ -120,38 +120,6 @@ namespace binon {
 				-> Child&;
 		};
 
-	/*
-	The container types all share a lot of basic functionality.
-
-	But of particular note is that the constructor accepts a std::any
-	rather than the TValue type, and indeed the internally stored value is
-	a std::any as well. Why, you ask? This was done to work around a
-	circular header dependency problem. (For example, ListObj's value type
-	is std::vector<BinONObj>. But ListObj is also a variant of BinONObj,
-	and this causes the compiler a lot of drama. So the type has to be
-	hidden in order for the code to compile.)
-
-	Since the constructor does not perform a compile-time type check,
-	the value() methods will instead perform a type check at run-time and
-	throw binon::TypeErr if it fails.
-	*/
-	template<typename Child, typename Ctnr>
-		struct StdCtnr: StdCodec<Child> {
-			using TValue = Ctnr;
-			StdCtnr(std::any ctnr);
-			StdCtnr() = default;
-
-			auto operator== (const StdCtnr& rhs) const -> bool;
-			auto operator!= (const StdCtnr& rhs) const -> bool;
-				 // throw NoComparing
-
-			auto hash() const -> std::size_t; // throws NoHashing
-
-		protected:
-			std::any mValue;
-			auto castError() const -> TypeErr;
-		};
-
 	//==== Template Implementation =============================================
 
 	//--- StdCodec ------------------------------------------------------------
@@ -199,36 +167,6 @@ namespace binon {
 			auto& child = *static_cast<Child*>(this);
 			Decode(child, cb, stream, requireIO);
 			return child;
-		}
-
-	//--- StdCtnr ----------------------------------------------------------
-
-	template<typename Child, typename Ctnr>
-		StdCtnr<Child,Ctnr>::StdCtnr(std::any ctnr):
-			mValue{std::move(ctnr)}
-		{
-		}
-	template<typename Child, typename Ctnr>
-		auto StdCtnr<Child,Ctnr>::operator== (const StdCtnr&) const -> bool {
-			throw NoComparing{"BinON container objects cannot be compared"};
-		}
-	template<typename Child, typename Ctnr>
-		auto StdCtnr<Child,Ctnr>::operator!= (const StdCtnr& rhs) const
-			-> bool
-		{
-			return !(*this == rhs);
-		}
-	template<typename Child, typename Ctnr>
-		auto StdCtnr<Child,Ctnr>::hash() const -> std::size_t {
-			throw NoHashing{"BinON container objects cannot be hashed"};
-		}
-	template<typename Child, typename Ctnr>
-		auto StdCtnr<Child,Ctnr>::castError() const -> TypeErr {
-			std::ostringstream oss;
-			oss << Child::kClsName
-				<< " constructed with something other than the expected "
-				<< Child::kClsName << "::TValue";
-			return TypeErr{oss.str()};
 		}
 }
 

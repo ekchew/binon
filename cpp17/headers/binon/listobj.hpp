@@ -17,7 +17,27 @@ namespace binon {
 
 	using TList = std::vector<BinONObj,BINON_ALLOCATOR<BinONObj>>;
 
-	struct CtnrType{};
+	//	CtnrBase lies at the base of a class hierarchy that looks like this:
+	//
+	//		CtnrBase
+	//			ListBase
+	//				ListObj SList
+	//			DictBase
+	//				DictObj SKDict SDict
+	//
+	//	It stores the value used by all these classes in a std::any instance.
+	//	This was done to get around a circular dependency problem. (For example,
+	//	ListObj is built around a vector of BinONObj, but a BinONObj can itself
+	//	be a ListObj. Each needs to know what the other is before it can be
+	//	defined, leading to an impass. By using std::any, BinONObj no longer
+	//	needs to know that a ListObj can contain them, thereby placating the
+	//	compiler.)
+	//
+	//	Since any container object can be initialized with any data type besides
+	//	the expected TList for list types or TDict for dictionary types, there
+	//	can be no compile-time check that constructor is called with the right
+	//	argument type. Instead, the value() methods perform this check at
+	//	run-time and throw TypeErr if there is a problem.
 	struct CtnrBase{
 		CtnrBase(const std::any& ctnr);
 		CtnrBase(std::any&& ctnr) noexcept;
@@ -26,7 +46,11 @@ namespace binon {
 		std::any mValue;
 		[[noreturn]] static void CastError();
 	};
-	struct ListBase: CtnrBase, CtnrType {
+
+	//	ListBase implements a number of methods shared by ListObj and SList. In
+	//	particular, it implements the value() methods used to extract a TList
+	//	out of the CtnrBase's internal std::any member.
+	struct ListBase: CtnrBase {
 		using TValue = TList;
 		using CtnrBase::CtnrBase;
 		auto operator == (const ListBase& rhs) const -> bool;
@@ -39,6 +63,7 @@ namespace binon {
 	 protected:
 		auto calcHash(std::size_t seed) const -> std::size_t;
 	};
+	
 	struct ListObj: ListBase, StdCodec<ListObj>  {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"ListObj"};

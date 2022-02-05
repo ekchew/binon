@@ -67,35 +67,6 @@ namespace binon {
 
 	//---- DictObj -------------------------------------------------------------
 
-	auto DictObj::hasDefVal() const -> bool {
-		return value().size() == 0;
-	}
-	auto DictObj::value() & -> TValue& {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&>(mValue);
-		}
-		catch(std::bad_any_cast&) {
-			throw castError();
-		}
-
-	}
-	auto DictObj::value() && -> TValue {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&&>(std::move(mValue));
-		}
-		catch(std::bad_any_cast&) {
-			throw castError();
-		}
-	}
-	auto DictObj::value() const& -> const TValue& {
-		return const_cast<DictObj*>(this)->value();
-	}
 	auto DictObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const DictObj&
 	{
@@ -130,6 +101,9 @@ namespace binon {
 		}
 		return *this;
 	}
+	auto DictObj::hash() const -> std::size_t {
+		return calcHash(std::hash<std::string_view>{}(kClsName));
+	}
 	void DictObj::printArgs(std::ostream& stream) const {
 		stream << "DictObj::TValue{";
 		auto& u = value();
@@ -152,43 +126,19 @@ namespace binon {
 
 	//---- SKDict --------------------------------------------------------------
 
-	SKDict::SKDict(std::any value, CodeByte keyCode):
-		StdCtnr<SKDict,TValue>{std::move(value)},
+	SKDict::SKDict(const std::any& value, CodeByte keyCode):
+		DictBase{value},
 		mKeyCode{keyCode}
 	{
 	}
-	SKDict::SKDict(CodeByte keyCode):
+	SKDict::SKDict(std::any&& value, CodeByte keyCode) noexcept:
+		DictBase{std::move(value)},
 		mKeyCode{keyCode}
 	{
 	}
-	auto SKDict::hasDefVal() const -> bool {
-		return value().size() == 0;
-	}
-	auto SKDict::value() & -> TValue& {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&>(mValue);
-		}
-		catch(std::bad_any_cast&) {
-			throw castError();
-		}
-
-	}
-	auto SKDict::value() && -> TValue {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&&>(std::move(mValue));
-		}
-		catch(std::bad_any_cast&) {
-			throw castError();
-		}
-	}
-	auto SKDict::value() const& -> const TValue& {
-		return const_cast<SKDict*>(this)->value();
+	SKDict::SKDict(CodeByte keyCode) noexcept:
+		mKeyCode{keyCode}
+	{
 	}
 	auto SKDict::encodeData(TOStream& stream, bool requireIO) const
 		-> const SKDict&
@@ -237,6 +187,9 @@ namespace binon {
 		}
 		return *this;
 	}
+	auto SKDict::hash() const -> std::size_t {
+		return calcHash(std::hash<std::string_view>{}(kClsName));
+	}
 	void SKDict::printArgs(std::ostream& stream) const {
 		stream << "SKDict::TValue{";
 		auto& u = value();
@@ -260,45 +213,22 @@ namespace binon {
 
 	//---- SDict ---------------------------------------------------------------
 
-	SDict::SDict(std::any value, CodeByte keyCode, CodeByte valCode):
-		StdCtnr<SDict,TValue>{std::move(value)},
+	SDict::SDict(const std::any& value, CodeByte keyCode, CodeByte valCode):
+		DictBase{value},
 		mKeyCode{keyCode},
 		mValCode{valCode}
 	{
 	}
-	SDict::SDict(CodeByte keyCode, CodeByte valCode):
+	SDict::SDict(std::any&& value, CodeByte keyCode, CodeByte valCode) noexcept:
+		DictBase{std::move(value)},
 		mKeyCode{keyCode},
 		mValCode{valCode}
 	{
 	}
-	auto SDict::hasDefVal() const -> bool {
-		return value().size() == 0;
-	}
-	auto SDict::value() & -> TValue& {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&>(mValue);
-		}
-		catch(std::bad_any_cast&) {
-			throw castError();
-		}
-
-	}
-	auto SDict::value() && -> TValue {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&&>(std::move(mValue));
-		}
-		catch(std::bad_any_cast&) {
-			throw castError();
-		}
-	}
-	auto SDict::value() const& -> const TValue& {
-		return const_cast<SDict*>(this)->value();
+	SDict::SDict(CodeByte keyCode, CodeByte valCode) noexcept:
+		mKeyCode{keyCode},
+		mValCode{valCode}
+	{
 	}
 	auto SDict::encodeData(TOStream& stream, bool requireIO) const
 		-> const SDict&
@@ -362,6 +292,9 @@ namespace binon {
 			u[std::move(k)] = unpackVal(kSkipRequireIO);
 		}
 		return *this;
+	}
+	auto SDict::hash() const -> std::size_t {
+		return calcHash(std::hash<std::string_view>{}(kClsName));
 	}
 	void SDict::printArgs(std::ostream& stream) const {
 		stream << "SDict::TValue{";

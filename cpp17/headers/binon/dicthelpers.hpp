@@ -6,7 +6,7 @@
 namespace binon {
 
 	template<typename T>
-		constexpr bool kIsDictType = std::is_base_of_v<DictType, T>;
+		constexpr bool kIsDictType = std::is_base_of_v<DictBase, T>;
 
 	/*
 	These functions help you work with DictObj, SKDict, and SDict instances:

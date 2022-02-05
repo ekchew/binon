@@ -10,7 +10,7 @@ namespace binon {
 	//	function defined in this header.
 	template<typename T>
 		constexpr bool kIsCtnrType
-			= std::is_base_of_v<CtnrType, std::decay_t<T>>;
+			= std::is_base_of_v<CtnrBase, std::decay_t<T>>;
 
 	//	kIsListBase<T> indicates whether (the decayed form of) type T is a
 	//	ListObj or SList. It is used by several functions defined in this
@@ -18,10 +18,6 @@ namespace binon {
 	template<typename T>
 		constexpr bool kIsListBase
 			= std::is_base_of_v<ListBase, std::decay_t<T>>;
-
-	//	Size() returns the number of elements in a list or dictionary object.
-	//
-	//template<typename Ctnr> auto Size(const Ctnr& ctnr) -> std::size_t;
 
 	//	These functions create a list object out of any TypeConv-supported
 	//	values you pass in. For example:
@@ -79,15 +75,6 @@ namespace binon {
 	//		auto AppendVal(List& list, const T& v) -> List;
 
 	//==== Template Implementation =============================================
-
-	//---- Size function template ----------------------------------------------
-
-	template<typename Ctnr>
-		auto Size(const Ctnr& ctnr)
-			-> std::enable_if_t<kIsCtnrType<Ctnr>, std::size_t>
-	{
-		return ctnr.value().size();
-	}
 
 	//---- GetVal function templates -------------------------------------------
 

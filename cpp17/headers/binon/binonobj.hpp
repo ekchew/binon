@@ -148,15 +148,16 @@ namespace binon {
 
 namespace std {
 
-	//	Any scalar BinONObj can be hashed or equivalence-compared, meaning it
-	//	can be used as a key in any of the dictionary container classes. At this
-	//	time, container types themselves cannot be hashed, though this could
-	//	change?
+	//	The C++ implementation now supports hashing (and equivalence-comparing)
+	//	of any kind of BinONObj. That means you can use BinONObj as the key in
+	//	any of the std::unordered... containers. Since DictObj, SKDict, and
+	//	SDict are built around st::unordered_map, you can use a BinONObj as
+	//	either key or value.
 	//
-	//	Note that individual BinON object classes like StrObj cannot be hashed
-	//	directly by std::hash, but they do provide hash() methods that should
-	//	return a suitable hash code (other than for the aforementioned container
-	//	types whose hash() methods will throw an exception instead).
+	//	Note that specific BinON object types like IntObj and so on do not
+	//	support std::hash directly at this point. The do implement a hash()
+	//	method, however. BinONObj's std::hash implementation calls hash()
+	//	internally.
 	template<> struct hash<binon::BinONObj> {
 		auto operator() (const binon::BinONObj& obj) const -> std::size_t;
 	};
