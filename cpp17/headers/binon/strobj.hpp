@@ -18,6 +18,10 @@ namespace binon {
 		TValue mValue;
 		StrObj(TValue v);
 		StrObj() = default;
+		auto operator== (const StrObj& rhs) const noexcept
+			{ return equals(rhs); }
+		auto operator!= (const StrObj& rhs) const noexcept
+			{ return !equals(rhs); }
 		auto hasDefVal() const noexcept -> bool;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const StrObj&;

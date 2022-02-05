@@ -65,12 +65,10 @@ namespace binon {
 	//	Has operators == and != directly compare value()'s results on 2 objects.
 	template<typename Child>
 		struct StdEq {
-			auto operator== (const Child& rhs) const noexcept {
+		 protected:
+			auto equals(const Child& rhs) const noexcept {
 					return static_cast<const Child*>(this)->value()
 						== rhs.value();
-				}
-			auto operator!= (const Child& rhs) const noexcept {
-					return !(*this == rhs);
 				}
 		};
 

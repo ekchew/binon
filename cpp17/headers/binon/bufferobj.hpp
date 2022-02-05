@@ -36,6 +36,10 @@ namespace binon {
 		BufferObj(const HyStr& hyStr);
 		BufferObj(TValue v);
 		BufferObj() = default;
+		auto operator== (const BufferObj& rhs) const noexcept
+			{ return equals(rhs); }
+		auto operator!= (const BufferObj& rhs) const noexcept
+			{ return !equals(rhs); }
 		auto hasDefVal() const noexcept -> bool;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const BufferObj&;

@@ -203,6 +203,10 @@ namespace binon {
 		TValue mValue;
 		IntObj(TValue v);
 		IntObj() = default;
+		auto operator== (const IntObj& rhs) const noexcept
+			{ return equals(rhs); }
+		auto operator!= (const IntObj& rhs) const noexcept
+			{ return !equals(rhs); }
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const IntObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
@@ -222,6 +226,10 @@ namespace binon {
 		TValue mValue;
 		UIntObj(TValue v);
 		UIntObj() = default;
+		auto operator== (const UIntObj& rhs) const noexcept
+			{ return equals(rhs); }
+		auto operator!= (const UIntObj& rhs) const noexcept
+			{ return !equals(rhs); }
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const UIntObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

@@ -27,6 +27,10 @@ namespace binon {
 		static constexpr auto kTypeCode = kBoolObjCode;
 		static constexpr auto kClsName = std::string_view{"BoolObj"};
 		constexpr BoolObj(TValue v = false) noexcept: mValue{v} {}
+		auto operator== (const BoolObj& rhs) const noexcept
+			{ return equals(rhs); }
+		auto operator!= (const BoolObj& rhs) const noexcept
+			{ return !equals(rhs); }
 		auto encode(TOStream& stream, bool requireIO = true) const
 			-> const BoolObj&;
 		auto decode(CodeByte cb, TIStream& stream, bool requireIO = true)

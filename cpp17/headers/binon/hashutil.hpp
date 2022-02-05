@@ -29,12 +29,9 @@ namespace binon {
 			-> std::enable_if_t<kArgsOfType<std::size_t, Vs...>, std::size_t>
 		{
 			using std::size_t;
-			constexpr auto pred = [](size_t a, size_t b) {
-				return details::HashCombine2(a, b);
-			};
 			return (
-				BinPred(v, pred) + ... +
-				BinPred(static_cast<size_t>(vs), pred)
+				CustomFold<details::HashCombine2,size_t>(v) + ... +
+				CustomFold<details::HashCombine2,size_t>(vs)
 			);
 		}
 

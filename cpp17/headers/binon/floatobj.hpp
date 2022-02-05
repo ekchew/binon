@@ -18,6 +18,10 @@ namespace binon {
 		static constexpr auto kClsName = std::string_view{"FloatObj"};
 		TValue mValue;
 		FloatObj(TValue v = 0.0);
+		auto operator== (const FloatObj& rhs) const noexcept
+			{ return equals(rhs); }
+		auto operator!= (const FloatObj& rhs) const noexcept
+			{ return !equals(rhs); }
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const FloatObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
@@ -36,6 +40,10 @@ namespace binon {
 		static constexpr auto kClsName = std::string_view{"Float32Obj"};
 		TValue mValue;
 		Float32Obj(TValue v = 0.0f);
+		auto operator== (const Float32Obj& rhs) const noexcept
+			{ return equals(rhs); }
+		auto operator!= (const Float32Obj& rhs) const noexcept
+			{ return !equals(rhs); }
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const Float32Obj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

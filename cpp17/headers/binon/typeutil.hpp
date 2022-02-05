@@ -3,9 +3,7 @@
 
 #include "macros.hpp"
 #include <type_traits>
-#if BINON_CONCEPTS
-	#include <concepts>
-#endif
+#include <utility>
 
 namespace binon {
 
@@ -37,31 +35,56 @@ namespace binon {
 		constexpr bool kArgsOfType =
 			(std::is_convertible_v<Args,T> && ... && true);
 
-	//	The BinPred struct template helps you set up a binary predicate that can
-	//	be used in C++17 fold expressions by overloading the + operator.
-	//	The HashCombine() function in hashutil.hpp demonstrates how it works.
-	template<typename T, typename Pred>
-		struct BinPred {
+	//	CustomFold is a struct template that allows you to apply custom folding
+	//	behaviour in C++17 fold expressions. It stores a value of arbitrary type
+	//	T (the 2nd template argument) which may be inferred from a value you
+	//	pass into the constructor, though it is not a bad idea to declare it
+	//	explicitly.
+	//
+	//	You must, however, always supply the 1st template argument. This is a
+	//	predicate function taking 2 arguments (typically of type T) and
+	//	returning 1 (typically also of type T). What CustomFold does is overload
+	//	the + operator to call your function instead.
+	//
+	//	For example, let's say at each stage, you wanted to double the current
+	//	number and add the new one. If your arguments were 3, 4, and 5, you
+	//	would be calculating (3 * 2 + 4) * 2 + 5 = 25. You could write this like
+	//	so:
+	//
+	//		int pred(int a, int b) { return a * 2 + b; }
+	//		template<typename... Ints> int calculate(Ints... ints) {
+	//			return (... + CustomFold<pred,int>(ints));
+	//		}
+	//
+	//	Note that C++17 does not allow you to use lambdas as template arguments.
+	//	You need to pass in a regular function. But in C++20, you could write:
+	//
+	//		template<typename... Ints> int calculate(Ints... ints) {
+	//			auto pred = [](int a, int b) { return a * 2 + b; };
+	//			return (... + CustomFold<pred,int>(ints));
+	//		}
+	template<auto Pred, typename T>
+		struct CustomFold {
 			using value_type = T;
-			T value;
-			Pred pred;
-			constexpr BinPred(const T& v, const Pred& p):
-				value{v}, pred{p} {}
-			constexpr BinPred(T&& v, const Pred& p) noexcept:
-				value{std::move(v)}, pred{p} {}
-			constexpr BinPred(const Pred& p): pred{p} {}
+			T value = T();
+			constexpr CustomFold(const T& v): value{v} {}
+			constexpr CustomFold(T&& v) noexcept:
+				value{std::move(v)} {}
+			constexpr CustomFold() = default;
 			constexpr operator T&() & { return value; }
 			constexpr operator const T&() const& { return value; }
 			constexpr operator T() && { return std::move(value); }
-			constexpr auto& operator = (const T& v) { return value = v, *this; }
+			constexpr auto& operator = (const T& v) {
+					return value = v, *this;
+				}
 			constexpr auto& operator = (T&& v) noexcept {
 					return value = std::move(v), *this;
 				}
-			constexpr auto operator + (const BinPred& rhs) {
-					return BinPred{pred(value, rhs.value), pred};
+			constexpr auto operator + (const CustomFold& rhs) {
+					return CustomFold{Pred(value, rhs.value)};
 				}
-			constexpr auto& operator += (const BinPred& rhs) {
-					return value = pred(value, rhs.value), *this;
+			constexpr auto& operator += (const CustomFold& rhs) {
+					return value = Pred(value, rhs.value), *this;
 				}
 		};
 
