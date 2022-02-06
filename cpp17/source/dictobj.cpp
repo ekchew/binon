@@ -10,6 +10,15 @@ namespace binon {
 	//---- DictBase ------------------------------------------------------------
 
 	auto DictBase::operator == (const DictBase& rhs) const -> bool {
+		//	Where unordered_map is concerned, the usual approach of iterating
+		//	through the 2 containers and comparing corresponding elements is
+		//	ill-advised, since the elements of 2 identical maps may emerge in a
+		//	different order.
+		//
+		//	So the algorithm here first checks that both maps contain the same
+		//	number of elements. Then it iterates through one of them and
+		//	performs key look-up on the other. If the look-up itself fails or
+		//	the corresponding values do not match, it return early with false.
 		auto& da = value();
 		auto& db = rhs.value();
 		if(da.size() != db.size()) {
