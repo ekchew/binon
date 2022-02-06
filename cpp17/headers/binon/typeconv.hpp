@@ -6,17 +6,19 @@
 #include <sstream>
 
 namespace binon {
-	/*
-	kIsCStr tells you whether a given type is a C string. It's used by some of
-	the template specializations used helper functions.
-	*/
+
+	//	kIsCStr tells you whether a given type is a C string. It's used by some
+	//	of the template specializations used helper functions.
 	template<typename T>
 		constexpr bool kIsCStr = std::is_same_v<std::decay_t<T>,const char*>;
+	BINON_IF_CONCEPTS(
+		template<typename T> concept CStrType = kIsCStr<T>;
+		template<typename T> concept NonCStr = !kIsCStr<T>;
+	)
 
-	/*
-	Some nifty code off the Internet that determines if a given type is among
-	the possible member types of a std::variant.
-	*/
+
+	//	Some nifty code off the Internet that determines if a given type is
+	//	among the possible members of a std::variant.
 	template<typename T, typename Variant> struct IsVariantMember;
 	template<typename T, typename... EveryT>
 		struct IsVariantMember<T, std::variant<EveryT...>>:
@@ -25,19 +27,24 @@ namespace binon {
 		};
 	template<typename T, typename Variant>
 		constexpr bool kIsVariantMember = IsVariantMember<T,Variant>::value;
+	#if BINON_CONCEPTS
+		template<typename Variant, typename T>
+			concept VariantMember = kIsVariantMember<T,Variant>;
+	#endif
 
-	/*
-	This uses the above to tell you if a give type T is one of the BinON object
-	types like IntObj, StrObj, etc.
-	*/
+	//	This uses the above to tell you if a give type T is a specific BinON
+	//	object type like IntObj, StrObj, etc.
 	template<typename T>
-		constexpr bool kIsBinONObj
+		constexpr bool kIsObj
 			= kIsVariantMember<std::decay_t<T>,BinONVariant>;
+	BINON_IF_CONCEPTS(
+		template<typename T> concept ObjType = kIsObj<T>;
+	)
 
 	/*
 	The TypeConv struct maps common types onto BinON object types for easy
 	conversion between the two. You usually don't access it directly, since
-	higher-level functions like MakeBinONObj(), BinONObjVal(), and the various
+	higher-level functions like MakeObj(), BinONObjVal(), and the various
 	list and dict helper functions do so for you.
 
 	TypeConv supports the following mappings:
@@ -122,7 +129,7 @@ namespace binon {
 				  BoolObj::TValue which, in turn, is simply bool.
 				- If T is a std::reference_wrapper<U>, TVal will be U.
 				- There is a special case for when T is const char*.
-				  Setter functions like MakeBinONObj() will treat a const char*
+				  Setter functions like MakeObj() will treat a const char*
 				  as a C string and build StrObj variants out of them.
 				  But a StrObj cannot return a C string, so getter functions
 				  like BinONObjVal() return the next best thing: a string view.
@@ -174,6 +181,10 @@ namespace binon {
 				std::decay_t<T>,
 				typename TypeConv<std::decay_t<T>>::TObj::TValue
 				>;
+	BINON_IF_CONCEPTS(
+		template<typename T> concept BinONVal = kIsBinONVal<T>;
+		template<typename T> concept NonBinONVal = !kIsBinONVal<T>;
+	)
 
 
 	//==== Template Implementation =============================================
@@ -197,8 +208,14 @@ namespace binon {
 					return TypeConv<T>::GetVal(std::forward<BinONObj>(obj));
 				}
 		};
+ #if BINON_CONCEPTS
+	template<ObjType T>
+		struct TypeConv<T>
+ #else
 	template<typename T>
-		struct TypeConv<T, std::enable_if_t<kIsBinONObj<T>>> {
+		struct TypeConv<T, std::enable_if_t<kIsObj<T>>>
+ #endif
+		{
 			using TObj = T;
 			using TVal = typename TObj::TValue;
 			static auto ValTypeName() -> HyStr { return TObj::kClsName; }
@@ -212,10 +229,15 @@ namespace binon {
 					return std::get<TObj>(std::forward<BinONObj>(obj)).value();
 				}
 		};
+ #if BINON_CONCEPTS
+	template<std::signed_integral T>
+		struct TypeConv<T>
+ #else
 	template<typename T>
 		struct TypeConv<
 			T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>>
 			>
+ #endif
 		{
 			using TObj = IntObj;
 			using TVal = T;
@@ -238,10 +260,15 @@ namespace binon {
 						);
 				}
 		};
+ #if BINON_CONCEPTS
+	template<std::unsigned_integral T>
+		struct TypeConv<T>
+ #else
 	template<typename T>
 		struct TypeConv<
 			T, std::enable_if_t<std::is_unsigned_v<T>>
 			>
+ #endif
 		{
 			using TObj = UIntObj;
 			using TVal = T;
@@ -357,8 +384,14 @@ namespace binon {
 					return std::get<TObj>(obj).value().asView();
 				}
 		};
+ #if BINON_CONCEPTS
+	template<CStrType T>
+		struct TypeConv<T>
+ #else
 	template<typename T>
-		struct TypeConv<T, std::enable_if_t<kIsCStr<T>>> {
+		struct TypeConv<T, std::enable_if_t<kIsCStr<T>>>
+ #endif
+		{
 			using TObj = StrObj;
 			using TVal = std::string_view;
 			static auto ValTypeName() -> HyStr { return "const char*"; }

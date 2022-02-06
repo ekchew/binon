@@ -78,10 +78,10 @@ namespace binon {
 		//		auto obj = BinONObj::FromTypeCode{kStrObjCode};
 		//		std::get<StrObj>(obj).value() = "foo";
 		//
-		//	Perhaps the easiest way is to call MakeBinONObj() (see
+		//	Perhaps the easiest way is to call MakeObj() (see
 		//	typeconv.hpp):
 		//
-		//	auto obj = MakeBinONObj("foo");
+		//	auto obj = MakeObj("foo");
 		using BinONVariant::variant;
 
 		//	typeCode() returns the BinON type code associated with the current

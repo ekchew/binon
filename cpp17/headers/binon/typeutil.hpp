@@ -38,32 +38,39 @@ namespace binon {
 	//	CustomFold is a struct template that allows you to apply custom folding
 	//	behaviour in C++17 fold expressions. It stores a value of arbitrary type
 	//	T (the 2nd template argument) which may be inferred from a value you
-	//	pass into the constructor, though it is not a bad idea to declare it
-	//	explicitly.
+	//	pass into the constructor (though it is not a bad idea to declare it
+	//	explicitly).
 	//
 	//	You must, however, always supply the 1st template argument. This is a
-	//	predicate function taking 2 arguments (typically of type T) and
-	//	returning 1 (typically also of type T). What CustomFold does is overload
-	//	the + operator to call your function instead.
+	//	function taking 2 arguments of type T and returning a T. What CustomFold
+	//	does is overload the + operator to call your function instead.
 	//
 	//	For example, let's say at each stage, you wanted to double the current
 	//	number and add the new one. If your arguments were 3, 4, and 5, you
 	//	would be calculating (3 * 2 + 4) * 2 + 5 = 25. You could write this like
 	//	so:
 	//
-	//		int pred(int a, int b) { return a * 2 + b; }
+	//		int fn(int a, int b) { return a * 2 + b; }
 	//		template<typename... Ints> int calculate(Ints... ints) {
-	//			return (... + CustomFold<pred,int>(ints));
+	//			return (... + CustomFold<fn,int>(ints));
 	//		}
 	//
 	//	Note that C++17 does not allow you to use lambdas as template arguments.
 	//	You need to pass in a regular function. But in C++20, you could write:
 	//
 	//		template<typename... Ints> int calculate(Ints... ints) {
-	//			auto pred = [](int a, int b) { return a * 2 + b; };
-	//			return (... + CustomFold<pred,int>(ints));
+	//			auto fn = [](int a, int b) { return a * 2 + b; };
+	//			return (... + CustomFold<fn,int>(ints));
 	//		}
-	template<auto Pred, typename T>
+#if BINON_CONCEPTS
+	template<auto Fn, typename T>
+		concept CustomFoldable = requires(T a, T b) {
+			{ Fn(a, b) } -> std::convertible_to<T>;
+		};
+	template<auto Fn, typename T> requires CustomFoldable<Fn,T>
+#else
+	template<auto Fn, typename T>
+#endif
 		struct CustomFold {
 			using value_type = T;
 			T value = T();
@@ -81,10 +88,10 @@ namespace binon {
 					return value = std::move(v), *this;
 				}
 			constexpr auto operator + (const CustomFold& rhs) {
-					return CustomFold{Pred(value, rhs.value)};
+					return CustomFold{Fn(value, rhs.value)};
 				}
 			constexpr auto& operator += (const CustomFold& rhs) {
-					return value = Pred(value, rhs.value), *this;
+					return value = Fn(value, rhs.value), *this;
 				}
 		};
 

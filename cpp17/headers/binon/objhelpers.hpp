@@ -14,21 +14,21 @@ namespace binon {
 	//	to support move semantics and so forth. You can peruse the template
 	//	implementation below if you're feeling brave!)
 	//
-	//	template<typename T> auto MakeBinONObj(T value) -> BinONObj;
+	//	template<typename T> auto MakeObj(T value) -> TValObj<T>;
 	//
-	//		This function produces a BinONObj out of any type T recognized by
-	//		the TypeConv class. For example:
+	//		This function produces a BinON object out of any type T recognized
+	//		by the TypeConv class. For example:
 	//
-	//			auto obj = MakeBinONObj("foo");
+	//			auto obj = MakeObj("foo");
 	//
 	//		is functionally equivalent to:
 	//
-	//			BinONObj obj = StrObj{HyStr{"foo"}};
+	//			StrObj obj = StrObj{HyStr{"foo"}};
 	//
 	//	template<typename T>
 	//		auto BinONObjVal(BinONObj varObj) -> TBinONObjVal<T>;
 	//
-	//		This is essentially the opposite of MakeBinONObj(), returning the
+	//		This is essentially the opposite of MakeObj(), returning the
 	//		object's value in the form you prefer.
 	//
 	//			auto val = BinONObjVal<std::string_view>(obj);
@@ -52,7 +52,7 @@ namespace binon {
 	//		typeCode() method or by calling std::holds_alternative() with
 	//		specific object types if you are uncertain.
 	//
-	//	See also the listhelpers.hpp and dicthelpers.hpp.
+	//	See also listhelpers.hpp and dicthelpers.hpp.
 
 	//	TBinONObjVal<T> is the core type returned by the BinONObjVal<T>()
 	//	function. In many cases, TBinONObjVal<T> is simply T. See TypeConv's
@@ -60,7 +60,7 @@ namespace binon {
 	template<typename T>
 		using TBinONObjVal = typename TypeConv<std::decay_t<T>>::TVal;
 
-	//	ObjWrapper offers an alternative to MakeBinONObj as a means of
+	//	ObjWrapper offers an alternative to MakeObj as a means of
 	//	converting an arbitrary value into a BinONObj. You can have one of these
 	//	be a function argument. The caller can then supply any value that is
 	//	convertible and your function should receive a BinONObj as its argument.
@@ -70,7 +70,11 @@ namespace binon {
 		ObjWrapper(const char* cStr);
 		template<typename T>
 			ObjWrapper(const T& val);
+	 #if BINON_CONCEPTS
+		template<BinONVal T>
+	 #else
 		template<typename T, typename std::enable_if_t<kIsBinONVal<T>,int> = 0>
+	 #endif
 			ObjWrapper(T&& val);
 	};
 
@@ -81,32 +85,45 @@ namespace binon {
 			BinONObj{TValObj<T>(val)}
 		{
 		}
-	template<typename T, typename std::enable_if_t<kIsBinONVal<T>,int>>
+	 #if BINON_CONCEPTS
+		template<BinONVal T>
+	 #else
+		template<typename T, typename std::enable_if_t<kIsBinONVal<T>,int>>
+	 #endif
 		ObjWrapper::ObjWrapper(T&& val):
 			BinONObj{TValObj<T>(std::move(val))}
 		{
 		}
 
-	//---- MakeBinONObj --------------------------------------------------------
+	//---- MakeObj -------------------------------------------------------------
 	//
-	//	There are 3 overloads for MakeBinONObj. One deals with copy semantics,
-	//	one with move semantics, and the 3rd handles the special case of C
-	//	string literals (const char*) which seem to have some issues with
-	//	reference resolution.
+	//	There are 3 overloads for MakeObj. One deals with copy semantics, one
+	//	with move semantics, and the 3rd handles the special case of C string
+	//	literals (const char*) which seem to have some issues with reference
+	//	resolution.
 
+ #if BINON_CONCEPTS
+	template<NonCStr T> auto MakeObj(const T& v) -> TValObj<T> {
+		return TValObj<T>(v);
+	}
+	template<BinONVal T> auto MakeObj(T&& v) noexcept -> TValObj<T> {
+		return TValObj<T>(std::forward<T>(v));
+	}
+ #else
 	template<typename T>
-		auto MakeBinONObj(const T& v)
-			-> std::enable_if_t<!kIsCStr<T>, BinONObj>
-		{
-			return TValObj<T>(v);
-		}
+		auto MakeObj(const T& v)
+			-> std::enable_if_t<!kIsCStr<T>, TValObj<T>>
+	{
+		return TValObj<T>(v);
+	}
 	template<typename T>
-		auto MakeBinONObj(T&& v) noexcept
-			-> std::enable_if_t<kIsBinONVal<T>,BinONObj>
-		{
-			return TValObj<T>(std::forward<T>(v));
-		}
-	auto MakeBinONObj(const char* s) -> BinONObj;
+		auto MakeObj(T&& v) noexcept
+			-> std::enable_if_t<kIsBinONVal<T>, TValObj<T>>
+	{
+		return TValObj<T>(std::forward<T>(v));
+	}
+ #endif
+	auto MakeObj(const char* s) -> StrObj;
 
 	//---- BinONObjVal ---------------------------------------------------------
 	//
@@ -123,31 +140,55 @@ namespace binon {
 	//	Note that the type T is decayed to remove const/reference qualifiers and
 	//	such before passing the type to TypeConv.
 
+ #if BINON_CONCEPTS
+	template<BinONVal T>
+		auto BinONObjVal(BinONObj& obj) -> TBinONObjVal<T>&
+	{
+		return TypeConv<std::decay_t<T>>::GetVal(obj);
+	}
+	template<BinONVal T>
+		auto BinONObjVal(const BinONObj& obj) -> const TBinONObjVal<T>&
+	{
+		return TypeConv<std::decay_t<T>>::GetVal(obj);
+	}
+	template<BinONVal T>
+		auto BinONObjVal(BinONObj&& obj) -> TBinONObjVal<T>
+	{
+		return
+			TypeConv<std::decay_t<T>>::GetVal(std::forward<BinONObj>(obj));
+	}
+	template<NonBinONVal T>
+		auto BinONObjVal(const BinONObj& obj) -> TBinONObjVal<T>
+	{
+		return TypeConv<std::decay_t<T>>::GetVal(obj);
+	}
+ #else
 	template<typename T>
 		auto BinONObjVal(BinONObj& obj)
 			-> std::enable_if_t<kIsBinONVal<T>, TBinONObjVal<T>&>
-		{
-			return TypeConv<std::decay_t<T>>::GetVal(obj);
-		}
+	{
+		return TypeConv<std::decay_t<T>>::GetVal(obj);
+	}
 	template<typename T>
 		auto BinONObjVal(const BinONObj& obj)
 			-> std::enable_if_t<kIsBinONVal<T>, const TBinONObjVal<T>&>
-		{
-			return TypeConv<std::decay_t<T>>::GetVal(obj);
-		}
+	{
+		return TypeConv<std::decay_t<T>>::GetVal(obj);
+	}
 	template<typename T>
 		auto BinONObjVal(BinONObj&& obj)
 			-> std::enable_if_t<kIsBinONVal<T>, TBinONObjVal<T>>
-		{
-			return
-				TypeConv<std::decay_t<T>>::GetVal(std::forward<BinONObj>(obj));
-		}
+	{
+		return
+			TypeConv<std::decay_t<T>>::GetVal(std::forward<BinONObj>(obj));
+	}
 	template<typename T>
 		auto BinONObjVal(const BinONObj& obj)
-			-> std::enable_if_t<!kIsBinONVal<T>, TBinONObjVal<T>> {
-			return TypeConv<std::decay_t<T>>::GetVal(obj);
-		}
-
+			-> std::enable_if_t<!kIsBinONVal<T>, TBinONObjVal<T>>
+	{
+		return TypeConv<std::decay_t<T>>::GetVal(obj);
+	}
+ #endif
 }
 
 #endif

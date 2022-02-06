@@ -87,6 +87,9 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 		#ifdef __cpp_concepts
 			#define BINON_CONCEPTS true
 			#define BINON_IF_CONCEPTS(code) code
+			#if BINON_GOT_VERSION
+				#include <concepts>
+			#endif
 		#endif
 	#endif
 #else
@@ -99,6 +102,8 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 #endif
 #ifndef BINON_CONCEPTS
 	#define BINON_CONCEPTS false
+#endif
+#if !BINON_CONCEPTS
 	#define BINON_IF_CONCEPTS(code)
 #endif
 

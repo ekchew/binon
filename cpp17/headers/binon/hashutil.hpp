@@ -4,6 +4,7 @@
 #include "byteutil.hpp" // for the CHAR_BIT assertion
 #include "typeutil.hpp"
 
+#include <concepts>
 #include <functional>
 
 namespace binon {
@@ -24,9 +25,14 @@ namespace binon {
 
 	//	Combines 2 or more hash values you generated using std::hash into a
 	//	single value and returns it.
+ #if BINON_CONCEPTS
+	template<std::convertible_to<std::size_t>... Vs>
+		auto HashCombine(std::size_t v, Vs... vs) noexcept -> std::size_t
+ #else
 	template<typename... Vs> constexpr
 		auto HashCombine(std::size_t v, Vs... vs) noexcept
 			-> std::enable_if_t<kArgsOfType<std::size_t, Vs...>, std::size_t>
+ #endif
 		{
 			using std::size_t;
 			return (

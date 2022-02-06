@@ -12,12 +12,18 @@ namespace binon {
 		constexpr bool kIsCtnrType
 			= std::is_base_of_v<CtnrBase, std::decay_t<T>>;
 
-	//	kIsListBase<T> indicates whether (the decayed form of) type T is a
+	//	kIsListType<T> indicates whether (the decayed form of) type T is a
 	//	ListObj or SList. It is used by several functions defined in this
 	//	header.
 	template<typename T>
-		constexpr bool kIsListBase
+		constexpr bool kIsListType
 			= std::is_base_of_v<ListBase, std::decay_t<T>>;
+ BINON_IF_CONCEPTS(
+	template<typename T>
+		concept CtnrType = kIsCtnrType<T>;
+	template<typename T>
+		concept ListType = kIsListType<T>;
+ )
 
 	//	These functions create a list object out of any TypeConv-supported
 	//	values you pass in. For example:
@@ -60,7 +66,7 @@ namespace binon {
 	//
 	//		SetVal(list, 1, "baz");
 	//
-	//	Internally, SetVal() calls MakeBinONObj() and therefore does support
+	//	Internally, SetVal() calls MakeObj() and therefore does support
 	//	move semantics for native object value types only.
 	//
 	//		SetVal(list, 1, std::move(hyStr));
@@ -78,10 +84,33 @@ namespace binon {
 
 	//---- GetVal function templates -------------------------------------------
 
+ #if BINON_CONCEPTS
+	template<BinONVal T, ListType List>
+		auto GetVal(List& list, std::size_t index) -> TBinONObjVal<T>&
+	{
+		return BinONObjVal<T>(list.value().at(index));
+	}
+	template<BinONVal T, ListType List>
+		auto GetVal(const List& list, std::size_t index)
+		-> const TBinONObjVal<T>&
+	{
+		return BinONObjVal<T>(list.value().at(index));
+	}
+	template<BinONVal T, ListType List>
+		auto GetVal(List&& list, std::size_t index) -> TBinONObjVal<T>
+	{
+		return BinONObjVal<T>(std::forward<List>(list).value().at(index));
+	}
+	template<NonBinONVal T, ListType List>
+		auto GetVal(const List& list, std::size_t index) -> TBinONObjVal<T>
+	{
+		return BinONObjVal<T>(list.value().at(index));
+	}
+ #else
 	template<typename T, typename List>
 		auto GetVal(List& list, std::size_t index)
 		-> std::enable_if_t<
-			kIsListBase<List> && kIsBinONVal<T>,
+			kIsListType<List> && kIsBinONVal<T>,
 			TBinONObjVal<T>&
 			>
 	{
@@ -90,7 +119,7 @@ namespace binon {
 	template<typename T, typename List>
 		auto GetVal(const List& list, std::size_t index)
 		-> std::enable_if_t<
-			kIsListBase<List> && kIsBinONVal<T>,
+			kIsListType<List> && kIsBinONVal<T>,
 			const TBinONObjVal<T>&
 			>
 	{
@@ -99,7 +128,7 @@ namespace binon {
 	template<typename T, typename List>
 		auto GetVal(List&& list, std::size_t index)
 		-> std::enable_if_t<
-			kIsListBase<List> && kIsBinONVal<T>,
+			kIsListType<List> && kIsBinONVal<T>,
 			TBinONObjVal<T>
 			>
 	{
@@ -108,76 +137,110 @@ namespace binon {
 	template<typename T, typename List>
 		auto GetVal(const List& list, std::size_t index)
 		-> std::enable_if_t<
-			kIsListBase<List> && !kIsBinONVal<T>,
+			kIsListType<List> && !kIsBinONVal<T>,
 			TBinONObjVal<T>
 			>
 	{
 		return BinONObjVal<T>(list.value().at(index));
 	}
+ #endif
 
 	//---- SetVal function templates -------------------------------------------
 
+ #if BINON_CONCEPTS
+	auto& SetVal(ListType auto& list, std::size_t index, const char* s) {
+		list.value().at(index) = MakeObj(s);
+		return list;
+	}
+	auto& SetVal(ListType auto& list, std::size_t index, const NonCStr auto& v)
+	{
+		list.value().at(index) = MakeObj(v);
+		return list;
+	}
+	template<ListType List, BinONVal T>
+		auto& SetVal(List& list, std::size_t index, T&& v)
+	{
+		list.value().at(index) = MakeObj(std::forward<T>(v));
+		return list;
+	}
+ #else
 	template<
 		typename List,
-		typename std::enable_if_t<kIsListBase<List>, int> = 0
+		typename std::enable_if_t<kIsListType<List>, int> = 0
 		>
 		auto& SetVal(List& list, std::size_t index, const char* s)
 	{
-		list.value().at(index) = MakeBinONObj(s);
+		list.value().at(index) = MakeObj(s);
 		return list;
 	}
 	template<
 		typename List, typename T,
-		typename std::enable_if_t<kIsListBase<List> && !kIsCStr<T>, int> = 0
+		typename std::enable_if_t<kIsListType<List> && !kIsCStr<T>, int> = 0
 		>
 		auto& SetVal(List& list, std::size_t index, const T& v)
 	{
-		list.value().at(index) = MakeBinONObj(v);
+		list.value().at(index) = MakeObj(v);
 		return list;
 	}
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<
-			kIsListBase<List> && kIsBinONVal<T> && !kIsCStr<T>, int
+			kIsListType<List> && kIsBinONVal<T>, int
 			> = 0
 		>
 		auto& SetVal(List& list, std::size_t index, T&& v)
 	{
-		list.value().at(index) = MakeBinONObj(std::forward<T>(v));
+		list.value().at(index) = MakeObj(std::forward<T>(v));
 		return list;
 	}
+ #endif
 
 	//---- AppendVal function templates ----------------------------------------
 
+#if BINON_CONCEPTS
+	auto& AppendVal(ListType auto& list, const char* s) {
+		list.value().push_back(MakeObj(s));
+		return list;
+	}
+	auto& AppendVal(ListType auto& list, const NonCStr auto& v) {
+		list.value().push_back(MakeObj(v));
+		return list;
+	}
+	template<ListType List, NonCStr T> auto& AppendVal(List& list, T&& v) {
+		list.value().push_back(MakeObj(std::forward<T>(v)));
+		return list;
+	}
+#else
 	template<
 		typename List,
-		typename std::enable_if_t<kIsListBase<List>, int> = 0
+		typename std::enable_if_t<kIsListType<List>, int> = 0
 		>
 		auto& AppendVal(List& list, const char* s)
 	{
-		list.value().push_back(MakeBinONObj(s));
+		list.value().push_back(MakeObj(s));
 		return list;
 	}
 	template<
 		typename List, typename T,
-		typename std::enable_if_t<kIsListBase<List> && !kIsCStr<T>, int> = 0
+		typename std::enable_if_t<kIsListType<List> && !kIsCStr<T>, int> = 0
 		>
 		auto& AppendVal(List& list, const T& v)
 	{
-		list.value().push_back(MakeBinONObj(v));
+		list.value().push_back(MakeObj(v));
 		return list;
 	}
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<
-			kIsListBase<List> && kIsBinONVal<T> && !kIsCStr<T>, int
+			kIsListType<List> && kIsBinONVal<T> && !kIsCStr<T>, int
 			> = 0
 		>
 		auto& AppendVal(List& list, T&& v)
 	{
-		list.value().push_back(MakeBinONObj(std::forward<T>(v)));
+		list.value().push_back(MakeObj(std::forward<T>(v)));
 		return list;
 	}
+#endif
 
 	//---- Make... function templates ------------------------------------------
 

@@ -1,8 +1,8 @@
 #include "binon/objhelpers.hpp"
 
 namespace binon {
-	auto MakeBinONObj(const char* s) -> BinONObj {
-		return StrObj(s);
+	auto MakeObj(const char* s) -> StrObj {
+		return HyStr{s};
 	}
 	ObjWrapper::ObjWrapper(const BinONObj& obj):
 		BinONObj{obj}
