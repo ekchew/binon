@@ -106,7 +106,7 @@ namespace binon {
 		return *this;
 	}
 	auto ListObj::hash() const -> std::size_t {
-		return calcHash(std::hash<std::string_view>{}(kClsName));
+		return calcHash(std::hash<CodeByte>{}(kTypeCode));
 	}
 	void ListObj::printArgs(std::ostream& stream) const {
 		stream << "ListObj::TValue{";
@@ -172,7 +172,7 @@ namespace binon {
 		return *this;
 	}
 	auto SList::hash() const -> std::size_t {
-		return calcHash(std::hash<std::string_view>{}(kClsName));
+		return calcHash(std::hash<CodeByte>{}(kTypeCode));
 	}
 	void SList::printArgs(std::ostream& stream) const {
 		stream << "SList::TValue{";
