@@ -118,6 +118,37 @@ namespace binon {
 		auto decodeData(TIStream& stream, bool requireIO = true)
 			-> BinONObj&;
 
+		//	asObj() attempts to extract a specific object type from a general
+		//	BinONObj. If your primary choice does not pan out, it may run
+		//	through alternates which it will attempt to static_cast into the
+		//	primary type.
+		//
+		//	The following type conversions are officially supported:
+		//
+		//		UIntObj -> IntObj
+		//			If value is > 2 ^ 63, it will be stored in vector form in
+		//			the IntObj.
+		//		IntObj -> UIntObj
+		//			Throws std::out_of_range if IntObj holds negative value
+		//		Float32Obj -> FloatObj
+		//		SList -> ListObj
+		//		SKDict -> DictObj
+		//		SDict -> DictObj
+		//
+		//	If you use move semantics, only your primary object type (the first
+		//	and only required template argument) can be moved. To request a
+		//	primary object move, try something like this:
+		//
+		//		auto list = std::move(myBinONObj).asObj<ListObj,SList>;
+		//
+		//	Note that asObj() is cslled automatically by TypeConv and the
+		//	various helper functions that depend on it, so you may never need to
+		//	call it directly.
+		template<typename Obj, typename... Alts>
+			auto asObj() const& -> Obj;
+		template<typename Obj, typename... Alts>
+			auto asObj() && -> Obj;
+
 		//	The print() prints a textual description of a BinONObj to an output
 		//	text stream. This is somewhat reminiscent of printing an object's
 		//	repr() string in Python, and can be helpful in debugging.
@@ -162,6 +193,43 @@ namespace std {
 		auto operator() (const binon::BinONObj& obj) const -> std::size_t;
 	};
 
+}
+
+//==== Template Implementation =================================================
+
+namespace binon {
+	template<typename Obj, typename... Alts>
+		auto BinONObj::asObj() const& -> Obj
+	{
+		if constexpr(sizeof...(Alts) == 0) {
+			return std::get<Obj>(*this);
+		}
+		else {
+			if(auto pObj = std::get_if<Obj>(this); pObj) {
+				return *pObj;
+			}
+			else {
+				return static_cast<Obj>(asObj<Alts...>());
+			}
+		}
+	}
+	template<typename Obj, typename... Alts>
+		auto BinONObj::asObj() && -> Obj
+	{
+		if constexpr(sizeof...(Alts) == 0) {
+			return std::get<Obj>(std::move(*this));
+		}
+		else {
+			if(auto pObj = std::get_if<Obj>(this); pObj) {
+				return std::move(*pObj);
+			}
+			else {
+				return static_cast<Obj>(
+					static_cast<const BinONObj*>(this)->asObj<Alts...>()
+				);
+			}
+		}
+	}
 }
 
 #endif

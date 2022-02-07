@@ -8,28 +8,30 @@
 #include <variant>
 
 namespace binon {
+	struct UIntObj;
+
 	/*
 	Class hierarchy:
 		std::variant
-			TIntBase:
-				TIntVal
+			IntBase:
+				IntVal
 				UIntVal
 
-	TIntVal and UIntVal store the integer values used by IntObj and UIntObj,
+	IntVal and UIntVal store the integer values used by IntObj and UIntObj,
 	respectively. They do so in a variant record containing either a 64-bit
 	C++ integer type or a byte buffer of arbitrary length for really big
 	numbers. In the latter case, the bytes are ordered big-endian.
 	*/
 	template<typename Child, typename Scalar>
-		struct TIntBase: std::variant<Scalar, std::basic_string<std::byte>>
+		struct IntBase: std::variant<Scalar, std::basic_string<std::byte>>
 		{
 			/*
-			TIntBase exposes all the functionality (including constructors)
+			IntBase exposes all the functionality (including constructors)
 			of the std::variant it inherits from. It also has full access its
-			child classes--TIntVal and UIntVal--through the CRTP paradigm.
+			child classes--IntVal and UIntVal--through the CRTP paradigm.
 
 			The variant's Scalar type is supplied by the child class in the
-			2nd template argument, but is std::int64_t for TIntVal and
+			2nd template argument, but is std::int64_t for IntVal and
 			std::uint64_t for UIntVal.
 
 			The vector type is actually a string of std::byte. (It used to be
@@ -66,7 +68,7 @@ namespace binon {
 			method.) Otherwise, it will throw std::bad_variant_access.
 
 			scalar() is also mapped onto an implicit conversion operator to
-			TScalar. This is to help TIntVal and UIntVal to function in many
+			TScalar. This is to help IntVal and UIntVal to function in many
 			situations where you would want to work with a std::int64_t or
 			std::uint64_t directly, but be aware of this potential for an
 			exception.
@@ -98,7 +100,7 @@ namespace binon {
 			comes in two forms. The simpler is much like asScalar(). It simply
 			returns the vector by value. The lower-level form accepts a
 			callback functor you would typically implement using a lambda
-			expression. The callback accespts a single argument--a constant
+			expression. The callback accepts a single argument--a constant
 			reference to the vector--and may return a type you supply. This
 			will then get returned by the asVect() method itself. The advantage
 			of the callback approach is that it can be a bit more efficient
@@ -121,13 +123,13 @@ namespace binon {
 	*/
 	template<typename Child, typename Scalar>
 		auto operator<< (
-			std::ostream& stream, const TIntBase<Child,Scalar>& i
+			std::ostream& stream, const IntBase<Child,Scalar>& i
 			) -> std::ostream&;
 
-	struct TIntVal: TIntBase<TIntVal, std::int64_t> {
+	struct IntVal: IntBase<IntVal, std::int64_t> {
 
 		/*
-		You can convert both TIntVal and UIntVal into a hexadecimal string by
+		You can convert both IntVal and UIntVal into a hexadecimal string by
 		calling asHex(), or build either object by calling the FromHex()
 		class method.
 
@@ -145,7 +147,7 @@ namespace binon {
 		a bearing on how many pad bytes (if any) to insert ahead of the data.
 		The default 16 (the length of a 64-bit scalar) means a number like
 		0x123abc will be printed "0x0000000000123abc". The pad bytes can be
-		especially important for TIntVal which support negative numbers. In this
+		especially important for IntVal which support negative numbers. In this
 		case, they will be "ff" rather than "00". If the number of significant
 		bytes exceeds the word size, the padding will be extended to the next
 		word boundary. For example, if your integer were 0x12345 and your
@@ -154,13 +156,13 @@ namespace binon {
 		*/
 		static auto FromHex(const HyStr& hex,
 			std::size_t wordSize = sizeof(TScalar)
-			) -> TIntVal;
+			) -> IntVal;
 		auto asHex(
 			bool zerox = true, std::size_t wordSize = sizeof(TScalar)
 			) const -> std::string;
 
-		template<typename, typename> friend struct TIntBase;
-		using TIntBase<TIntVal,TScalar>::TIntBase;
+		template<typename, typename> friend struct IntBase;
+		using IntBase<IntVal,TScalar>::IntBase;
 
 		auto asScalar() const noexcept -> TScalar;
 
@@ -172,7 +174,7 @@ namespace binon {
 		template<typename Int>
 			auto fits() const noexcept -> bool;
 	};
-	struct UIntVal: TIntBase<UIntVal, std::uint64_t> {
+	struct UIntVal: IntBase<UIntVal, std::uint64_t> {
 
 		static auto FromHex(const HyStr& hex,
 			std::size_t wordSize = sizeof(TScalar)
@@ -181,8 +183,8 @@ namespace binon {
 			bool zerox = true, std::size_t wordSize = sizeof(TScalar)
 			) const -> std::string;
 
-		template<typename, typename> friend struct TIntBase;
-		using TIntBase<UIntVal,TScalar>::TIntBase;
+		template<typename, typename> friend struct IntBase;
+		using IntBase<UIntVal,TScalar>::IntBase;
 		auto asScalar() const noexcept -> TScalar;
 
 		template<typename UInt>
@@ -197,10 +199,11 @@ namespace binon {
 		StdPrintArgs<IntObj>,
 		StdCodec<IntObj>
 	{
-		using TValue = TIntVal;
+		using TValue = IntVal;
 		static constexpr auto kTypeCode = kIntObjCode;
 		static constexpr auto kClsName = std::string_view{"IntObj"};
 		TValue mValue;
+		explicit IntObj(const UIntObj& obj);
 		IntObj(TValue v);
 		IntObj() = default;
 		auto operator== (const IntObj& rhs) const noexcept
@@ -224,6 +227,7 @@ namespace binon {
 		static constexpr auto kTypeCode = kUIntCode;
 		static constexpr auto kClsName = std::string_view{"UIntObj"};
 		TValue mValue;
+		explicit UIntObj(const IntObj& obj);
 		UIntObj(TValue v);
 		UIntObj() = default;
 		auto operator== (const UIntObj& rhs) const noexcept
@@ -242,21 +246,21 @@ namespace binon {
 
 	//==== Template Implementation =============================================
 
-	//---- TIntBase -------------------------------------------------------------
+	//---- IntBase -------------------------------------------------------------
 
 	template<typename Child, typename Scalar>
-		auto TIntBase<Child,Scalar>::isScalar() const noexcept -> bool {
+		auto IntBase<Child,Scalar>::isScalar() const noexcept -> bool {
 			return std::holds_alternative<TScalar>(*this);
 		}
 	template<typename Child, typename Scalar>
-		auto TIntBase<Child,Scalar>::canBeScalar() const noexcept -> bool {
+		auto IntBase<Child,Scalar>::canBeScalar() const noexcept -> bool {
 			if(isScalar()) {
 				return true;
 			}
 			return std::get<TVect>(*this).size() <= sizeof(TScalar);
 		}
 	template<typename Child, typename Scalar>
-		auto TIntBase<Child,Scalar>::scalar() -> TScalar& {
+		auto IntBase<Child,Scalar>::scalar() -> TScalar& {
 			if(	!isScalar() &&
 				std::get<TVect>(*this).size() <= sizeof(TScalar)
 				)
@@ -266,31 +270,31 @@ namespace binon {
 			return std::get<TScalar>(*this);
 		}
 	template<typename Child, typename Scalar>
-		auto TIntBase<Child,Scalar>::scalar() const -> TScalar {
-			return const_cast<TIntBase*>(this)->scalar();
+		auto IntBase<Child,Scalar>::scalar() const -> TScalar {
+			return const_cast<IntBase*>(this)->scalar();
 		}
 	template<typename Child, typename Scalar>
-		auto TIntBase<Child,Scalar>::vect() -> TVect& {
+		auto IntBase<Child,Scalar>::vect() -> TVect& {
 			return std::get<TVect>(*this);
 		}
 	template<typename Child, typename Scalar>
-		auto TIntBase<Child,Scalar>::vect() const -> const TVect& {
+		auto IntBase<Child,Scalar>::vect() const -> const TVect& {
 			return std::get<TVect>(*this);
 		}
 	template<typename Child, typename Scalar>
-		TIntBase<Child,Scalar>::operator TScalar() const {
+		IntBase<Child,Scalar>::operator TScalar() const {
 			return static_cast<const Child*>(this)->scalar();
 		}
 	template<typename Child, typename Scalar> template<typename N>
-		auto TIntBase<Child,Scalar>::asNum() const -> N {
+		auto IntBase<Child,Scalar>::asNum() const -> N {
 			return static_cast<N>(static_cast<const Child*>(this)->asScalar());
 		}
 	template<typename Child, typename Scalar>
-		auto TIntBase<Child,Scalar>::asVect() const -> TVect {
+		auto IntBase<Child,Scalar>::asVect() const -> TVect {
 			return asVect<TVect>([](const TVect& v) { return v; });
 		}
 	template<typename Child, typename Scalar> template<typename ReturnType>
-		auto TIntBase<Child,Scalar>::asVect(
+		auto IntBase<Child,Scalar>::asVect(
 			std::function<ReturnType(const TVect&)> callback
 			) const -> ReturnType
 		{
@@ -310,7 +314,7 @@ namespace binon {
 		}
 	template<typename Child, typename Scalar>
 		auto operator<< (
-			std::ostream& stream, const TIntBase<Child,Scalar>& i
+			std::ostream& stream, const IntBase<Child,Scalar>& i
 			) -> std::ostream&
 		{
 			auto& child = static_cast<const Child&>(i);
@@ -323,10 +327,10 @@ namespace binon {
 			return stream;
 		}
 
-	//---- TIntVal --------------------------------------------------------------
+	//---- IntVal --------------------------------------------------------------
 
 	template<typename Int>
-		auto TIntVal::fits() const noexcept -> bool {
+		auto IntVal::fits() const noexcept -> bool {
 			using std::get;
 			if(canBeScalar()) {
 				auto i = scalar();
@@ -356,8 +360,8 @@ namespace binon {
 }
 
 namespace std {
-	template<> struct hash<binon::TIntVal> {
-		auto operator () (const binon::TIntVal& i) const noexcept
+	template<> struct hash<binon::IntVal> {
+		auto operator () (const binon::IntVal& i) const noexcept
 			-> std::size_t;
 	};
 	template<> struct hash<binon::UIntVal> {

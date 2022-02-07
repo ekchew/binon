@@ -49,42 +49,42 @@ namespace binon {
 
 	TypeConv supports the following mappings:
 
-		General Type         BinON Obj    Notes
-		____________         _________    _____
+		General Type          BinON Obj   Notes
+		____________          _________   _____
 
-		bool                 BoolObj     native value type
-		BoolObj              BoolObj
-		int8_t               IntObj
-		int16_t              IntObj
-		int32_t              IntObj
-		int64_t              IntObj
-		TIntVal              IntObj      native value type
-		IntObj               IntObj
-		uint8_t              UIntObj
-		uint16_t             UIntObj
-		uint32_t             UIntObj
-		uint64_t             UIntObj
-		UIntVal              IntObj      native value type
-		UIntObj              UIntObj
-		TFloat32             Float32Obj  native value type, see floattypes.hpp
-		Float32Obj           Float32Obj
-		TFloat64             FloatObj    native value type, see floattypes.hpp
-		FloatObj             FloatObj
-		BufferVal            BufferObj   native value type
-		BufferObj            BufferObj
-		std::string          StrObj
-		std::string_view     StrObj
-		HyStr                StrObj      native value type, see hystr.hpp
-		const char*          StrObj      BinONObjVal() returns std::string_view
-		TStringObj           StrObj
-		std::vector<BinONObj>  ListObj     native value type
-		ListObj             ListObj
-		SList               SList
+		bool                  BoolObj     native value type
+		BoolObj               BoolObj
+		int8_t                IntObj
+		int16_t               IntObj
+		int32_t               IntObj
+		int64_t               IntObj
+		IntVal                IntObj      native value type
+		IntObj                IntObj
+		uint8_t               UIntObj
+		uint16_t              UIntObj
+		uint32_t              UIntObj
+		uint64_t              UIntObj
+		UIntVal               IntObj      native value type
+		UIntObj               UIntObj
+		TFloat32              Float32Obj  native value type, see floattypes.hpp
+		Float32Obj            Float32Obj
+		TFloat64              FloatObj    native value type, see floattypes.hpp
+		FloatObj              FloatObj
+		BufferVal             BufferObj   native value type
+		BufferObj             BufferObj
+		std::string           StrObj
+		std::string_view      StrObj
+		HyStr                 StrObj      native value type, see hystr.hpp
+		const char*           StrObj      BinONObjVal() returns std::string_view
+		TStringObj            StrObj
+		std::vector<BinONObj> ListObj     native value type
+		ListObj               ListObj
+		SList                 SList
 		std::unordered_map<BinONObj,BinONObj>
-		                     DictObj     native value type
-		DictObj             DictObj
-		SKDict              SKDict
-		SDict               SDict
+		                      DictObj     native value type
+		DictObj               DictObj
+		SKDict                SKDict
+		SDict                 SDict
 
 	First of all, you can see that all BinON object types map onto themselves as
 	you might expect. In fact, for list and dictionary subtypes like SList, the
@@ -256,8 +256,13 @@ namespace binon {
 				}
 			static auto GetVal(const BinONObj& obj) -> TVal {
 					return static_cast<TVal>(
-						std::get<TObj>(obj).value().scalar()
-						);
+						obj.asObj<TObj,UIntObj>().value().scalar()
+					);
+				}
+			static auto GetVal(BinONObj&& obj) -> TVal {
+					return static_cast<TVal>(
+						std::move(obj).asObj<TObj,UIntObj>().value().scalar()
+					);
 				}
 		};
  #if BINON_CONCEPTS
@@ -287,15 +292,20 @@ namespace binon {
 				}
 			static auto GetVal(const BinONObj& obj) -> TVal {
 					return static_cast<TVal>(
-						std::get<TObj>(obj).value().scalar()
-						);
+						obj.asObj<TObj,IntObj>().value().scalar()
+					);
+				}
+			static auto GetVal(BinONObj&& obj) -> TVal {
+					return static_cast<TVal>(
+						std::move(obj).asObj<TObj,IntObj>().value().scalar()
+					);
 				}
 		};
 	template<>
-		struct TypeConv<TIntVal> {
+		struct TypeConv<IntVal> {
 			using TObj = IntObj;
-			using TVal = TIntVal;
-			static auto ValTypeName() -> HyStr { return "TIntVal"; }
+			using TVal = IntVal;
+			static auto ValTypeName() -> HyStr { return "IntVal"; }
 			static auto GetVal(BinONObj& obj) -> TVal& {
 					return std::get<TObj>(obj).value();
 				}

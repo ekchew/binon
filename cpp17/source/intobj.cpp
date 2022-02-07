@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 
 namespace binon {
@@ -53,7 +54,7 @@ namespace binon {
 		};
 	}
 	static void BytesFromHex(
-		TIntVal::TVect& v, const HyStr& hex, std::size_t nDigits
+		IntVal::TVect& v, const HyStr& hex, std::size_t nDigits
 		)
 	{
 		std::stringstream ss;
@@ -80,7 +81,7 @@ namespace binon {
 		auto reqByt = sigByt + wordSize - 1u;
 		reqByt -= reqByt % wordSize;
 		auto padByt = reqByt - sigByt;
-		TIntVal::TVect u;
+		IntVal::TVect u;
 		u.reserve(reqByt);
 		while(padByt-->0u) {
 			u.push_back(0x00_byte);
@@ -90,7 +91,7 @@ namespace binon {
 	}
 
 	template<typename Scalar>
-		static auto ByteGen(const std::variant<Scalar,TIntVal::TVect>& var)
+		static auto ByteGen(const std::variant<Scalar,IntVal::TVect>& var)
 			-> std::function<std::optional<std::byte>()>
 		{
 			using std::byte;
@@ -109,7 +110,7 @@ namespace binon {
 				};
 			}
 			else {
-				auto& vect = get<TIntVal::TVect>(var);
+				auto& vect = get<IntVal::TVect>(var);
 				auto iter = vect.begin();
 				return [&vect, iter]() mutable -> optional<byte> {
 					if(iter == vect.end()) {
@@ -120,7 +121,7 @@ namespace binon {
 			}
 		}
 	static auto SigByteGen(
-		const std::variant<TIntVal::TScalar,TIntVal::TVect>& var
+		const std::variant<IntVal::TScalar,IntVal::TVect>& var
 		)
 		-> std::function<std::optional<std::byte>()>
 	{
@@ -199,7 +200,7 @@ namespace binon {
 		};
 	}
 	static auto PaddedByteGen(
-		const std::variant<TIntVal::TScalar,TIntVal::TVect>& var,
+		const std::variant<IntVal::TScalar,IntVal::TVect>& var,
 		std::size_t wordSize
 		)
 		-> std::function<std::optional<std::byte>()>
@@ -242,16 +243,16 @@ namespace binon {
 		};
 	}
 
-	//---- TIntVal --------------------------------------------------------------
+	//---- IntVal --------------------------------------------------------------
 
-	auto TIntVal::FromHex(const HyStr& hex, std::size_t wordSize) -> TIntVal {
+	auto IntVal::FromHex(const HyStr& hex, std::size_t wordSize) -> IntVal {
 		auto u = PaddedBytes(hex, wordSize);
 		if(u.size() <= sizeof(TScalar)) {
-			return TIntVal{u}.asScalar();
+			return IntVal{u}.asScalar();
 		}
 		return u;
 	}
-	auto TIntVal::asHex(
+	auto IntVal::asHex(
 		bool zerox, std::size_t wordSize
 		) const -> std::string
 	{
@@ -268,7 +269,7 @@ namespace binon {
 		}
 		return oss.str();
 	}
-	auto TIntVal::asScalar() const noexcept -> TScalar {
+	auto IntVal::asScalar() const noexcept -> TScalar {
 		TScalar i = 0;
 		auto pbg = PaddedByteGen(*this, sizeof(TScalar));
 		auto optByte = pbg();
@@ -318,6 +319,20 @@ namespace binon {
 
 	//---- IntObj -------------------------------------------------------------
 
+	IntObj::IntObj(const UIntObj& obj) {
+		constexpr auto kMaxInt =
+			static_cast<UIntVal::TScalar>(
+				std::numeric_limits<IntVal::TScalar>::max()
+			);
+		auto& v = obj.value();
+		UIntVal::TScalar i;
+		if(v.isScalar() && (i = v.scalar()) <= kMaxInt) {
+			mValue = static_cast<IntVal::TScalar>(i);
+		}
+		else {
+			mValue = v.asVect();
+		}
+	}
 	IntObj::IntObj(TValue v):
 		mValue{v}
 	{
@@ -428,6 +443,33 @@ namespace binon {
 
 	//---- UIntObj ------------------------------------------------------------
 
+	UIntObj::UIntObj(const IntObj& obj) {
+		bool neg = false;
+		auto& v = obj.value();
+		if(v.isScalar()) {
+			auto sc = v.scalar();
+			if(v.scalar() < 0) {
+				neg = true;
+			}
+			else {
+				mValue = static_cast<UIntVal::TScalar>(sc);
+			}
+		}
+		else {
+			auto vc = v.vect();
+			if((vc[0] & 0x80_byte) != 0x00_byte) {
+				neg = true;
+			}
+			else {
+				mValue = vc;
+			}
+		}
+		if(neg) {
+			throw std::out_of_range{
+				"cannot convert negative IntObj to UIntObj"
+			};
+		}
+	}
 	UIntObj::UIntObj(TValue v):
 		mValue{v}
 	{
@@ -522,17 +564,17 @@ namespace binon {
 	}
 }
 
-auto std::hash<binon::TIntVal>::operator() (
-	const binon::TIntVal& iv
+auto std::hash<binon::IntVal>::operator() (
+	const binon::IntVal& iv
 	) const noexcept -> std::size_t
 {
-	using binon::TIntVal;
+	using binon::IntVal;
 	using std::string_view;
 	if(iv.canBeScalar()) {
-		return std::hash<binon::TIntVal::TScalar>{}(iv.scalar());
+		return std::hash<binon::IntVal::TScalar>{}(iv.scalar());
 	}
 	//	Works in clang++, broken in g++
-	//return std::hash<binon::TIntVal::TVect>{}(iv.vect());
+	//return std::hash<binon::IntVal::TVect>{}(iv.vect());
 	auto& vect = iv.vect();
 	std::string_view sv{
 		reinterpret_cast<const char*>(vect.data()),
@@ -550,7 +592,7 @@ auto std::hash<binon::UIntVal>::operator() (
 		return std::hash<binon::UIntVal::TScalar>{}(iv.scalar());
 	}
 	//	Works in clang++, broken in g++
-	//return std::hash<binon::TIntVal::TVect>{}(iv.vect());
+	//return std::hash<binon::IntVal::TVect>{}(iv.vect());
 	auto& vect = iv.vect();
 	std::string_view sv{
 		reinterpret_cast<const char*>(vect.data()),
