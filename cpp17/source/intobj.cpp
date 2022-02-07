@@ -326,11 +326,17 @@ namespace binon {
 			);
 		auto& v = obj.value();
 		UIntVal::TScalar i;
-		if(v.isScalar() && (i = v.scalar()) <= kMaxInt) {
+		if(v.isScalar() and (i = v.scalar()) <= kMaxInt) {
 			mValue = static_cast<IntVal::TScalar>(i);
 		}
 		else {
 			mValue = v.asVect();
+		}
+		if(!mValue.isScalar()) {
+			auto& vect = mValue.vect();
+			if(vect.size() == 0u || (vect[0] & 0x80_byte) != 0x00_byte) {
+				vect.insert(0, 1, 0x00_byte);
+			}
 		}
 	}
 	IntObj::IntObj(TValue v):
