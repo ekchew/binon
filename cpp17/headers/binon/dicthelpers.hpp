@@ -12,32 +12,27 @@ namespace binon {
 		concept DictType = kIsDictType<T>;
  )
 
-	/*
-	These functions help you work with DictObj, SKDict, and SDict instances:
-
-	template<typename Dict, typename Key>
-		auto HasKey(const Dict& dict, Key key) -> bool;
-	template<typename Val, typename Dict, typename Key>
-		auto GetVal(Dict dict, Key key) -> TBinONObjVal<Val>;
-	template<typename Dict, typename Key, typename Val>
-		auto SetVal(Dict& dict, Key key, Val val) -> Dict&;
-	template<typename Dict, typename Key>
-		auto DelKey(Dict& dict, Key key) -> bool;
-
-	As with the list helpers, the dict helpers let you work with more natural
-	types along the lines:
-
-		SetVal(myDict, "answer", 42);
-		int i = GetVal<int>(myDict, "answer");
-
-	DelKey() returns true if the key entry exists and the key-value pair gets
-	deleted. If there is no such entry, it does nothing and returns false.
-
-	Again, there are numerous overloads of these methods for dealing with
-	move semantics and such.
-	*/
+	constexpr bool kAutoAlloc = true;
 
 	//==== Template Implementation =============================================
+
+	//---- HasObjKey function templates ----------------------------------------
+
+#if BINON_CONCEPTS
+	auto HasObjKey(const DictType auto& dict, const BinONObj& key) -> bool
+	{
+		auto& map = dict.value();
+		return map.find(key) != map.end();
+	}
+#else
+	template<typename Dict, typename T>
+		auto HasObjKey(const Dict& dict, const BinONObj& key)
+		-> std::enable_if<kIsDictType<Dict>, bool>
+	{
+		auto& map = dict.value();
+		return map.find(key) != map.end();
+	}
+#endif
 
 	//---- HasKey function templates -------------------------------------------
 
@@ -49,11 +44,6 @@ namespace binon {
 	auto HasKey(const DictType auto& dict, const NonCStr auto& key) -> bool {
 		auto& map = dict.value();
 		return map.find(MakeObj(key)) != map.end();
-	}
-	template<DictType Dict, BinONVal Key>
-		auto HasKey(const Dict& dict, Key&& key) -> bool {
-		auto& map = dict.value();
-		return map.find(MakeObj(std::forward<Key>(key))) != map.end();
 	}
  #else
 	template<typename Dict>
@@ -74,293 +64,164 @@ namespace binon {
 		auto& map = dict.value();
 		return map.find(MakeObj(key)) != map.end();
 	}
-	template<typename Dict, typename Key>
-		auto HasKey(const Dict& dict, Key&& key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Key>, bool
-				>
-	{
-		auto& map = dict.value();
-		return map.find(MakeObj(std::forward<Key>(key))) != map.end();
-	}
  #endif
 
-	//---- GetVal function templates -------------------------------------------
+	//---- CtnrTValue function templates ---------------------------------------
+
+#if BINON_CONCEPTS
+	template<TValueType Val, DictType Dict>
+		auto CntrTValue(
+			Dict& dict, const BinONObj& key, bool autoAlloc = false
+		) -> Val&
+	{
+		auto& map = dict.value();
+		if(autoAlloc) {
+			auto pPair = map.find(key);
+			if(pPair == map.end()) {
+				pPair = map.insert(*pPair, {key, TValObj<Val>()});
+			}
+			return ObjTValue<Val>(pPair->second);
+		}
+		else {
+			return ObjTValue<Val>(map.at(key));
+		}
+	}
+	template<TValueType Val, DictType Dict>
+		auto CntrTValue(
+			const Dict& dict, const BinONObj& key
+		) -> const Val&
+	{
+		auto& map = dict.value();
+		return ObjTValue<Val>(map.at(key));
+	}
+	template<TValueType Val, DictType Dict>
+		auto CntrTValue(
+			Dict&& dict, const BinONObj& key
+		) -> Val
+	{
+		auto& map = dict.value();
+		return ObjTValue<Val>(std::move(map.at(key)));
+	}
+#else
+	template<typename Val, typename Dict>
+		auto CntrTValue(
+			Dict& dict, const BinONObj& key, bool autoAlloc = false
+		)
+		-> std::enable_if_t<
+			kIsTValue<Val> && kIsDictType<Dict>,
+			Val&
+			>
+	{
+		auto& map = dict.value();
+		if(autoAlloc) {
+			auto pPair = map.find(key);
+			if(pPair == map.end()) {
+				pPair = map.insert(*pPair, {key, TValObj<Val>()});
+			}
+			return ObjTValue<Val>(pPair->second);
+		}
+		else {
+			return ObjTValue<Val>(map.at(key));
+		}
+	}
+	template<typename Val, typename Dict>
+		auto CntrTValue(
+			const Dict& dict, const BinONObj& key
+		)
+		-> std::enable_if_t<
+			kIsTValue<Val> && kIsDictType<Dict>,
+			const Val&
+			>
+	{
+		auto& map = dict.value();
+		return ObjTValue<Val>(map.at(key));
+	}
+	template<typename Val, typename Dict, typename Key>
+		auto CntrTValue(
+			Dict&& dict, const BinONObj& key
+		)
+		-> std::enable_if_t<
+			kIsTValue<Val> && kIsDictType<Dict>,
+			Val
+			>
+	{
+		auto& map = dict.value();
+		return ObjTValue<Val>(std::move(map.at(key)));
+	}
+#endif
+
+	//---- GetCtnrVal function templates ---------------------------------------
 
  #if BINON_CONCEPTS
-	template<BinONVal Val, DictType Dict>
-		auto GetVal(Dict& dict, const char* key) -> TBinONObjVal<Val>&
+	template<typename Val, DictType Dict>
+		auto GetCtnrVal(const Dict& dict, const char* key)
+			-> TGetObjVal<Val>
 	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
+		return GetObjVal<Val>(dict.value().at(MakeObj(key)));
 	}
-	template<BinONVal Val, DictType Dict, NonCStr Key>
-		auto GetVal(Dict& dict, const Key& key) -> TBinONObjVal<Val>&
+	template<typename Val, DictType Dict, NonCStr Key>
+		auto GetCtnrVal(const Dict& dict, const Key& key)
+			-> TGetObjVal<Val>
 	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<BinONVal Val, DictType Dict, NonCStr Key>
-		auto GetVal(Dict& dict, Key&& key) -> TBinONObjVal<Val>&
-	{
-		return BinONObjVal<Val>(
-			dict.value().at(MakeObj(std::forward<Key>(key)))
-			);
-	}
-	template<BinONVal Val, DictType Dict>
-		auto GetVal(const Dict& dict, const char* key)
-			-> const TBinONObjVal<Val>&
-	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<BinONVal Val, DictType Dict, NonCStr Key>
-		auto GetVal(const Dict& dict, const Key& key)
-			-> const TBinONObjVal<Val>&
-	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<BinONVal Val, DictType Dict, NonCStr Key>
-		auto GetVal(const Dict& dict, Key&& key)
-			-> const TBinONObjVal<Val>&
-	{
-		return BinONObjVal<Val>(
-			dict.value().at(MakeObj(std::forward<Key>(key)))
-			);
-	}
-	template<BinONVal Val, DictType Dict>
-		auto GetVal(Dict&& dict, const char* key)
-			-> TBinONObjVal<Val>
-	{
-		return BinONObjVal<Val>(
-			std::forward<Dict>(dict).value().at(MakeObj(key))
-			);
-	}
-	template<BinONVal Val, DictType Dict, NonCStr Key>
-		auto GetVal(Dict&& dict, const Key& key)
-			-> TBinONObjVal<Val>
-	{
-		return BinONObjVal<Val>(
-			std::forward<Dict>(dict).value().at(MakeObj(key))
-			);
-	}
-	template<BinONVal Val, DictType Dict, NonCStr Key>
-		auto GetVal(Dict&& dict, Key&& key)
-			-> TBinONObjVal<Val>
-	{
-		return BinONObjVal<Val>(
-			std::forward<Dict>(dict).value().at(
-				MakeObj(std::forward<Key>(key))
-				)
-			);
-	}
-	template<NonBinONVal Val, DictType Dict>
-		auto GetVal(const Dict& dict, const char* key)
-			-> TBinONObjVal<Val>
-	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<NonBinONVal Val, DictType Dict, NonCStr Key>
-		auto GetVal(const Dict& dict, const Key& key)
-			-> TBinONObjVal<Val>
-	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<NonBinONVal Val, DictType Dict, NonCStr Key>
-		auto GetVal(const Dict& dict, Key&& key)
-			-> TBinONObjVal<Val>
-	{
-		return BinONObjVal<Val>(
-			dict.value().at(MakeObj(std::forward<Key>(key)))
-			);
+		return GetObjVal<Val>(dict.value().at(MakeObj(key)));
 	}
   #else
 	template<typename Val, typename Dict>
-		auto GetVal(Dict& dict, const char* key)
+		auto GetCtnrVal(const Dict& dict, const char* key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Val>,
-				TBinONObjVal<Val>&
+				kIsDictType<Dict>,
+				TGetObjVal<Val>
 				>
 	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
+		return GetObjVal<Val>(dict.value().at(MakeObj(key)));
 	}
 	template<typename Val, typename Dict, typename Key>
-		auto GetVal(Dict& dict, const Key& key)
+		auto GetCtnrVal(const Dict& dict, const Key& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Key>,
-				TBinONObjVal<Val>&
+				kIsDictType<Dict> && !kIsCStr<Key>,
+				TGetObjVal<Val>
 				>
 	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<typename Val, typename Dict, typename Key>
-		auto GetVal(Dict& dict, Key&& key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Key>
-					&& kIsBinONVal<Val> && !kIsCStr<Key>,
-				TBinONObjVal<Val>&
-				>
-	{
-		return BinONObjVal<Val>(
-			dict.value().at(MakeObj(std::forward<Key>(key)))
-			);
-	}
-	template<typename Val, typename Dict>
-		auto GetVal(const Dict& dict, const char* key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Val>,
-				const TBinONObjVal<Val>&
-				>
-	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<typename Val, typename Dict, typename Key>
-		auto GetVal(const Dict& dict, const Key& key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Key>,
-				const TBinONObjVal<Val>&
-				>
-	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<typename Val, typename Dict, typename Key>
-		auto GetVal(const Dict& dict, Key&& key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Key>
-					&& kIsBinONVal<Val> && !kIsCStr<Key>,
-				const TBinONObjVal<Val>&
-				>
-	{
-		return BinONObjVal<Val>(
-			dict.value().at(MakeObj(std::forward<Key>(key)))
-			);
-	}
-	template<typename Val, typename Dict>
-		auto GetVal(Dict&& dict, const char* key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Val>,
-				TBinONObjVal<Val>
-				>
-	{
-		return BinONObjVal<Val>(
-			std::forward<Dict>(dict).value().at(MakeObj(key))
-			);
-	}
-	template<typename Val, typename Dict, typename Key>
-		auto GetVal(Dict&& dict, const Key& key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Key>,
-				TBinONObjVal<Val>
-				>
-	{
-		return BinONObjVal<Val>(
-			std::forward<Dict>(dict).value().at(MakeObj(key))
-			);
-	}
-	template<typename Val, typename Dict, typename Key>
-		auto GetVal(Dict&& dict, Key&& key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Key>
-					&& kIsBinONVal<Val> && !kIsCStr<Key>,
-				TBinONObjVal<Val>
-				>
-	{
-		return BinONObjVal<Val>(
-			std::forward<Dict>(dict).value().at(
-				MakeObj(std::forward<Key>(key))
-				)
-			);
-	}
-	template<typename Val, typename Dict>
-		auto GetVal(const Dict& dict, const char* key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && !kIsBinONVal<Val>,
-				TBinONObjVal<Val>
-				>
-	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<typename Val, typename Dict, typename Key>
-		auto GetVal(const Dict& dict, const Key& key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && !kIsBinONVal<Val> && !kIsCStr<Key>,
-				TBinONObjVal<Val>
-				>
-	{
-		return BinONObjVal<Val>(dict.value().at(MakeObj(key)));
-	}
-	template<typename Val, typename Dict, typename Key>
-		auto GetVal(const Dict& dict, Key&& key)
-			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Key>
-					&& !kIsBinONVal<Val> && !kIsCStr<Key>,
-				TBinONObjVal<Val>
-				>
-	{
-		return BinONObjVal<Val>(
-			dict.value().at(MakeObj(std::forward<Key>(key)))
-			);
+		return GetObjVal<Val>(dict.value().at(MakeObj(key)));
 	}
  #endif
 
-	//---- SetVal function templates -------------------------------------------
+	//---- SetCtnrVal function templates ---------------------------------------
 
  #if BINON_CONCEPTS
-	auto& SetVal(DictType auto& dict, const char* key, const char* val) {
+	auto& SetCtnrVal(DictType auto& dict, const char* key, const char* val) {
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
 	}
-	auto& SetVal(DictType auto& dict, const char* key, const NonCStr auto& val)
+	auto& SetCtnrVal(DictType auto& dict, const char* key, const NonCStr auto& val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
 	}
-	auto& SetVal(DictType auto& dict, const NonCStr auto& key, const char* val)
+	auto& SetCtnrVal(DictType auto& dict, const NonCStr auto& key, const char* val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
 	}
-	auto& SetVal(
+	auto& SetCtnrVal(
 		DictType auto& dict, const NonCStr auto& key, const NonCStr auto& val
 	) {
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
 	}
-	template<DictType Dict, BinONVal Key>
-		auto& SetVal(Dict& dict, Key&& key, const char* val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(std::forward<Key>(key)), MakeObj(val)
-			);
-		return dict;
-	}
-	template<DictType Dict, BinONVal Key, NonCStr Val>
-		auto& SetVal(Dict& dict, Key&& key, const Val& val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(std::forward<Key>(key)), MakeObj(val)
-			);
-		return dict;
-	}
-	template<DictType Dict, BinONVal Val>
-		auto& SetVal(Dict& dict, const char* key, Val&& val)
+	template<DictType Dict, TValueType Val>
+		auto& SetCtnrVal(Dict& dict, const char* key, Val&& val)
 	{
 		dict.value().insert_or_assign(
 			MakeObj(key), MakeObj(std::forward<Val>(val))
 			);
 		return dict;
 	}
-	template<DictType Dict, NonCStr Key, BinONVal Val>
-		auto& SetVal(Dict& dict, const Key& key, Val&& val)
+	template<DictType Dict, NonCStr Key, TValueType Val>
+		auto& SetCtnrVal(Dict& dict, const Key& key, Val&& val)
 	{
 		dict.value().insert_or_assign(
 			MakeObj(key),
-			MakeObj(std::forward<Val>(val))
-			);
-		return dict;
-	}
-	template<DictType Dict, BinONVal Key, BinONVal Val>
-		auto& SetVal(Dict& dict, Key&& key, Val&& val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(std::forward<Key>(key)),
 			MakeObj(std::forward<Val>(val))
 			);
 		return dict;
@@ -370,7 +231,7 @@ namespace binon {
 		typename Dict,
 		typename std::enable_if_t<kIsDictType<Dict>, int> = 0
 		>
-		auto& SetVal(Dict& dict, const char* key, const char* val)
+		auto& SetCtnrVal(Dict& dict, const char* key, const char* val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
@@ -379,7 +240,7 @@ namespace binon {
 		typename Dict, typename Val,
 		typename std::enable_if_t<kIsDictType<Dict> && !kIsCStr<Val>, int> = 0
 		>
-		auto& SetVal(Dict& dict, const char* key, const Val& val)
+		auto& SetCtnrVal(Dict& dict, const char* key, const Val& val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
@@ -388,7 +249,7 @@ namespace binon {
 		typename Dict, typename Key,
 		typename std::enable_if_t<kIsDictType<Dict> && !kIsCStr<Key>, int> = 0
 		>
-		auto& SetVal(Dict& dict, const Key& key, const char* val)
+		auto& SetCtnrVal(Dict& dict, const Key& key, const char* val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
@@ -399,45 +260,18 @@ namespace binon {
 			kIsDictType<Dict> && !kIsCStr<Key> && !kIsCStr<Val>, int
 			> = 0
 		>
-		auto& SetVal(Dict& dict, const Key& key, const Val& val)
+		auto& SetCtnrVal(Dict& dict, const Key& key, const Val& val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
 	}
 	template<
-		typename Dict, typename Key,
-		typename std::enable_if_t<
-			kIsDictType<Dict> && kIsBinONVal<Key>, int
-			> = 0
-		>
-		auto& SetVal(Dict& dict, Key&& key, const char* val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(std::forward<Key>(key)), MakeObj(val)
-			);
-		return dict;
-	}
-	template<
-		typename Dict, typename Key, typename Val,
-		typename std::enable_if_t<
-			kIsDictType<Dict> && kIsBinONVal<Key> && !kIsCStr<Val>,
-			int
-			> = 0
-		>
-		auto& SetVal(Dict& dict, Key&& key, const Val& val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(std::forward<Key>(key)), MakeObj(val)
-			);
-		return dict;
-	}
-	template<
 		typename Dict, typename Val,
 		typename std::enable_if_t<
-			kIsDictType<Dict> && kIsBinONVal<Val>, int
+			kIsDictType<Dict> && kIsTValue<Val>, int
 			> = 0
 		>
-		auto& SetVal(Dict& dict, const char* key, Val&& val)
+		auto& SetCtnrVal(Dict& dict, const char* key, Val&& val)
 	{
 		dict.value().insert_or_assign(
 			MakeObj(key), MakeObj(std::forward<Val>(val))
@@ -447,29 +281,14 @@ namespace binon {
 	template<
 		typename Dict, typename Key, typename Val,
 		typename std::enable_if_t<
-			kIsDictType<Dict> && kIsBinONVal<Val> && !kIsCStr<Key>,
+			kIsDictType<Dict> && kIsTValue<Val> && !kIsCStr<Key>,
 			int
 			> = 0
 		>
-		auto& SetVal(Dict& dict, const Key& key, Val&& val)
+		auto& SetCtnrVal(Dict& dict, const Key& key, Val&& val)
 	{
 		dict.value().insert_or_assign(
 			MakeObj(key),
-			MakeObj(std::forward<Val>(val))
-			);
-		return dict;
-	}
-	template<
-		typename Dict, typename Key, typename Val,
-		typename std::enable_if_t<
-			kIsDictType<Dict> && kIsBinONVal<Key> && kIsBinONVal<Val>,
-			int
-			> = 0
-		>
-		auto& SetVal(Dict& dict, Key&& key, Val&& val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(std::forward<Key>(key)),
 			MakeObj(std::forward<Val>(val))
 			);
 		return dict;
@@ -497,7 +316,7 @@ namespace binon {
 		map.erase(iter);
 		return true;
 	}
-	template<DictType Dict, BinONVal Key>
+	template<DictType Dict, TValueType Key>
 		auto DelKey(Dict& dict, Key&& key) -> bool
 	{
 		auto& map = dict.value();
@@ -540,7 +359,7 @@ namespace binon {
 	template<typename Dict, typename Key>
 		auto DelKey(Dict& dict, Key&& key)
 			-> std::enable_if_t<
-				kIsDictType<Dict> && kIsBinONVal<Key>, bool
+				kIsDictType<Dict> && kIsTValue<Key>, bool
 				>
 	{
 		auto& map = dict.value();
@@ -560,7 +379,7 @@ namespace binon {
 	{
 		DictObj dict;
 		dict.value().reserve(sizeof...(Pairs));
-		(	SetVal(
+		(	SetCtnrVal(
 				dict, std::forward<Pairs>(pairs).first, std::forward<Pairs>(pairs).second
 			),
 			...
