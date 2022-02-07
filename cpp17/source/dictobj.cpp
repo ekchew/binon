@@ -68,51 +68,12 @@ namespace binon {
 		return value().size();
 	}
 	auto DictBase::calcHash(std::size_t seed0) const -> std::size_t {
-		//	You can't willy-nilly apply a general hash-combining algorithm (e.g.
-		//	binon::details::HashCombine2()) across all the key-value pairs in an
-		//	unordered_map. Two identical maps could hash differntly because the
-		//	pairs may emerge in a different order as you iterate them.
-		//
-		//	So the hash combination needs to be done using an algorithm that is
-		//	commutative. The algorithm applied here is essentially the one used
-		//	by frozenset in Python.
-		//
-		//	(Note: This algoritm has the look of being tailored to generate
-		//	32-bit hashes. I'm not sure how well it performs when size_t is 64
-		//	bits? Perhaps it doesn't matter assuming unordered_map and friends
-		//	only use the least-significant bits in managing a hash table. So
-		//	unless the table grows to >2^32 in size, you should be good with a
-		//	32-bit hash? But I'm not sure that's how things are actually
-		//	implemented.)
-
 		auto& dict = value();
-		std::size_t seed = 1927868237UL;
-		seed *= dict.size() + 1;
+		CommutativeHash ch;
 		for(auto& pair: dict) {
-
-			//	Use the normal hash combine algorithm to combine the key and
-			//	value hashes.
-			auto kvHash = Hash(pair.first, pair.second);
-			seed ^= (kvHash ^ (kvHash << 16) ^ 89869747UL) * 3644798167UL;
+			ch.extend(HashCombineObjs(pair.first, pair.second));
 		}
-		seed = seed * 69069U + 907133923UL;
-
-		//	I think this final step in the frozenset hash is only necessary
-		//	because their implementation uses -1 as a flag to indicate whether
-		//	or not a hash has already been calculated? So I am omitting it here
-		//	but leaving it commented out in case there is more to it than I am
-		//	aware of.
-	 #if 0
-		if(seed == -1) {
-			seed = 590923713UL;
-		}
-	 #endif
-
-		//	The final step is to combine the hash passed into calcHash() with
-		//	the one we just generated. (The latter should be a hash of the
-		//	object's type code: namely, kDictObjCode, kSKDictCode, or
-		//	kSDictCode.)
-		return HashCombine(seed0, seed);
+		return ch;
 	}
 
 	//---- DictObj -------------------------------------------------------------

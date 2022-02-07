@@ -32,6 +32,7 @@ SRC_NAMES := \
 	codebyte \
 	dictobj \
 	floatobj \
+	hashutil \
 	intobj \
 	ioutil \
 	listobj \
@@ -93,6 +94,8 @@ ${OBJ}dictobj.o: ${SRC}dictobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}dictobj.cpp -o ${OBJ}dictobj.o
 ${OBJ}floatobj.o: ${SRC}floatobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}floatobj.cpp -o ${OBJ}floatobj.o
+${OBJ}hashutil.o: ${SRC}hashutil.cpp ${DEPS}
+	${CXX} ${FLAGS} ${SRC}hashutil.cpp -o ${OBJ}hashutil.o
 ${OBJ}intobj.o: ${SRC}intobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}intobj.cpp -o ${OBJ}intobj.o
 ${OBJ}ioutil.o: ${SRC}ioutil.cpp ${DEPS}

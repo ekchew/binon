@@ -102,8 +102,12 @@ namespace binon {
 auto std::hash<binon::BinONObj>::operator() (const binon::BinONObj& obj) const
 	-> std::size_t
 {
+	using std::size_t;
+	auto msb = (sizeof(size_t) << 3) - 1;
+	size_t salt = binon::gHashSalt;
+	salt = salt << 1 | salt >> msb & 0x1;
 	return std::visit(
-		[](const auto& obj) -> std::size_t { return obj.hash(); },
+		[](const auto& obj) -> size_t { return obj.hash(); },
 		static_cast<const binon::BinONVariant&>(obj)
-		);
+	) ^ salt;
 }
