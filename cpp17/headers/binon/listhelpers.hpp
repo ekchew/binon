@@ -30,8 +30,12 @@ namespace binon {
 
  #if BINON_CONCEPTS
 
-	//	CntrTValue() is essentially ObjTValue() (see objhelpers.hpp) applied to
-	//	a specific container element.
+	//	GetCntrVal() is essentially GetObjVal() as applied to a particular list
+	//	element
+	template<typename T, ListType List>
+		 auto GetCtnrVal(const List& list, std::size_t index) -> TGetObjVal<T>;
+
+	//	Likewise, CtnrTValue() is like ObjTValue() applied to a list element.
 	template<TValueType T, ListType List>
 		auto CtnrTValue(List& list, std::size_t index) -> T&;
 	template<TValueType T, ListType List>
@@ -39,11 +43,12 @@ namespace binon {
  	template<TValueType T, ListType List>
  		auto CtnrTValue(List&& list, std::size_t index) -> T;
 
-	//	Likewise, GetCntrVal() is the container element counterpart to
-	//	GetObjVal().
-	template<typename T, ListType List>
-		 auto GetCtnrVal(const List& list, std::size_t index) -> TGetObjVal<T>;
-
+	//	AppendVal() adds elements to the list. You can use move semantics if the
+	//	type is a TValue.
+	template<ListType List, typename T>
+		auto AppendVal(List& list, const T& v) -> List&;
+	template<ListType List, TValueType T>
+		auto AppendVal(List& list, T&& v) -> List&;
  #endif
 
 	//==== Template Implementation =============================================
@@ -144,41 +149,40 @@ namespace binon {
 	//---- AppendVal function templates ----------------------------------------
 
 #if BINON_CONCEPTS
-	auto& AppendVal(ListType auto& list, const char* s) {
-		list.value().push_back(MakeObj(s));
+	auto& AppendVal(ListType auto& list, const auto& v) {
+		auto& vec = list.value();
+		if constexpr(kIsCStr<decltype(v)>) {
+			vec.push_back(StrObj{v});
+		}
+		else {
+			vec.push_back(MakeObj(v));
+		}
 		return list;
 	}
-	auto& AppendVal(ListType auto& list, const NonCStr auto& v) {
-		list.value().push_back(MakeObj(v));
-		return list;
-	}
-	template<ListType List, NonCStr T> auto& AppendVal(List& list, T&& v) {
+	template<ListType List, TValueType T> auto& AppendVal(List& list, T&& v) {
 		list.value().push_back(MakeObj(std::forward<T>(v)));
 		return list;
 	}
 #else
 	template<
-		typename List,
-		typename std::enable_if_t<kIsListType<List>, int> = 0
-		>
-		auto& AppendVal(List& list, const char* s)
-	{
-		list.value().push_back(MakeObj(s));
-		return list;
-	}
-	template<
 		typename List, typename T,
-		typename std::enable_if_t<kIsListType<List> && !kIsCStr<T>, int> = 0
+		typename std::enable_if_t<kIsListType<List>, int> = 0
 		>
 		auto& AppendVal(List& list, const T& v)
 	{
-		list.value().push_back(MakeObj(v));
+		auto& vec = list.value();
+		if constexpr(kIsCStr<decltype(v)>) {
+			vec.push_back(StrObj{v});
+		}
+		else {
+			vec.push_back(MakeObj(v));
+		}
 		return list;
 	}
 	template<
 		typename List, typename T,
 		typename std::enable_if_t<
-			kIsListType<List> && kIsTValue<T> && !kIsCStr<T>, int
+			kIsListType<List> && kIsTValue<T>, int
 			> = 0
 		>
 		auto& AppendVal(List& list, T&& v)
