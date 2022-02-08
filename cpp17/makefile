@@ -71,7 +71,6 @@ DEPS := \
 	${HDR}objhelpers.hpp \
 	${HDR}optutil.hpp \
 	${HDR}packelems.hpp \
-	${HDR}refutil.hpp \
 	${HDR}strobj.hpp \
 	${HDR}typeconv.hpp \
 	${HDR}typeutil.hpp \

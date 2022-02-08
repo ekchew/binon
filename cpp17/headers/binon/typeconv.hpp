@@ -7,14 +7,17 @@
 
 namespace binon {
 
-	//	kIsCStr tells you whether a given type is a C string. It's used by some
-	//	of the template specializations used helper functions.
+	//	kIsCStr tells you whether a given type is a C string. It evaluates true
+	//	if the decayed version of your type T is either char* or const char*.
+	//	The TypeConv class uses kIsCStr to specialize for C strings.
 	template<typename T>
-		constexpr bool kIsCStr = std::is_same_v<std::decay_t<T>,const char*>;
-	BINON_IF_CONCEPTS(
-		template<typename T> concept CStrType = kIsCStr<T>;
-		template<typename T> concept NonCStr = !kIsCStr<T>;
-	)
+		constexpr bool kIsCStr =
+			std::is_same_v<std::decay_t<T>,char*> ||
+			std::is_same_v<std::decay_t<T>,const char*>;
+ #if BINON_CONCEPTS
+	template<typename T>
+		concept CStrType = kIsCStr<T>;
+ #endif
 
 	//	Some nifty code off the Internet that determines if a given type is
 	//	among the possible members of a std::variant.

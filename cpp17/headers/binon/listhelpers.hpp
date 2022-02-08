@@ -30,18 +30,36 @@ namespace binon {
 
  #if BINON_CONCEPTS
 
-	//	GetCntrVal() is essentially GetObjVal() as applied to a particular list
-	//	element
+	//	GetCtnrVal() is essentially GetObjVal() as applied to a particular list
+	//	element. (Note that dicthelpers.hpp also implements GetCtnrVal and other
+	//	"Ctnr" functions that take keys rather than element indices.) Note that
+	//	GetCtnrVal() may throw std::out_of_range if the index is bad (see
+	//	std::vector::at() documentation). A std::bad_variant_access exception is
+	//	also possible if the type T doesn't work out.
 	template<typename T, ListType List>
 		 auto GetCtnrVal(const List& list, std::size_t index) -> TGetObjVal<T>;
 
-	//	Likewise, CtnrTValue() is like ObjTValue() applied to a list element.
+	//	Likewise, CtnrTValue() is like ObjTValue() applied to a list element. To
+	//	move a TValue out of an element, call std::move on the list itself. For
+	//	example:
+	//
+	//		auto hyStr = CtnrTValue<StrObj::TValue>(std::move(myList), 0);
+	//
+	//	Now, assuming element 0 of myList is indeed a string, hyStr should
+	//	contain its text and the element's string should be empty.
 	template<TValueType T, ListType List>
 		auto CtnrTValue(List& list, std::size_t index) -> T&;
 	template<TValueType T, ListType List>
 		auto CtnrTValue(const List& list, std::size_t index) -> const T&;
  	template<TValueType T, ListType List>
  		auto CtnrTValue(List&& list, std::size_t index) -> T;
+
+	//	SetCtnrVal() is equivalent to assigning a new object created by calling
+	//	MakeObj(v) to an existing list element. (Note that it and AppendVal
+	//	return the input list so that you can chain several calls together using
+	//	the fluent paradigm.)
+	template<ListType List, typename Val>
+		auto SetCtnrVal(List& list, std::size_t index, const Val& v) -> List&;
 
 	//	AppendVal() adds elements to the list. You can use move semantics if the
 	//	type is a TValue.
@@ -115,48 +133,22 @@ namespace binon {
 	//---- SetCtnrVal function templates ---------------------------------------
 
  #if BINON_CONCEPTS
-	auto& SetCtnrVal(ListType auto& list, std::size_t index, const char* s) {
-		list.value().at(index) = MakeObj(s);
-		return list;
-	}
-	auto& SetCtnrVal(
-		ListType auto& list, std::size_t index, const NonCStr auto& v
-	) {
-		list.value().at(index) = MakeObj(v);
-		return list;
-	}
+	auto& SetCtnrVal(ListType auto& list, std::size_t index, const auto& v)
  #else
-	template<
-		typename List,
-		typename std::enable_if_t<kIsListType<List>, int> = 0
-		>
-		auto& SetCtnrVal(List& list, std::size_t index, const char* s)
-	{
-		list.value().at(index) = MakeObj(s);
-		return list;
-	}
-	template<
-		typename List, typename T,
-		typename std::enable_if_t<kIsListType<List> && !kIsCStr<T>, int> = 0
-		>
-		auto& SetCtnrVal(List& list, std::size_t index, const T& v)
+ 	template<typename List, typename T>
+		auto SetCtnrVal(List& list, std::size_t index, const T& v)
+			-> std::enable_if_t<kIsListType<List>, List&>
+ #endif
 	{
 		list.value().at(index) = MakeObj(v);
 		return list;
 	}
- #endif
 
 	//---- AppendVal function templates ----------------------------------------
 
 #if BINON_CONCEPTS
 	auto& AppendVal(ListType auto& list, const auto& v) {
-		auto& vec = list.value();
-		if constexpr(kIsCStr<decltype(v)>) {
-			vec.push_back(StrObj{v});
-		}
-		else {
-			vec.push_back(MakeObj(v));
-		}
+		list.value().push_back(MakeObj(v));
 		return list;
 	}
 	template<ListType List, TValueType T> auto& AppendVal(List& list, T&& v) {
@@ -170,13 +162,7 @@ namespace binon {
 		>
 		auto& AppendVal(List& list, const T& v)
 	{
-		auto& vec = list.value();
-		if constexpr(kIsCStr<decltype(v)>) {
-			vec.push_back(StrObj{v});
-		}
-		else {
-			vec.push_back(MakeObj(v));
-		}
+		list.value().push_back(MakeObj(v));
 		return list;
 	}
 	template<

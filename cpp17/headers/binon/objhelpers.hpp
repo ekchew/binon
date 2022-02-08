@@ -96,19 +96,9 @@ namespace binon {
 	//==== Template Implementation =============================================
 
 	//---- MakeObj -------------------------------------------------------------
-	//
-	//	There are 3 overloads for MakeObj. One deals with copy semantics, one
-	//	with move semantics, and the 3rd handles the special case of C string
-	//	literals (const char*) which seem to have some issues with reference
-	//	resolution.
 
 	template<typename T> auto MakeObj(const T& v) -> TValObj<T> {
-		if constexpr(kIsCStr<T>) {
-			return HyStr(v);
-		}
-		else {
-			return TValObj<T>(v);
-		}
+		return TValObj<T>(v);
 	}
 
  #if BINON_CONCEPTS
