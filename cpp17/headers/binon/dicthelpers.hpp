@@ -16,24 +16,6 @@ namespace binon {
 
 	//==== Template Implementation =============================================
 
-	//---- HasObjKey function templates ----------------------------------------
-
-#if BINON_CONCEPTS
-	auto HasObjKey(const DictType auto& dict, const BinONObj& key) -> bool
-	{
-		auto& map = dict.value();
-		return map.find(key) != map.end();
-	}
-#else
-	template<typename Dict, typename T>
-		auto HasObjKey(const Dict& dict, const BinONObj& key)
-		-> std::enable_if<kIsDictType<Dict>, bool>
-	{
-		auto& map = dict.value();
-		return map.find(key) != map.end();
-	}
-#endif
-
 	//---- HasKey function templates -------------------------------------------
 
  #if BINON_CONCEPTS
@@ -65,6 +47,24 @@ namespace binon {
 		return map.find(MakeObj(key)) != map.end();
 	}
  #endif
+
+	//---- HasObjKey function templates ----------------------------------------
+
+#if BINON_CONCEPTS
+	auto HasObjKey(const DictType auto& dict, const BinONObj& key) -> bool
+	{
+		auto& map = dict.value();
+		return map.find(key) != map.end();
+	}
+#else
+	template<typename Dict, typename T>
+		auto HasObjKey(const Dict& dict, const BinONObj& key)
+		-> std::enable_if<kIsDictType<Dict>, bool>
+	{
+		auto& map = dict.value();
+		return map.find(key) != map.end();
+	}
+#endif
 
 	//---- CtnrTValue function templates ---------------------------------------
 
@@ -193,12 +193,14 @@ namespace binon {
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
 	}
-	auto& SetCtnrVal(DictType auto& dict, const char* key, const NonCStr auto& val)
+	auto& SetCtnrVal(
+		DictType auto& dict, const char* key, const NonCStr auto& val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
 	}
-	auto& SetCtnrVal(DictType auto& dict, const NonCStr auto& key, const char* val)
+	auto& SetCtnrVal(
+		DictType auto& dict, const NonCStr auto& key, const char* val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
@@ -371,6 +373,33 @@ namespace binon {
 		return true;
 	}
  #endif
+
+	//---- DelObjKey function templates ----------------------------------------
+
+#if BINON_CONCEPTS
+	auto DelObjKey(const DictType auto& dict, const BinONObj& key) -> bool {
+		auto& map = dict.value();
+		auto iter = map.find(key);
+		if(iter == map.end()) {
+			return false;
+		}
+		map.erase(iter);
+		return true;
+	}
+#else
+	template<typename Dict>
+		auto DelObjKey(const Dict& dict, const BinONObj& key)
+			-> std::enable_if_t<kIsDictType<Dict>, bool>
+	{
+		auto& map = dict.value();
+		auto iter = map.find(key);
+		if(iter == map.end()) {
+			return false;
+		}
+		map.erase(iter);
+		return true;
+	}
+#endif
 
 	//---- Make... function templates ------------------------------------------
 
