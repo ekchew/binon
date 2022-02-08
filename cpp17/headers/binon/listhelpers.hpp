@@ -120,12 +120,6 @@ namespace binon {
 		list.value().at(index) = MakeObj(v);
 		return list;
 	}
-	template<ListType List, TValueType T>
-		auto& SetCtnrVal(List& list, std::size_t index, T&& v)
-	{
-		list.value().at(index) = MakeObj(std::forward<T>(v));
-		return list;
-	}
  #else
 	template<
 		typename List,
@@ -143,17 +137,6 @@ namespace binon {
 		auto& SetCtnrVal(List& list, std::size_t index, const T& v)
 	{
 		list.value().at(index) = MakeObj(v);
-		return list;
-	}
-	template<
-		typename List, typename T,
-		typename std::enable_if_t<
-			kIsListType<List> && kIsTValue<T>, int
-			> = 0
-		>
-		auto& SetCtnrVal(List& list, std::size_t index, T&& v)
-	{
-		list.value().at(index) = MakeObj(std::forward<T>(v));
 		return list;
 	}
  #endif

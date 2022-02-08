@@ -211,23 +211,6 @@ namespace binon {
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
 	}
-	template<DictType Dict, TValueType Val>
-		auto& SetCtnrVal(Dict& dict, const char* key, Val&& val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(key), MakeObj(std::forward<Val>(val))
-			);
-		return dict;
-	}
-	template<DictType Dict, NonCStr Key, TValueType Val>
-		auto& SetCtnrVal(Dict& dict, const Key& key, Val&& val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(key),
-			MakeObj(std::forward<Val>(val))
-			);
-		return dict;
-	}
  #else
 	template<
 		typename Dict,
@@ -265,34 +248,6 @@ namespace binon {
 		auto& SetCtnrVal(Dict& dict, const Key& key, const Val& val)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
-		return dict;
-	}
-	template<
-		typename Dict, typename Val,
-		typename std::enable_if_t<
-			kIsDictType<Dict> && kIsTValue<Val>, int
-			> = 0
-		>
-		auto& SetCtnrVal(Dict& dict, const char* key, Val&& val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(key), MakeObj(std::forward<Val>(val))
-			);
-		return dict;
-	}
-	template<
-		typename Dict, typename Key, typename Val,
-		typename std::enable_if_t<
-			kIsDictType<Dict> && kIsTValue<Val> && !kIsCStr<Key>,
-			int
-			> = 0
-		>
-		auto& SetCtnrVal(Dict& dict, const Key& key, Val&& val)
-	{
-		dict.value().insert_or_assign(
-			MakeObj(key),
-			MakeObj(std::forward<Val>(val))
-			);
 		return dict;
 	}
  #endif
