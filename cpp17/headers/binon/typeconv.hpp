@@ -400,6 +400,13 @@ namespace binon {
 					return obj.asObj<TObj,SKDict,SDict>().value();
 				}
 		};
+	template<>
+		struct TypeConv<BinONObj> {
+			using TObj = BinONObj;
+			using TVal = BinONObj;
+			static auto ValTypeName() -> HyStr { return "BinONObj"; }
+			static auto GetVal(const BinONObj& obj) -> TVal { return obj; }
+		};
 }
 
 #endif
