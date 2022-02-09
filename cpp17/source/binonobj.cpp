@@ -74,7 +74,7 @@ namespace binon {
 		return *this;
 	}
 	void BinONObj::print(OptRef<std::ostream> optStream) const {
-		auto& stream = optStream.value_or(std::cout).get();
+		auto& stream = optStream.value_or(std::cout);
 		std::visit(
 			[&stream](const auto& obj) {
 					stream << obj.kClsName << '(';
