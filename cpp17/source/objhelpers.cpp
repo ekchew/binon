@@ -9,8 +9,4 @@ namespace binon {
 		BinONObj{std::forward<BinONObj>(obj)}
 	{
 	}
-	ObjWrapper::ObjWrapper(const char* cStr):
-		BinONObj{StrObj{cStr}}
-	{
-	}
 }

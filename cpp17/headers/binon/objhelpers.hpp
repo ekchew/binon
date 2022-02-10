@@ -33,7 +33,7 @@ namespace binon {
 	//
 	//	This works because HyStr is StrObj::TValue.
 	//
-	template<typename T> auto MakeObj(const T& v) -> TValObj<T>;
+	template<TCType T> auto MakeObj(const T& v) -> TValObj<T>;
 	template<TValueType T> auto MakeObj(T&& v) noexcept -> TValObj<T>;
 
 	//	GetObjVal() attempts to extract a value of the type you specify from a
@@ -56,7 +56,7 @@ namespace binon {
 	//			static_cast<UIntObj>(std::get<IntObj>(obj)).value().scalar()
 	//			)
 	//
-	template<typename T>
+	template<TCType T>
 		auto GetObjVal(const BinONObj& obj) -> TGetObjVal<T>;
 
 	//	ObjTValue() is a more focused alternative to GetObjVal(). In this case,
@@ -82,12 +82,12 @@ namespace binon {
 	struct ObjWrapper: BinONObj {
 		ObjWrapper(const BinONObj& obj);
 		ObjWrapper(BinONObj&& obj) noexcept;
-		ObjWrapper(const char* cStr);
-		template<typename T>
-			ObjWrapper(const T& val);
 	 #if BINON_CONCEPTS
+		ObjWrapper(const TCType auto& val);
 		ObjWrapper(TValueType auto&& val);
 	 #else
+		template<typename T, typename std::enable_if_t<kIsTCType<T>,int> = 0>
+			ObjWrapper(const T& val);
 		template<typename T, typename std::enable_if_t<kIsTValue<T>,int> = 0>
 			ObjWrapper(T&& val);
 	 #endif
@@ -97,18 +97,14 @@ namespace binon {
 
 	//---- MakeObj -------------------------------------------------------------
 
-	template<typename T> auto MakeObj(const T& v) -> TValObj<T> {
+	template<typename T> auto MakeObj(const T& v)
+		BINON_CONCEPTS_FN(TCType<T>, kIsTCType<T>, TValObj<T>)
+	{
 		return TValObj<T>(v);
 	}
 
- #if BINON_CONCEPTS
-	template<TValueType T>
-		auto MakeObj(T&& v) noexcept -> TValObj<T>
- #else
-	template<typename T>
-		auto MakeObj(T&& v) noexcept
-			-> std::enable_if_t<kIsTValue<T>, TValObj<T>>
- #endif
+	template<typename T> auto MakeObj(T&& v) noexcept
+		BINON_CONCEPTS_FN(TValueType<T>, kIsTValue<T>, TValObj<T>)
 	{
 		return TValObj<T>(std::forward<T>(v));
 	}
@@ -128,52 +124,37 @@ namespace binon {
 	//	Note that the type T is decayed to remove const/reference qualifiers and
 	//	such before passing the type to TypeConv.
 
-	template<typename T>
-		auto GetObjVal(const BinONObj& obj) -> TGetObjVal<T>
+	template<typename T> auto GetObjVal(const BinONObj& obj)
+		BINON_CONCEPTS_FN(TCType<T>, kIsTCType<T>, TGetObjVal<T>)
 	{
 		return TypeConv<T>::GetVal(obj);
 	}
 
 	//---- ObjTValue -----------------------------------------------------------
 
- #if BINON_CONCEPTS
-	template<TValueType T>
-		auto ObjTValue(BinONObj& obj) -> T&
+	template<typename T> auto ObjTValue(BinONObj& obj)
+		BINON_CONCEPTS_FN(TValueType<T>, kIsTValue<T>, T&)
 	{
 		return std::get<typename TypeConv<T>::TObj>(obj).value();
 	}
-	template<TValueType T>
-		auto ObjTValue(const BinONObj& obj) -> const T&
+	template<typename T> auto ObjTValue(const BinONObj& obj)
+		BINON_CONCEPTS_FN(TValueType<T>, kIsTValue<T>, const T&)
 	{
 		return std::get<typename TypeConv<T>::TObj>(obj).value();
 	}
-	template<TValueType T>
-		auto ObjTValue(BinONObj&& obj) -> T
+	template<typename T> auto ObjTValue(BinONObj&& obj)
+		BINON_CONCEPTS_FN(TValueType<T>, kIsTValue<T>, T)
 	{
 		return std::move(std::get<typename TypeConv<T>::TObj>(obj)).value();
 	}
- #else
-	template<typename T>
-		auto ObjTValue(BinONObj& obj) -> std::enable_if_t<kIsTValue<T>, T&>
-	{
-		return std::get<typename TypeConv<T>::TObj>(obj).value();
-	}
-	template<typename T>
-		auto ObjTValue(const BinONObj& obj)
-		-> std::enable_if_t<kIsTValue<T>, const T&>
-	{
-		return std::get<typename TypeConv<T>::TObj>(obj).value();
-	}
-	template<typename T>
-		auto ObjTValue(BinONObj&& obj) -> std::enable_if_t<kIsTValue<T>, T>
-	{
-		return std::move(std::get<typename TypeConv<T>::TObj>(obj)).value();
-	}
- #endif
 
 	//---- ObjWrapper ----------------------------------------------------------
 
-	template<typename T>
+	 #if BINON_CONCEPTS
+		template<TCType T>
+	 #else
+		template<typename T, typename std::enable_if_t<kIsTCType<T>,int>>
+	 #endif
 		ObjWrapper::ObjWrapper(const T& val):
 			BinONObj{TValObj<T>(val)}
 		{

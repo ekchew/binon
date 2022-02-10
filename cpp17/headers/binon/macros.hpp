@@ -87,6 +87,30 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 		#ifdef __cpp_concepts
 			#define BINON_CONCEPTS true
 			#define BINON_IF_CONCEPTS(code) code
+			#define BINON_IF_CONCEPTS_ELSE(code, alt) code
+
+			//	This macro can be useful in declaring a function template that
+			//	applies constraints on argument types. For example:
+			//
+			//		template<typename I> auto foo(I i)
+			//			BINON_CONCEPTS_FN(
+			//				std::integral<I>, std::is_integral_v<I>, I
+			//			);
+			//
+			//	looks like this in C++20 (or later):
+			//
+			//		template<typename I> auto foo(I i)
+			//			-> I requires std::integral<I>;
+			//
+			//	or this in C++17:
+			//
+			//		template<typename I> auto foo(I i)
+			//			-> std::enable_if_t<std::is_integral_v<I>, I>;
+			//
+			//	(Note that if any of the 3 expressions you pass into this macro
+			//	contains commas, you will need to escape them with BINON_COMMA.)
+			#define BINON_CONCEPTS_FN(req, cond, res) -> res requires req
+
 			#if BINON_GOT_VERSION
 				#include <concepts>
 			#endif
@@ -105,6 +129,8 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 #endif
 #if !BINON_CONCEPTS
 	#define BINON_IF_CONCEPTS(code)
+	#define BINON_IF_CONCEPTS_ELSE(code, alt) alt
+	#define BINON_CONCEPTS_FN(req, cond, res) -> std::enable_if_t<cond, res>
 #endif
 
 //	Defines to help use execution policies where available

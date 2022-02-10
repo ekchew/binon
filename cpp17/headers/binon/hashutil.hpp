@@ -25,14 +25,13 @@ namespace binon {
 
 	//	Combines 2 or more hash values you generated using std::hash into a
 	//	single value and returns it.
- #if BINON_CONCEPTS
-	template<std::convertible_to<std::size_t>... Vs>
-		auto HashCombine(std::size_t v, Vs... vs) noexcept -> std::size_t
- #else
 	template<typename... Vs> constexpr
 		auto HashCombine(std::size_t v, Vs... vs) noexcept
-			-> std::enable_if_t<kArgsOfType<std::size_t, Vs...>, std::size_t>
- #endif
+	 BINON_CONCEPTS_FN(
+		(std::convertible_to<Vs BINON_COMMA std::size_t> && ...),
+		(kArgsOfType<std::size_t BINON_COMMA Vs> && ...),
+		std::size_t
+	 )
 		{
 			using std::size_t;
 			return (
@@ -41,20 +40,16 @@ namespace binon {
 			);
 		}
 
- #if BINON_CONCEPTS
+ BINON_IF_CONCEPTS(
 	template<typename T>
 		concept Hashable = requires(T a) {
 			{ std::hash<T>{}(a) } -> std::convertible_to<std::size_t>;
 		};
- #endif
+ )
 
 	//	This is a high-level function that calls the std::hash functor on one or
 	//	more hashable objects and returns a combined hash value for all of them.
- #if BINON_CONCEPTS
-	template<Hashable... Vs> constexpr
- #else
-	template<typename... Vs> constexpr
- #endif
+	template<BINON_IF_CONCEPTS_ELSE(Hashable,typename)... Vs> constexpr
 		auto HashCombineObjs(const Vs&... vs) -> std::size_t {
 			return HashCombine(std::hash<Vs>{}(vs)...);
 		}
@@ -79,11 +74,7 @@ namespace binon {
 		//	You can call a CommutativeHash instance as a functor with any
 		//	hashable value as its sole argument. It will then hash said value
 		//	and call extend on it.
-	#if BINON_CONCEPTS
-		template<Hashable T>
-	#else
-		template<typename T>
-	#endif
+		template<BINON_IF_CONCEPTS_ELSE(Hashable,typename) T>
 			void operator() (const T& v) { extend(std::hash<T>{}(v)); }
 
 		//	The get() method finalizes the combined hash and returns it to you.

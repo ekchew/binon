@@ -14,10 +14,10 @@ namespace binon {
 		constexpr bool kIsCStr =
 			std::is_same_v<std::decay_t<T>,char*> ||
 			std::is_same_v<std::decay_t<T>,const char*>;
- #if BINON_CONCEPTS
+ BINON_IF_CONCEPTS(
 	template<typename T>
 		concept CStrType = kIsCStr<T>;
- #endif
+ )
 
 	//	Some nifty code off the Internet that determines if a given type is
 	//	among the possible members of a std::variant.
@@ -29,19 +29,19 @@ namespace binon {
 		};
 	template<typename T, typename Variant>
 		constexpr bool kIsVariantMember = IsVariantMember<T,Variant>::value;
-	#if BINON_CONCEPTS
-		template<typename Variant, typename T>
-			concept VariantMember = kIsVariantMember<T,Variant>;
-	#endif
+ #if BINON_CONCEPTS
+	template<typename Variant, typename T>
+		concept VariantMember = kIsVariantMember<T,Variant>;
+ #endif
 
 	//	This uses the above to tell you if a give type T is a specific BinON
 	//	object type like IntObj, StrObj, etc.
 	template<typename T>
 		constexpr bool kIsObj
 			= kIsVariantMember<std::decay_t<T>,BinONVariant>;
-	BINON_IF_CONCEPTS(
-		template<typename T> concept ObjType = kIsObj<T>;
-	)
+ BINON_IF_CONCEPTS(
+	template<typename T> concept ObjType = kIsObj<T>;
+ )
 
 	/*
 	The TypeConv struct maps common types onto BinON object types for easy
@@ -108,55 +108,62 @@ namespace binon {
 	*/
 	template<typename T, typename Enable = void>
 		struct TypeConv {
-			static_assert(true, "Cannot convert type to/from BinON object");
-			/*
-			The base definition of TypeConv is actually illegal. Finding
-			yourself here means TypeConv does not recognize your type T.
-			All the work is done in template specializations of this class.
+			//	The base definition of TypeConv is actually illegal. Finding
+			//				yourself here means TypeConv does not recognize your
+			//				type T. All the work is done in template
+			//				specializations of this class.
+			//
+			//				Here is a rough outline of what you would find in
+			//				particular specialization:
+			//
+			//	using TObj = ...
+			//	using TVal = ...
+			//	static auto ValTypeName() -> HyStr;
+			//	static auto GetVal(BinONObj) -> TVal;
+			//
+			//	TObj is the data type of the BinON object that would wrap the
+			//	type you supply. So for example, TypeConv<bool>::TObj would be
+			//	BoolObj.
+			//
+			//	TVal is typically your supplied type T with a few exceptions:
+			//		- If T is a BinON object type, TVal will be its internal
+			//		  value type. For example, TypeConv<BoolObj>::TVal is
+			//		  BoolObj::TValue which, in turn, is simply bool.
+			//		- If T is a std::reference_wrapper<U>, TVal will be U.
+			//		- There is a special case for when T is char* (or const
+			//		  char*). Setter functions like MakeObj() will treat a char*
+			//		  as a C string and build StrObj variants out of them. But a
+			//		  StrObj cannot return a C string, so getter functions like
+			//		  GetObjVal() return the next best thing: a string view. So
+			//		  for T = char*, TVal will be std::string_view.
+			//
+			//	ValTypeName() simply returns a string naming the TVal type which
+			//	could be useful in debugging? For example, if you make T a
+			//	32-bit integer, the returned type name would be
+			//	HyStr{"int32_t"}. Note that you can also get the name of a BinON
+			//	class from its kClsName field (e.g. BoolObj::kClsName is
+			//	HyStr{"BoolObj"}).
+			//
+			//	The GetVal() class method takes a BinONObj and attempts to
+			//	extract a value of type TVal from it. Typically, you would call
+			//	GetObjVal() instead, which would call TypeConv::GetVal()
+			//	internally.
 
-			Here is a rough outline of what you would find in particular
-			specialization:
-
-			using TObj = ...
-			using TVal = ...
+			using TObj = void;
+			using TVal = void;
 			static auto ValTypeName() -> HyStr;
-			static auto GetVal(BinONObj) -> TVal;
-
-			TObj is the data type of the BinON object that would wrap the type
-			you supply. So for example, TypeConv<bool>::TObj would be BoolObj.
-
-			TVal is typically your supplied type T with a few exceptions:
-				- If T is a BinON object type, TVal will be its internal value
-				  type. For example, TypeConv<BoolObj>::TVal is
-				  BoolObj::TValue which, in turn, is simply bool.
-				- If T is a std::reference_wrapper<U>, TVal will be U.
-				- There is a special case for when T is const char*.
-				  Setter functions like MakeObj() will treat a const char*
-				  as a C string and build StrObj variants out of them.
-				  But a StrObj cannot return a C string, so getter functions
-				  like GetObjVal() return the next best thing: a string view.
-				  So for T = const char*, TVal will be std::string_view.
-
-			ValTypeName() simply returns a string naming the TVal type which
-			could be useful in debugging? For example, if you make T a 32-bit
-			integer, the returned type name would be HyStr{"int32_t"}. Note
-			that you can also get the name of a BinON class from its kClsName
-			field (e.g. BoolObj::kClsName is HyStr{"BoolObj"}).
-
-			The GetVal() class method takes a BinONObj and attempts to extract
-			a value of type TVal from it. Typically, you would call GetObjVal()
-			instead, which would call TypeConv::GetVal() internally. Though it's
-			shown in its most general form above, it is often overloaded in
-			specializations to handle move semantics and returning by reference
-			where applicable according to what T is. When assigning the return
-			value to a variable, it's good to go like this:
-
-				auto&& v = TypeConv<WHATEVER>::GetVal(myVarObj);
-
-			The && make v happy to be either a reference to or copy of the
-			return value, depending on what GetVal() decides to give it.
-			*/
+			[[ noreturn ]] static auto GetVal(const BinONObj&) -> TVal;
+				// throws TypeErr
 		};
+
+	//	kIsTCType<T> is true if T is one of the types known to TypeConv.
+	template<typename T>
+		constexpr bool kIsTCType
+			= !std::is_same_v<typename TypeConv<std::decay_t<T>>::TObj, void>;
+ BINON_IF_CONCEPTS(
+	template<typename T>
+		concept TCType = kIsTCType<T>;
+ )
 
 	/*
 	TValObj<T> gives you the BinON object type corresponding to your type T.
@@ -190,6 +197,19 @@ namespace binon {
 
 
 	//==== Template Implementation =============================================
+
+	//---- TypeConv base -------------------------------------------------------
+
+	template<typename T, typename Enable>
+		auto TypeConv<T,Enable>::ValTypeName() -> HyStr
+	{
+		return "unknown type";
+	}
+	template<typename T, typename Enable>
+		auto TypeConv<T,Enable>::GetVal(const BinONObj&) -> TVal
+	{
+		throw TypeErr{"type unknown to binon::TypeConv"};
+	}
 
 	//---- TypeConv specializations --------------------------------------------
 

@@ -26,9 +26,9 @@ namespace binon {
 	//
 	//	You can also call FindObj() simply to check if a key exists, since an
 	//	OptRef evaluates true or false in say an if statement.
-	auto FindObj(const DictType auto& dict, const auto& key)
+	auto FindObj(const DictType auto& dict, const TCType auto& key)
 		-> OptRef<const BinONObj>;
-	auto FindObj(DictType auto& dict, const auto& key)
+	auto FindObj(DictType auto& dict, const TCType auto& key)
 		-> OptRef<BinONObj>;
 
 	//	Note that aside from taking a key rather than an index, the dictionary
@@ -39,29 +39,30 @@ namespace binon {
 	//	your key. This element will have a default-constructed value. Without
 	//	auto-allocation, GetCtnrVal() will throw std::out_of_range instead on a
 	//	missing key.
-	template<typename Val, DictType Dict, typename Key>
+	template<TCType Val, DictType Dict, TCType Key>
 		auto GetCtnrVal(Dict& dict, const Key& key, bool autoAlloc = false)
 		-> TGetObjVal<Val>;
-	template<typename Val, DictType Dict, typename Key>
+	template<TCType Val, DictType Dict, TCType Key>
 		auto GetCtnrVal(const Dict& dict, const Key& key)
 		-> TGetObjVal<Val>;
 
-	template<TValueType Val, DictType Dict, typename Key>
-		auto CtnrTValue(
-			Dict& dict, const Key& key, bool autoAlloc = false
-		) -> Val&;
-	template<TValueType Val, DictType Dict, typename Key>
-		auto CtnrTValue(const Dict& dict, const Key& key) -> const Val&;
-	template<TValueType Val, DictType Dict, typename Key>
-		auto CtnrTValue(Dict&& dict, const Key& key) -> Val;
+	TValueType auto& CtnrTValue(
+			DictType auto& dict, const TCType auto& key, bool autoAlloc = false
+		);
+	const TValueType auto& CtnrTValue(
+			const DictType auto& dict, const TCType auto& key
+		);
+	TValueType auto CtnrTValue(
+			DictType auto&& dict, const TCType auto& key
+		);
 
-	template<DictType Dict, typename Key, typename Val>
+	template<DictType Dict, TCType Key, TCType Val>
 		auto SetCtnrVal(Dict& dict, const Key& key, const Val& val) -> Dict&;
 
 	//	DelKey() deletes the element associated with the key you provide if it
 	//	exists in the dictionary. It returns true if the key existed and was
 	//	removed or false it there was no such key.
-	auto DelKey(DictType auto& dict, const auto& key) -> bool;
+	auto DelKey(DictType auto& dict, const TCType auto& key) -> bool;
 
  #endif
 
@@ -69,16 +70,50 @@ namespace binon {
 
 	//==== Template Implementation =============================================
 
+	namespace details {
+	 	template<typename Result, typename Callback, typename Key>
+			auto ApplyKey(Callback&& callback, const Key& key)
+			BINON_CONCEPTS_FN(
+				std::regular_invocable<Callback BINON_COMMA BinONObj>
+					&& TCType<Key>,
+				kIsTCType<Key>,
+				Result
+			)
+		{
+			using std::forward;
+			using std::is_same_v;
+			if constexpr(is_same_v<std::decay_t<Key>, BinONObj>) {
+				if constexpr(is_same_v<Result, void>) {
+					forward<Callback>(callback)(key);
+				}
+				else {
+					return static_cast<Result>(
+						forward<Callback>(callback)(key)
+					);
+				}
+			}
+			else {
+				if constexpr(is_same_v<Result, void>) {
+					forward<Callback>(callback)(MakeObj(key));
+				}
+				else {
+					return static_cast<Result>(
+						forward<Callback>(callback)(MakeObj(key))
+					);
+				}
+			}
+		}
+	}
+
 	//---- FindObj function templates ------------------------------------------
 
- #if BINON_CONCEPTS
-	auto FindObj(const DictType auto& dict, const auto& key)
-		-> OptRef<const BinONObj>
- #else
 	template<typename Dict, typename Key>
 		auto FindObj(const Dict& dict, const Key& key)
-		-> std::enable_if_t<kIsDictType<Dict>, OptRef<const BinONObj>>
- #endif
+		BINON_CONCEPTS_FN(
+			DictType<Dict> && TCType<Key>,
+			kIsDictType<Dict> && kIsTCType<Key>,
+			OptRef<const BinONObj>
+		)
 	{
 		auto find = [&dict](const BinONObj& keyObj) -> OptRef<const BinONObj> {
 			auto& map = dict.value();
@@ -88,21 +123,15 @@ namespace binon {
 			}
 			return std::nullopt;
 		};
-		if constexpr(std::is_same_v<Key,BinONObj>) {
-			return find(key);
-		}
-		else {
-			return find(MakeObj(key));
-		}
+		return details::ApplyKey<OptRef<const BinONObj>>(find, key);
 	}
- #if BINON_CONCEPTS
-	auto FindObj(DictType auto& dict, const auto& key)
-		-> OptRef<BinONObj>
- #else
 	template<typename Dict, typename Key>
 		auto FindObj(Dict& dict, const Key& key)
-		-> std::enable_if_t<kIsDictType<Dict>, OptRef<BinONObj>>
- #endif
+		BINON_CONCEPTS_FN(
+			DictType<Dict> && TCType<Key>,
+			kIsDictType<Dict> && kIsTCType<Key>,
+			OptRef<BinONObj>
+		)
 	{
 		auto find = [&dict](const BinONObj& keyObj) -> OptRef<BinONObj> {
 			auto& map = dict.value();
@@ -112,25 +141,18 @@ namespace binon {
 			}
 			return std::nullopt;
 		};
-		if constexpr(std::is_same_v<Key,BinONObj>) {
-			return find(key);
-		}
-		else {
-			return find(MakeObj(key));
-		}
+		return details::ApplyKey<OptRef<BinONObj>>(find, key);
 	}
 
  	//---- GetCtnrVal function templates ---------------------------------------
 
- #if BINON_CONCEPTS
-	template<typename Val, DictType Dict, typename Key>
+ 	template<typename Val, typename Dict, typename Key>
 		auto GetCtnrVal(Dict& dict, const Key& key, bool autoAlloc)
-		-> TGetObjVal<Val>
- #else
-	template<typename Val, typename Dict, typename Key>
-		auto GetCtnrVal(Dict& dict, const Key& key, bool autoAlloc)
-		-> std::enable_if_t<kIsDictType<Dict>, TGetObjVal<Val>>
- #endif
+		BINON_CONCEPTS_FN(
+			TCType<Val> && DictType<Dict> && TCType<Key>,
+			kIsTCType<Val> && kIsDictType<Dict> && kIsTCType<Key>,
+			TGetObjVal<Val>
+		)
 	{
 		if(!autoAlloc) {
 			return GetCtnrVal(static_cast<const Dict&>(dict), key);
@@ -143,64 +165,26 @@ namespace binon {
 		}
 		return GetObjVal<Val>(pPair->second);
 	}
-
- #if BINON_CONCEPTS
-	template<typename Val, DictType Dict, typename Key>
-		auto GetCtnrVal(const Dict& dict, const Key& key)
-		-> TGetObjVal<Val>
- #else
 	template<typename Val, typename Dict, typename Key>
 		auto GetCtnrVal(const Dict& dict, const Key& key)
-		-> std::enable_if_t<kIsDictType<Dict>, TGetObjVal<Val>>
- #endif
+		BINON_CONCEPTS_FN(
+			TCType<Val> && DictType<Dict> && TCType<Key>,
+			kIsTCType<Val> && kIsDictType<Dict> && kIsTCType<Key>,
+			TGetObjVal<Val>
+		)
 	{
 		return GetObjVal<Val>(dict.value().at(MakeObj(key)));
 	}
 
 	//---- CtnrTValue function templates ---------------------------------------
 
- #if BINON_CONCEPTS
-	template<TValueType Val, DictType Dict, typename Key>
-		auto CtnrTValue(
-			Dict& dict, const Key& key, bool autoAlloc
-		) -> Val&
-	{
-		auto& map = dict.value();
-		auto keyObj{MakeObj(key)};
-		if(autoAlloc) {
-			auto pPair = map.find(keyObj);
-			if(pPair == map.end()) {
-				pPair = map.insert(*pPair, {keyObj, TValObj<Val>()});
-			}
-			return ObjTValue<Val>(pPair->second);
-		}
-		else {
-			return ObjTValue<Val>(map.at(keyObj));
-		}
-	}
-	template<TValueType Val, DictType Dict, typename Key>
-		auto CtnrTValue(const Dict& dict, const Key& key) -> const Val&
-	{
-		auto& map = dict.value();
-		return ObjTValue<Val>(map.at(MakeObj(key)));
-	}
-	template<TValueType Val, DictType Dict, typename Key>
-		auto CtnrTValue(
-			Dict&& dict, const Key& key
-		) -> Val
-	{
-		auto& map = dict.value();
-		return ObjTValue<Val>(std::move(map.at(MakeObj(key))));
-	}
- #else
 	template<typename Val, typename Key, typename Dict>
-		auto CtnrTValue(
-			Dict& dict, const Key& key, bool autoAlloc = false
-		)
-		-> std::enable_if_t<
-			kIsTValue<Val> && kIsDictType<Dict>,
+		auto CtnrTValue(Dict& dict, const Key& key, bool autoAlloc)
+		BINON_CONCEPTS_FN(
+			TValueType<Val> && DictType<Dict> && TCType<Key>,
+			kIsTValue<Val> && kIsDictType<Dict> && kIsTCType<Key>,
 			Val&
-			>
+		)
 	{
 		auto& map = dict.value();
 		auto keyObj{MakeObj(key)};
@@ -219,10 +203,11 @@ namespace binon {
 		auto CtnrTValue(
 			const Dict& dict, const Key& key
 		)
-		-> std::enable_if_t<
-			kIsTValue<Val> && kIsDictType<Dict>,
+		BINON_CONCEPTS_FN(
+			TValueType<Val> && DictType<Dict> && TCType<Key>,
+			kIsTValue<Val> && kIsDictType<Dict> && kIsTCType<Key>,
 			const Val&
-			>
+		)
 	{
 		auto& map = dict.value();
 		return ObjTValue<Val>(map.at(MakeObj(key)));
@@ -231,26 +216,25 @@ namespace binon {
 		auto CtnrTValue(
 			Dict&& dict, const Key& key
 		)
-		-> std::enable_if_t<
-			kIsTValue<Val> && kIsDictType<Dict>,
+		BINON_CONCEPTS_FN(
+			TValueType<Val> && DictType<Dict> && TCType<Key>,
+			kIsTValue<Val> && kIsDictType<Dict> && kIsTCType<Key>,
 			Val
-			>
+		)
 	{
 		auto& map = dict.value();
 		return ObjTValue<Val>(std::move(map.at(MakeObj(key))));
 	}
- #endif
 
 	//---- SetCtnrVal function templates ---------------------------------------
 
- #if BINON_CONCEPTS
-	template<DictType Dict, typename Key, typename Val>
-		auto SetCtnrVal(Dict& dict, const Key& key, const Val& val) -> Dict&
- #else
 	template<typename Dict, typename Key, typename Val>
 		auto SetCtnrVal(Dict& dict, const Key& key, const Val& val)
-		-> std::enable_if_t<kIsDictType<Dict>, Dict&>
- #endif
+		BINON_CONCEPTS_FN(
+			DictType<Dict> && TCType<Key> && TCType<Val>,
+			kIsDictType<Dict> && kIsTCType<Key> && kIsTCType<Val>,
+			Dict&
+		)
 	{
 		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
 		return dict;
@@ -258,13 +242,13 @@ namespace binon {
 
 	//---- DelKey function templates -------------------------------------------
 
- #if BINON_CONCEPTS
-	auto DelKey(DictType auto& dict, const auto& key) -> bool
- #else
-	template<typename Dict, typename Key>
+ 	template<typename Dict, typename Key>
 		auto DelKey(Dict& dict, const Key& key)
-		-> std::enable_if_t<kIsDictType<Dict>, bool>
- #endif
+		BINON_CONCEPTS_FN(
+			DictType<Dict> && TCType<Key>,
+			kIsDictType<Dict> && kIsTCType<Key>,
+			bool
+		)
 	{
 		auto& map = dict.value();
 		auto iter = map.find(MakeObj(key));

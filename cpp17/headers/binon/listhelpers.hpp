@@ -16,6 +16,8 @@ namespace binon {
 		concept ListType = kIsListType<T>;
  )
 
+ #if BINON_CONCEPTS
+
 	//	These functions create a list object out of any TypeConv-supported
 	//	values you pass in. For example:
 	//
@@ -23,12 +25,8 @@ namespace binon {
 	//
 	//	should return a ListObj containing a UIntObj, a StrObj, and a
 	//	Float32Obj.
-	template<typename... Ts>
-		auto MakeListObj(Ts&&... values) -> ListObj;
-	template<typename... Ts>
-		auto MakeSList(CodeByte elemCode, Ts&&... values) -> SList;
-
- #if BINON_CONCEPTS
+	auto MakeListObj(TCType auto&&... values) -> ListObj;
+	auto MakeSList(CodeByte elemCode, TCType auto&&... values) -> SList;
 
 	//	GetCtnrVal() is essentially GetObjVal() as applied to a particular list
 	//	element. (Note that dicthelpers.hpp also implements GetCtnrVal and other
@@ -36,7 +34,7 @@ namespace binon {
 	//	GetCtnrVal() may throw std::out_of_range if the index is bad (see
 	//	std::vector::at() documentation). A std::bad_variant_access exception is
 	//	also possible if the type T doesn't work out.
-	template<typename T, ListType List>
+	template<TCType T, ListType List>
 		 auto GetCtnrVal(const List& list, std::size_t index) -> TGetObjVal<T>;
 
 	//	Likewise, CtnrTValue() is like ObjTValue() applied to a list element. To
@@ -47,98 +45,85 @@ namespace binon {
 	//
 	//	Now, assuming element 0 of myList is indeed a string, hyStr should
 	//	contain its text and the element's string should be empty.
-	template<TValueType T, ListType List>
-		auto CtnrTValue(List& list, std::size_t index) -> T&;
-	template<TValueType T, ListType List>
-		auto CtnrTValue(const List& list, std::size_t index) -> const T&;
- 	template<TValueType T, ListType List>
- 		auto CtnrTValue(List&& list, std::size_t index) -> T;
+	TValueType auto& CtnrTValue(ListType auto& list, std::size_t index);
+	const TValueType auto& CtnrTValue(
+			const ListType auto& list, std::size_t index
+		);
+ 	TValueType auto CtnrTValue(ListType auto&& list, std::size_t index);
 
 	//	SetCtnrVal() is equivalent to assigning a new object created by calling
 	//	MakeObj(v) to an existing list element. (Note that it and AppendVal
 	//	return the input list so that you can chain several calls together using
 	//	the fluent paradigm.)
-	template<ListType List, typename Val>
+	template<ListType List, TCType Val>
 		auto SetCtnrVal(List& list, std::size_t index, const Val& v) -> List&;
 
 	//	AppendVal() adds elements to the list. You can use move semantics if the
 	//	type is a TValue.
-	template<ListType List, typename T>
+	template<ListType List, TCType T>
 		auto AppendVal(List& list, const T& v) -> List&;
-	template<ListType List, TValueType T>
+	template<ListType List, TCType T>
 		auto AppendVal(List& list, T&& v) -> List&;
+
  #endif
 
 	//==== Template Implementation =============================================
 
 	//---- CtnrTValue function templates ---------------------------------------
 
- #if BINON_CONCEPTS
-	template<TValueType T, ListType List>
-		auto CtnrTValue(List& list, std::size_t index) -> T&
-	{
-		return ObjTValue<T>(list.value().at(index));
-	}
-	template<TValueType T, ListType List>
-		auto CtnrTValue(const List& list, std::size_t index) -> const T&
-	{
-		return ObjTValue<T>(list.value().at(index));
-	}
- 	template<TValueType T, ListType List>
- 		auto CtnrTValue(List&& list, std::size_t index) -> T
- 	{
- 		return ObjTValue<T>(std::move(list.value().at(index)));
- 	}
-#else
 	template<typename T, typename List>
 		auto CtnrTValue(List& list, std::size_t index)
-		-> std::enable_if<kIsTValue<T> && kIsListType<List>, T&>
+		BINON_CONCEPTS_FN(
+			TValueType<T> && ListType<List>,
+			kIsTValue<T> && kIsListType<List>,
+			T&
+		)
 	{
 		return ObjTValue<T>(list.value().at(index));
 	}
 	template<typename T, typename List>
 		auto CtnrTValue(const List& list, std::size_t index)
-		-> std::enable_if<kIsTValue<T> && kIsListType<List>, const T&>
+		BINON_CONCEPTS_FN(
+			TValueType<T> && ListType<List>,
+			kIsTValue<T> && kIsListType<List>,
+			const T&
+		)
 	{
 		return ObjTValue<T>(list.value().at(index));
 	}
- 	template<typename T, typename List>
- 		auto CtnrTValue(List&& list, std::size_t index)
-		-> std::enable_if<kIsTValue<T> && kIsListType<List>, T>
+	template<typename T, typename List>
+		auto CtnrTValue(List&& list, std::size_t index)
+		BINON_CONCEPTS_FN(
+			TValueType<T> && ListType<List>,
+			kIsTValue<T> && kIsListType<List>,
+			T
+		)
  	{
  		return ObjTValue<T>(std::move(list.value().at(index)));
  	}
- #endif
 
 	//---- GetCtnrVal function templates ---------------------------------------
 
- #if BINON_CONCEPTS
-	template<typename T, ListType List>
-		auto GetCtnrVal(const List& list, std::size_t index) -> TGetObjVal<T>
-	{
-		return GetObjVal<T>(list.value().at(index));
-	}
- #else
-	template<typename T, typename List>
+ 	template<typename T, typename List>
 		auto GetCtnrVal(const List& list, std::size_t index)
-		-> std::enable_if_t<
-			kIsListType<List>,
+		BINON_CONCEPTS_FN(
+			TCType<T> && ListType<List>,
+			kIsTCType<T> && kIsListType<List>,
 			TGetObjVal<T>
-			>
+		)
 	{
 		return GetObjVal<T>(list.value().at(index));
 	}
- #endif
 
 	//---- SetCtnrVal function templates ---------------------------------------
 
- #if BINON_CONCEPTS
-	auto& SetCtnrVal(ListType auto& list, std::size_t index, const auto& v)
- #else
  	template<typename List, typename T>
 		auto SetCtnrVal(List& list, std::size_t index, const T& v)
-			-> std::enable_if_t<kIsListType<List>, List&>
- #endif
+		BINON_CONCEPTS_FN(
+			ListType<List> && TCType<T>,
+			kIsListType<List> && kIsTCType<T>,
+			List&
+		)
 	{
 		list.value().at(index) = MakeObj(v);
 		return list;
@@ -146,42 +131,34 @@ namespace binon {
 
 	//---- AppendVal function templates ----------------------------------------
 
-#if BINON_CONCEPTS
-	auto& AppendVal(ListType auto& list, const auto& v) {
-		list.value().push_back(MakeObj(v));
-		return list;
-	}
-	template<ListType List, TValueType T> auto& AppendVal(List& list, T&& v) {
-		list.value().push_back(MakeObj(std::forward<T>(v)));
-		return list;
-	}
-#else
-	template<
-		typename List, typename T,
-		typename std::enable_if_t<kIsListType<List>, int> = 0
-		>
-		auto& AppendVal(List& list, const T& v)
+	template<typename List, typename T>
+		auto AppendVal(List& list, const T& v)
+		BINON_CONCEPTS_FN(
+			ListType<List> && TCType<T>,
+			kIsListType<List> && kIsTCType<T>,
+			List&
+		)
 	{
 		list.value().push_back(MakeObj(v));
 		return list;
 	}
-	template<
-		typename List, typename T,
-		typename std::enable_if_t<
-			kIsListType<List> && kIsTValue<T>, int
-			> = 0
-		>
-		auto& AppendVal(List& list, T&& v)
+	template<typename List, typename T>
+		auto AppendVal(List& list, T&& v)
+		BINON_CONCEPTS_FN(
+			ListType<List> && TValueType<T>,
+			kIsListType<List> && kIsTValue<T>,
+			List&
+		)
 	{
 		list.value().push_back(MakeObj(std::forward<T>(v)));
 		return list;
 	}
-#endif
 
 	//---- Make... function templates ------------------------------------------
 
 	template<typename... Ts>
-		auto MakeListObj(Ts&&... values) -> ListObj
+		auto MakeListObj(Ts&&... values)
+		BINON_CONCEPTS_FN((TCType<Ts> && ...), (kIsTCType<Ts> && ...), ListObj)
 	{
 		ListObj list;
 		list.value().reserve(sizeof...(Ts));
@@ -189,7 +166,8 @@ namespace binon {
 		return list;
 	}
 	template<typename... Ts>
-		auto MakeSList(CodeByte elemCode, Ts&&... values) -> SList
+		auto MakeSList(CodeByte elemCode, Ts&&... values)
+		BINON_CONCEPTS_FN((TCType<Ts> && ...), (kIsTCType<Ts> && ...), SList)
 	{
 		SList list(elemCode);
 		list.value().reserve(sizeof...(Ts));
