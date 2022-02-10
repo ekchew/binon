@@ -19,30 +19,6 @@ namespace binon {
 		concept CStrType = kIsCStr<T>;
  )
 
-	//	Some nifty code off the Internet that determines if a given type is
-	//	among the possible members of a std::variant.
-	template<typename T, typename Variant> struct IsVariantMember;
-	template<typename T, typename... EveryT>
-		struct IsVariantMember<T, std::variant<EveryT...>>:
-			std::disjunction<std::is_same<T, EveryT>...>
-		{
-		};
-	template<typename T, typename Variant>
-		constexpr bool kIsVariantMember = IsVariantMember<T,Variant>::value;
- #if BINON_CONCEPTS
-	template<typename Variant, typename T>
-		concept VariantMember = kIsVariantMember<T,Variant>;
- #endif
-
-	//	This uses the above to tell you if a give type T is a specific BinON
-	//	object type like IntObj, StrObj, etc.
-	template<typename T>
-		constexpr bool kIsObj
-			= kIsVariantMember<std::decay_t<T>,BinONVariant>;
- BINON_IF_CONCEPTS(
-	template<typename T> concept ObjType = kIsObj<T>;
- )
-
 	/*
 	The TypeConv struct maps common types onto BinON object types for easy
 	conversion between the two. You usually don't access it directly, since

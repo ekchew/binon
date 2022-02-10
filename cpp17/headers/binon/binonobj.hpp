@@ -35,6 +35,15 @@ namespace binon {
 		SDict
 		>;
 
+	//	kIsObj<T> tells you if your type T is one of the above BinON object
+	//	variants.
+	template<typename T>
+		constexpr bool kIsObj
+			= kIsVariantMember<std::decay_t<T>,BinONVariant>;
+ BINON_IF_CONCEPTS(
+	template<typename T> concept ObjType = kIsObj<T>;
+ )
+
 	// he BinONObj struct is central to the BinON C++ implementation. As a
 	// BinONVariant, it can be any of the object types. BinONObjs are managed by
 	// many of the APIs in this library, and the struct itself comes with some
@@ -144,14 +153,18 @@ namespace binon {
 		//	Note that asObj() is cslled automatically by TypeConv and the
 		//	various helper functions that depend on it, so you may never need to
 		//	call it directly.
-		template<typename Obj>
-			auto asObj() const& -> Obj;
-		template<typename Obj, typename Alt, typename... Alts>
-			auto asObj() const& -> Obj;
-		template<typename Obj>
-			auto asObj() && -> Obj;
-		template<typename Obj, typename Alt, typename... Alts>
-			auto asObj() && -> Obj;
+		template<typename Obj, typename... Alts>
+			auto asObj() const& BINON_CONCEPTS_FN(
+				ObjType<Obj> && (ObjType<Alts> && ...),
+				kIsObj<Obj> && (kIsObj<Alts> && ...),
+				Obj
+			);
+		template<typename Obj, typename... Alts>
+			auto asObj() && BINON_CONCEPTS_FN(
+				ObjType<Obj> && (ObjType<Alts> && ...),
+				kIsObj<Obj> && (kIsObj<Alts> && ...),
+				Obj
+			);
 
 		//	The print() prints a textual description of a BinONObj to an output
 		//	text stream. This is somewhat reminiscent of printing an object's
@@ -174,6 +187,18 @@ namespace binon {
 		//		stream: an optional output text stream
 		//			If not supplied, std::cout will be used.
 		void print(OptRef<std::ostream> stream = std::nullopt) const;
+
+	private:
+		template<typename Obj>
+			auto tryAlts() const& BINON_CONCEPTS_FN(
+				ObjType<Obj>, kIsObj<Obj>, Obj
+			);
+		template<typename Obj, typename Alt, typename... Alts>
+			auto tryAlts() const& BINON_CONCEPTS_FN(
+				ObjType<Obj> && ObjType<Alt> && (ObjType<Alts> && ...),
+				kIsObj<Obj> && kIsObj<Alt> && (kIsObj<Alts> && ...),
+				Obj
+			);
 	};
 	auto operator<< (std::ostream& stream, const BinONObj& obj)
 		-> std::ostream&;
@@ -203,42 +228,55 @@ namespace std {
 
 namespace binon {
 
-	template<typename Obj>
-		auto BinONObj::asObj() const& -> Obj
-	{
-		return std::get<Obj>(*this);
-	}
-	template<typename Obj, typename Alt, typename... Alts>
-		auto BinONObj::asObj() const& -> Obj
+	template<typename Obj, typename... Alts>
+		auto BinONObj::asObj() const& BINON_CONCEPTS_FN(
+			ObjType<Obj> && (ObjType<Alts> && ...),
+			kIsObj<Obj> && (kIsObj<Alts> && ...),
+			Obj
+		)
 	{
 		if(auto pObj = std::get_if<Obj>(this); pObj) {
 			return *pObj;
 		}
-		else if(auto pAlt = std::get_if<Alt>(this); pAlt) {
-			return static_cast<Obj>(*pAlt);
-		}
 		else {
-			return asObj<Obj,Alts...>();
+			return tryAlts<Obj,Alts...>();
 		}
 	}
-	template<typename Obj>
-		auto BinONObj::asObj() && -> Obj
-	{
-		return std::get<Obj>(std::move(*this));
-	}
-	template<typename Obj, typename Alt, typename... Alts>
-		auto BinONObj::asObj() && -> Obj
+	template<typename Obj, typename... Alts>
+		auto BinONObj::asObj() && BINON_CONCEPTS_FN(
+			ObjType<Obj> && (ObjType<Alts> && ...),
+			kIsObj<Obj> && (kIsObj<Alts> && ...),
+			Obj
+		)
 	{
 		if(auto pObj = std::get_if<Obj>(this); pObj) {
 			return std::move(*pObj);
 		}
-		else if(auto pAlt = std::get_if<Alt>(this); pAlt) {
-			return static_cast<Obj>(*pAlt);
-		}
 		else {
-			return asObj<Obj,Alts...>();
+			return tryAlts<Obj,Alts...>();
 		}
 	}
+	template<typename Obj>
+		auto BinONObj::tryAlts() const& BINON_CONCEPTS_FN(
+			ObjType<Obj>, kIsObj<Obj>, Obj
+		) {
+			return std::get<Obj>(*this);
+				// should throw std::bad_variant_access
+		}
+	template<typename Obj, typename Alt, typename... Alts>
+		auto BinONObj::tryAlts() const& BINON_CONCEPTS_FN(
+			ObjType<Obj> && ObjType<Alt> && (ObjType<Alts> && ...),
+			kIsObj<Obj> && ObjType<Alt> && (kIsObj<Alts> && ...),
+			Obj
+		) {
+			auto pAlt = std::get_if<Alt>(this);
+			if(pAlt) {
+				return static_cast<Obj>(*pAlt);
+			}
+			else {
+				return tryAlts<Obj,Alts...>();
+			}
+		}
 }
 
 #endif

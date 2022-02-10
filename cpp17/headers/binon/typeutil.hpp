@@ -4,6 +4,7 @@
 #include "macros.hpp"
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace binon {
 
@@ -34,6 +35,21 @@ namespace binon {
 	template<typename T, typename... Args>
 		constexpr bool kArgsOfType =
 			(std::is_convertible_v<Args,T> && ... && true);
+
+	//	Some nifty code off the Internet that determines if a given type is
+	//	among the possible members of a std::variant.
+	template<typename T, typename Variant> struct IsVariantMember;
+	template<typename T, typename... EveryT>
+		struct IsVariantMember<T, std::variant<EveryT...>>:
+			std::disjunction<std::is_same<T, EveryT>...>
+		{
+		};
+	template<typename T, typename Variant>
+		constexpr bool kIsVariantMember = IsVariantMember<T,Variant>::value;
+ #if BINON_CONCEPTS
+	template<typename Variant, typename T>
+		concept VariantMember = kIsVariantMember<T,Variant>;
+ #endif
 
 	//	CustomFold is a struct template that allows you to apply custom folding
 	//	behaviour in C++17 fold expressions. It stores a value of arbitrary type
