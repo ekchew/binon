@@ -38,6 +38,7 @@ namespace binon {
 	//
 	//	You can also call FindObj() simply to check if a key exists, since an
 	//	OptRef evaluates true or false in say an if statement.
+	//
 	//auto FindObj(const DictType auto& dict, const TCType auto& key)
 	//	-> OptRef<const BinONObj>;
 	//auto FindObj(DictType auto& dict, const TCType auto& key)
@@ -51,6 +52,7 @@ namespace binon {
 	//	your key. This element will have a default-constructed value. Without
 	//	auto-allocation, GetCtnrVal() will throw std::out_of_range instead on a
 	//	missing key.
+	//
 	//template<TCType Val, DictType Dict, TCType Key>
 	//	auto GetCtnrVal(Dict& dict, const Key& key, bool autoAlloc = false)
 	//	-> TGetObjVal<Val>;
@@ -74,6 +76,7 @@ namespace binon {
 	//	DelKey() deletes the element associated with the key you provide if it
 	//	exists in the dictionary. It returns true if the key existed and was
 	//	removed or false it there was no such key.
+	//
 	//auto DelKey(DictType auto& dict, const TCType auto& key) -> bool;
 
 	constexpr bool kAutoAlloc = true;

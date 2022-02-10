@@ -275,7 +275,7 @@ namespace binon {
 		) {
 			auto pAlt = std::get_if<Alt>(this);
 			if(pAlt) {
-				return static_cast<Obj>(*pAlt);
+				return static_cast<Obj>(pAlt->value());
 			}
 			else {
 				return tryAlts<Obj,Alts...>();

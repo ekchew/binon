@@ -162,7 +162,19 @@ namespace binon {
 			) const -> std::string;
 
 		template<typename, typename> friend struct IntBase;
-		using IntBase<IntVal,TScalar>::IntBase;
+
+	#if BINON_CONCEPTS
+		IntVal(std::signed_integral auto i): IntBase{i} {}
+	#else
+		template<
+			typename I,
+			std::enable_if_t<std::is_integral_v<I> && std::is_signed_v<I>, int>
+				= 0
+			>
+			IntVal(I i): IntBase{i} {}
+	#endif
+		IntVal(const TVect& v): IntBase{v} {}
+		IntVal() noexcept: IntBase{0} {}
 
 		auto asScalar() const noexcept -> TScalar;
 
@@ -184,7 +196,19 @@ namespace binon {
 			) const -> std::string;
 
 		template<typename, typename> friend struct IntBase;
-		using IntBase<UIntVal,TScalar>::IntBase;
+
+	#if BINON_CONCEPTS
+		UIntVal(std::unsigned_integral auto i): IntBase{i} {}
+	#else
+		template<
+			typename I,
+			std::enable_if_t<std::is_unsigned_v<I>, int> = 0
+			>
+			UIntVal(I i): IntBase{i} {}
+	#endif
+		UIntVal(const TVect& v): IntBase{v} {}
+		UIntVal() noexcept: IntBase{0U} {}
+
 		auto asScalar() const noexcept -> TScalar;
 
 		template<typename UInt>
@@ -203,7 +227,7 @@ namespace binon {
 		static constexpr auto kTypeCode = kIntObjCode;
 		static constexpr auto kClsName = std::string_view{"IntObj"};
 		TValue mValue;
-		explicit IntObj(const UIntObj& obj);
+		explicit IntObj(const UIntVal& obj);
 		IntObj(TValue v);
 		IntObj() = default;
 		auto operator== (const IntObj& rhs) const noexcept
@@ -227,7 +251,7 @@ namespace binon {
 		static constexpr auto kTypeCode = kUIntCode;
 		static constexpr auto kClsName = std::string_view{"UIntObj"};
 		TValue mValue;
-		explicit UIntObj(const IntObj& obj);
+		explicit UIntObj(const IntVal& obj);
 		UIntObj(TValue v);
 		UIntObj() = default;
 		auto operator== (const UIntObj& rhs) const noexcept
