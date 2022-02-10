@@ -2,6 +2,7 @@
 #define BINON_DICTHELPERS__HPP
 
 #include "objhelpers.hpp"
+#include <initializer_list>
 
 //	dicthelpers.hpp is structured a lot like listhelpers.hpp, so the
 //	documentation here will mainly highlight differences.
@@ -15,20 +16,18 @@ namespace binon {
 		concept DictType = kIsDictType<T>;
  )
 
-	//	kIsTCTypePair is used to constrain the arguments to MakeDictObj() and
-	//	friends.
-	template<typename T>
-		constexpr bool kIsTCTypePair =
-			kIsPair<T> &&
-			kIsTCType<typename T::first_type> &&
-			kIsTCType<typename T::second_type>;
- BINON_IF_CONCEPTS(
-	template<typename T>
-		concept TCTypePair = kIsTCTypePair<T>;
- )
-
-
- #if BINON_CONCEPTS
+	//	The Make... functions for dictionaries take initializer lists of
+	//	key-value pairs. This allows you to use nested brace notation along the
+	//	lines SDict(kStrObjCode, kUIntCode, {{"foo", 1}, {"bar", 2}})
+	using TCTypePair = std::pair<ObjWrapper,ObjWrapper>;
+	auto MakeDictObj(std::initializer_list<TCTypePair> pairs) -> DictObj;
+	auto MakeSKDict(
+		CodeByte keyCode, std::initializer_list<TCTypePair> pairs
+	) -> SKDict;
+	auto MakeSDict(
+		CodeByte keyCode, CodeByte valCode,
+		std::initializer_list<TCTypePair> pairs
+	) -> SDict;
 
 	//	FindObj() attempts to locate the key you provide in the dictionary. If
 	//	it finds it, it returns a reference to the associated BinONObj in the
@@ -39,10 +38,10 @@ namespace binon {
 	//
 	//	You can also call FindObj() simply to check if a key exists, since an
 	//	OptRef evaluates true or false in say an if statement.
-	auto FindObj(const DictType auto& dict, const TCType auto& key)
-		-> OptRef<const BinONObj>;
-	auto FindObj(DictType auto& dict, const TCType auto& key)
-		-> OptRef<BinONObj>;
+	//auto FindObj(const DictType auto& dict, const TCType auto& key)
+	//	-> OptRef<const BinONObj>;
+	//auto FindObj(DictType auto& dict, const TCType auto& key)
+	//	-> OptRef<BinONObj>;
 
 	//	Note that aside from taking a key rather than an index, the dictionary
 	//	version of GetCtnrVal() differs from the list counterpart in one other
@@ -52,32 +51,30 @@ namespace binon {
 	//	your key. This element will have a default-constructed value. Without
 	//	auto-allocation, GetCtnrVal() will throw std::out_of_range instead on a
 	//	missing key.
-	template<TCType Val, DictType Dict, TCType Key>
-		auto GetCtnrVal(Dict& dict, const Key& key, bool autoAlloc = false)
-		-> TGetObjVal<Val>;
-	template<TCType Val, DictType Dict, TCType Key>
-		auto GetCtnrVal(const Dict& dict, const Key& key)
-		-> TGetObjVal<Val>;
+	//template<TCType Val, DictType Dict, TCType Key>
+	//	auto GetCtnrVal(Dict& dict, const Key& key, bool autoAlloc = false)
+	//	-> TGetObjVal<Val>;
+	//template<TCType Val, DictType Dict, TCType Key>
+	//	auto GetCtnrVal(const Dict& dict, const Key& key)
+	//	-> TGetObjVal<Val>;
 
-	TValueType auto& CtnrTValue(
-			DictType auto& dict, const TCType auto& key, bool autoAlloc = false
-		);
-	const TValueType auto& CtnrTValue(
-			const DictType auto& dict, const TCType auto& key
-		);
-	TValueType auto CtnrTValue(
-			DictType auto&& dict, const TCType auto& key
-		);
+	//TValueType auto& CtnrTValue(
+	//		DictType auto& dict, const TCType auto& key, bool autoAlloc = false
+	//	);
+	//const TValueType auto& CtnrTValue(
+	//		const DictType auto& dict, const TCType auto& key
+	//	);
+	//TValueType auto CtnrTValue(
+	//		DictType auto&& dict, const TCType auto& key
+	//	);
 
-	template<DictType Dict, TCType Key, TCType Val>
-		auto SetCtnrVal(Dict& dict, const Key& key, const Val& val) -> Dict&;
+	//template<DictType Dict, TCType Key, TCType Val>
+	//	auto SetCtnrVal(Dict& dict, const Key& key, const Val& val) -> Dict&;
 
 	//	DelKey() deletes the element associated with the key you provide if it
 	//	exists in the dictionary. It returns true if the key existed and was
 	//	removed or false it there was no such key.
-	auto DelKey(DictType auto& dict, const TCType auto& key) -> bool;
-
- #endif
+	//auto DelKey(DictType auto& dict, const TCType auto& key) -> bool;
 
 	constexpr bool kAutoAlloc = true;
 
@@ -270,63 +267,6 @@ namespace binon {
 		}
 		map.erase(iter);
 		return true;
-	}
-
-	//---- Make... function templates ------------------------------------------
-
-	template<typename... Pairs>
-		auto MakeDictObj(Pairs&&... pairs)
-		BINON_CONCEPTS_FN(
-			(TCTypePair<Pairs> && ...),
-			(kIsTCTypePair<Pairs> && ...),
-			DictObj
-		)
-	{
-		DictObj dict;
-		dict.value().reserve(sizeof...(Pairs));
-		(	SetCtnrVal(
-				dict, std::forward<Pairs>(pairs).first,
-				std::forward<Pairs>(pairs).second
-			),
-			...
-		);
-		return dict;
-	}
-	template<typename... Pairs>
-		auto MakeSKDict(CodeByte keyCode, Pairs&&... pairs)
-		BINON_CONCEPTS_FN(
-			(TCTypePair<Pairs> && ...),
-			(kIsTCTypePair<Pairs> && ...),
-			SKDict
-		)
-	{
-		SKDict dict{keyCode};
-		dict.value().reserve(sizeof...(Pairs));
-		(	SetCtnrVal(
-				dict, std::forward<Pairs>(pairs).first,
-				std::forward<Pairs>(pairs).second
-			),
-			...
-		);
-		return dict;
-	}
-	template<typename... Pairs>
-		auto MakeSDict(CodeByte keyCode, CodeByte valCode, Pairs&&... pairs)
-		BINON_CONCEPTS_FN(
-			(TCTypePair<Pairs> && ...),
-			(kIsTCTypePair<Pairs> && ...),
-			SDict
-		)
-	{
-		SDict dict{keyCode, valCode};
-		dict.value().reserve(sizeof...(Pairs));
-		(	SetCtnrVal(
-				dict, std::forward<Pairs>(pairs).first,
-				std::forward<Pairs>(pairs).second
-			),
-			...
-		);
-		return dict;
 	}
 }
 

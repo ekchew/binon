@@ -11,9 +11,7 @@ namespace binon {
 	template<typename T>
 		using TGetObjVal = typename TypeConv<std::decay_t<T>>::TVal;
 
- #if BINON_CONCEPTS
-
-	//	MakeObj() is a convenience function to build the appropriate type of
+ 	//	MakeObj() is a convenience function to build the appropriate type of
 	//	object for the argument you supply. For example:
 	//
 	//		auto intObj = MakeObj(42);
@@ -33,8 +31,8 @@ namespace binon {
 	//
 	//	This works because HyStr is StrObj::TValue.
 	//
-	template<TCType T> auto MakeObj(const T& v) -> TValObj<T>;
-	template<TValueType T> auto MakeObj(T&& v) noexcept -> TValObj<T>;
+	//template<TCType T> auto MakeObj(const T& v) -> TValObj<T>;
+	//template<TValueType T> auto MakeObj(T&& v) noexcept -> TValObj<T>;
 
 	//	GetObjVal() attempts to extract a value of the type you specify from a
 	//	general BinONObj. It can accept any type recognized by TypeConv, and can
@@ -56,8 +54,8 @@ namespace binon {
 	//			static_cast<UIntObj>(std::get<IntObj>(obj)).value().scalar()
 	//			)
 	//
-	template<TCType T>
-		auto GetObjVal(const BinONObj& obj) -> TGetObjVal<T>;
+	//template<TCType T>
+	//	auto GetObjVal(const BinONObj& obj) -> TGetObjVal<T>;
 
 	//	ObjTValue() is a more focused alternative to GetObjVal(). In this case,
 	//	the type T must be the TValue type of specific object stored in the
@@ -66,14 +64,12 @@ namespace binon {
 	//	But by supplying this, you get more direct access to the stored value.
 	//	You can get a reference to the TValue that lets you modify the object
 	//	value in-place. You can also move the value out of the object.
-	template<TValueType T>
-		auto ObjTValue(BinONObj& obj) -> T&;
-	template<TValueType T>
-		auto ObjTValue(const BinONObj& obj) -> const T&;
-	template<TValueType T>
-		auto ObjTValue(BinONObj&& obj) -> T;
-
- #endif
+	//template<TValueType T>
+	//	auto ObjTValue(BinONObj& obj) -> T&;
+	//template<TValueType T>
+	//	auto ObjTValue(const BinONObj& obj) -> const T&;
+	//template<TValueType T>
+	//	auto ObjTValue(BinONObj&& obj) -> T;
 
 	//	ObjWrapper offers an alternative to MakeObj as a means of converting an
 	//	arbitrary value into a BinONObj. You can have one of these be a function

@@ -30,6 +30,7 @@ SRC_NAMES := \
 	bufferobj \
 	byteutil \
 	codebyte \
+	dicthelpers \
 	dictobj \
 	floatobj \
 	hashutil \
@@ -89,6 +90,8 @@ ${OBJ}byteutil.o: ${SRC}byteutil.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}byteutil.cpp -o ${OBJ}byteutil.o
 ${OBJ}codebyte.o: ${SRC}codebyte.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}codebyte.cpp -o ${OBJ}codebyte.o
+${OBJ}dicthelpers.o: ${SRC}dicthelpers.cpp ${DEPS}
+	${CXX} ${FLAGS} ${SRC}dicthelpers.cpp -o ${OBJ}dicthelpers.o
 ${OBJ}dictobj.o: ${SRC}dictobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}dictobj.cpp -o ${OBJ}dictobj.o
 ${OBJ}floatobj.o: ${SRC}floatobj.cpp ${DEPS}

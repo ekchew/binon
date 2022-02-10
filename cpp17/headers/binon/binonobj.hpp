@@ -48,8 +48,12 @@ namespace binon {
 	// BinONVariant, it can be any of the object types. BinONObjs are managed by
 	// many of the APIs in this library, and the struct itself comes with some
 	// convenience methods for encoding/decoding BinON and so forth.
-	struct BinONObj: BinONVariant
-	{
+	struct BinONObj: BinONVariant {
+		using TValue = BinONVariant;
+		auto& value() & { return *static_cast<TValue*>(this); }
+		const auto& value() const& { return *static_cast<const TValue*>(this); }
+		auto value() && { return std::move(*static_cast<TValue*>(this)); }
+
 		//	The Decode() class method can decode an arbitrary BinON object from
 		//	an input binary stream.
 		//
@@ -157,13 +161,13 @@ namespace binon {
 			auto asObj() const& BINON_CONCEPTS_FN(
 				ObjType<Obj> && (ObjType<Alts> && ...),
 				kIsObj<Obj> && (kIsObj<Alts> && ...),
-				Obj
+				Obj // return type
 			);
 		template<typename Obj, typename... Alts>
 			auto asObj() && BINON_CONCEPTS_FN(
 				ObjType<Obj> && (ObjType<Alts> && ...),
 				kIsObj<Obj> && (kIsObj<Alts> && ...),
-				Obj
+				Obj // return type
 			);
 
 		//	The print() prints a textual description of a BinONObj to an output
@@ -266,7 +270,7 @@ namespace binon {
 	template<typename Obj, typename Alt, typename... Alts>
 		auto BinONObj::tryAlts() const& BINON_CONCEPTS_FN(
 			ObjType<Obj> && ObjType<Alt> && (ObjType<Alts> && ...),
-			kIsObj<Obj> && ObjType<Alt> && (kIsObj<Alts> && ...),
+			kIsObj<Obj> && kIsObj<Alt> && (kIsObj<Alts> && ...),
 			Obj
 		) {
 			auto pAlt = std::get_if<Alt>(this);

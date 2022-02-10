@@ -396,12 +396,14 @@ namespace binon {
 					return obj.asObj<TObj,SKDict,SDict>().value();
 				}
 		};
-	template<>
-		struct TypeConv<BinONObj> {
-			using TObj = BinONObj;
-			using TVal = BinONObj;
-			static auto ValTypeName() -> HyStr { return "BinONObj"; }
-			static auto GetVal(const BinONObj& obj) -> TVal { return obj; }
+	template<typename T>
+		struct TypeConv<T, std::enable_if_t<std::is_base_of_v<BinONObj,T>>> {
+			using TObj = T;
+			using TVal = T;
+			static auto ValTypeName() -> HyStr {
+				return "BinONObj (or subclass)";
+			}
+			static auto GetVal(const T& obj) -> TVal { return obj; }
 		};
 }
 

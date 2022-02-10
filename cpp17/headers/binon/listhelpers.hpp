@@ -25,8 +25,8 @@ namespace binon {
 	//
 	//	should return a ListObj containing a UIntObj, a StrObj, and a
 	//	Float32Obj.
-	auto MakeListObj(TCType auto&&... values) -> ListObj;
-	auto MakeSList(CodeByte elemCode, TCType auto&&... values) -> SList;
+	//auto MakeListObj(TCType auto&&... values) -> ListObj;
+	//auto MakeSList(CodeByte elemCode, TCType auto&&... values) -> SList;
 
 	//	GetCtnrVal() is essentially GetObjVal() as applied to a particular list
 	//	element. (Note that dicthelpers.hpp also implements GetCtnrVal and other
@@ -34,8 +34,8 @@ namespace binon {
 	//	GetCtnrVal() may throw std::out_of_range if the index is bad (see
 	//	std::vector::at() documentation). A std::bad_variant_access exception is
 	//	also possible if the type T doesn't work out.
-	template<TCType T, ListType List>
-		 auto GetCtnrVal(const List& list, std::size_t index) -> TGetObjVal<T>;
+	//template<TCType T, ListType List>
+	//	 auto GetCtnrVal(const List& list, std::size_t index) -> TGetObjVal<T>;
 
 	//	Likewise, CtnrTValue() is like ObjTValue() applied to a list element. To
 	//	move a TValue out of an element, call std::move on the list itself. For
@@ -45,25 +45,25 @@ namespace binon {
 	//
 	//	Now, assuming element 0 of myList is indeed a string, hyStr should
 	//	contain its text and the element's string should be empty.
-	TValueType auto& CtnrTValue(ListType auto& list, std::size_t index);
-	const TValueType auto& CtnrTValue(
-			const ListType auto& list, std::size_t index
-		);
- 	TValueType auto CtnrTValue(ListType auto&& list, std::size_t index);
+	//TValueType auto& CtnrTValue(ListType auto& list, std::size_t index);
+	//const TValueType auto& CtnrTValue(
+	//		const ListType auto& list, std::size_t index
+	//	);
+ 	//TValueType auto CtnrTValue(ListType auto&& list, std::size_t index);
 
 	//	SetCtnrVal() is equivalent to assigning a new object created by calling
 	//	MakeObj(v) to an existing list element. (Note that it and AppendVal
 	//	return the input list so that you can chain several calls together using
 	//	the fluent paradigm.)
-	template<ListType List, TCType Val>
-		auto SetCtnrVal(List& list, std::size_t index, const Val& v) -> List&;
+	//template<ListType List, TCType Val>
+	//	auto SetCtnrVal(List& list, std::size_t index, const Val& v) -> List&;
 
 	//	AppendVal() adds elements to the list. You can use move semantics if the
 	//	type is a TValue.
-	template<ListType List, TCType T>
-		auto AppendVal(List& list, const T& v) -> List&;
-	template<ListType List, TCType T>
-		auto AppendVal(List& list, T&& v) -> List&;
+	//template<ListType List, TCType T>
+	//	auto AppendVal(List& list, const T& v) -> List&;
+	//template<ListType List, TCType T>
+	//	auto AppendVal(List& list, T&& v) -> List&;
 
  #endif
 
