@@ -146,6 +146,7 @@ namespace binon {
 		//		Float32Obj -> FloatObj
 		//		SList -> ListObj
 		//		SKDict -> DictObj
+		//		SDict -> SKDict
 		//		SDict -> DictObj
 		//
 		//	If you use move semantics, only your primary object type (the first

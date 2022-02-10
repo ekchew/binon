@@ -245,19 +245,22 @@ namespace binon {
 			static auto GetObj(const BinONObj& obj) -> TObj {
 					using std::is_same_v;
 					if constexpr(is_same_v<T,IntObj>) {
-						return obj.asObj<IntObj,UIntObj>();
+						return obj.asObj<T,UIntObj>();
 					}
 					else if constexpr(is_same_v<T,UIntObj>) {
-						return obj.asObj<UIntObj,IntObj>();
+						return obj.asObj<T,IntObj>();
 					}
 					else if constexpr(is_same_v<T,FloatObj>) {
-						return obj.asObj<FloatObj,Float32Obj>();
+						return obj.asObj<T,Float32Obj>();
 					}
 					else if constexpr(is_same_v<T,ListObj>) {
-						return obj.asObj<ListObj,SList>();
+						return obj.asObj<T,SList>();
 					}
 					else if constexpr(is_same_v<T,DictObj>) {
-						return obj.asObj<DictObj,SKDict,SDict>();
+						return obj.asObj<T,SKDict,SDict>();
+					}
+					else if constexpr(is_same_v<T,SKDict>) {
+						return obj.asObj<T,SDict>();
 					}
 					else {
 						return std::get<T>(obj);
@@ -266,19 +269,22 @@ namespace binon {
 			static auto GetObj(BinONObj&& obj) -> TObj {
 					using std::is_same_v;
 					if constexpr(is_same_v<T,IntObj>) {
-						return std::move(obj).asObj<IntObj,UIntObj>();
+						return std::move(obj).asObj<T,UIntObj>();
 					}
 					else if constexpr(is_same_v<T,UIntObj>) {
-						return std::move(obj).asObj<UIntObj,IntObj>();
+						return std::move(obj).asObj<T,IntObj>();
 					}
 					else if constexpr(is_same_v<T,FloatObj>) {
-						return std::move(obj).asObj<FloatObj,Float32Obj>();
+						return std::move(obj).asObj<T,Float32Obj>();
 					}
 					else if constexpr(is_same_v<T,ListObj>) {
-						return std::move(obj).asObj<ListObj,SList>();
+						return std::move(obj).asObj<T,SList>();
 					}
 					else if constexpr(is_same_v<T,DictObj>) {
-						return std::move(obj).asObj<DictObj,SKDict,SDict>();
+						return std::move(obj).asObj<T,SKDict,SDict>();
+					}
+					else if constexpr(is_same_v<T,SKDict>) {
+						return std::move(obj).asObj<T,SDict>();
 					}
 					else {
 						return std::get<T>(std::move(obj));
