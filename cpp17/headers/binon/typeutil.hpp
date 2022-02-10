@@ -95,6 +95,17 @@ namespace binon {
 				}
 		};
 
+	//	kIsPair<T> evaluates true if T is a std::pair.
+	template<typename T>
+		struct IsPair: std::false_type {};
+	template<typename A, typename B>
+		struct IsPair<std::pair<A,B>>: std::true_type {};
+	template<typename T>
+		constexpr bool kIsPair = IsPair<T>::value;
+ BINON_IF_CONCEPTS(
+	template<typename T>
+		concept Pair = kIsPair<T>;
+ )
 }
 
 #endif

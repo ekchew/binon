@@ -144,9 +144,13 @@ namespace binon {
 		//	Note that asObj() is cslled automatically by TypeConv and the
 		//	various helper functions that depend on it, so you may never need to
 		//	call it directly.
-		template<typename Obj, typename... Alts>
+		template<typename Obj>
 			auto asObj() const& -> Obj;
-		template<typename Obj, typename... Alts>
+		template<typename Obj, typename Alt, typename... Alts>
+			auto asObj() const& -> Obj;
+		template<typename Obj>
+			auto asObj() && -> Obj;
+		template<typename Obj, typename Alt, typename... Alts>
 			auto asObj() && -> Obj;
 
 		//	The print() prints a textual description of a BinONObj to an output
@@ -198,36 +202,41 @@ namespace std {
 //==== Template Implementation =================================================
 
 namespace binon {
-	template<typename Obj, typename... Alts>
+
+	template<typename Obj>
 		auto BinONObj::asObj() const& -> Obj
 	{
-		if constexpr(sizeof...(Alts) == 0) {
-			return std::get<Obj>(*this);
+		return std::get<Obj>(*this);
+	}
+	template<typename Obj, typename Alt, typename... Alts>
+		auto BinONObj::asObj() const& -> Obj
+	{
+		if(auto pObj = std::get_if<Obj>(this); pObj) {
+			return *pObj;
+		}
+		else if(auto pAlt = std::get_if<Alt>(this); pAlt) {
+			return static_cast<Obj>(*pAlt);
 		}
 		else {
-			if(auto pObj = std::get_if<Obj>(this); pObj) {
-				return *pObj;
-			}
-			else {
-				return static_cast<Obj>(asObj<Alts...>());
-			}
+			return asObj<Obj,Alts...>();
 		}
 	}
-	template<typename Obj, typename... Alts>
+	template<typename Obj>
 		auto BinONObj::asObj() && -> Obj
 	{
-		if constexpr(sizeof...(Alts) == 0) {
-			return std::get<Obj>(std::move(*this));
+		return std::get<Obj>(std::move(*this));
+	}
+	template<typename Obj, typename Alt, typename... Alts>
+		auto BinONObj::asObj() && -> Obj
+	{
+		if(auto pObj = std::get_if<Obj>(this); pObj) {
+			return std::move(*pObj);
+		}
+		else if(auto pAlt = std::get_if<Alt>(this); pAlt) {
+			return static_cast<Obj>(*pAlt);
 		}
 		else {
-			if(auto pObj = std::get_if<Obj>(this); pObj) {
-				return std::move(*pObj);
-			}
-			else {
-				return static_cast<Obj>(
-					static_cast<const BinONObj*>(this)->asObj<Alts...>()
-				);
-			}
+			return asObj<Obj,Alts...>();
 		}
 	}
 }

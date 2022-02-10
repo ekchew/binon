@@ -51,8 +51,8 @@ namespace binon {
 		static constexpr auto kTypeCode = kSKDictCode;
 		static constexpr auto kClsName = std::string_view{"SKDict"};
 		CodeByte mKeyCode;
-		SKDict(const std::any& value, CodeByte keyCode = kNoObjCode);
-		SKDict(std::any&& value, CodeByte keyCode = kNoObjCode) noexcept;
+		SKDict(const std::any& value, CodeByte keyCode);
+		SKDict(std::any&& value, CodeByte keyCode) noexcept;
 		SKDict(CodeByte keyCode = kNoObjCode) noexcept;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SKDict&;
@@ -67,10 +67,10 @@ namespace binon {
 		CodeByte mKeyCode;
 		CodeByte mValCode;
 		SDict(const std::any& value,
-			CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode
+			CodeByte keyCode, CodeByte valCode
 			);
 		SDict(std::any&& value,
-			CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode
+			CodeByte keyCode, CodeByte valCode
 			) noexcept;
 		SDict(
 			CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode

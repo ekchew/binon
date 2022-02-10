@@ -15,6 +15,19 @@ namespace binon {
 		concept DictType = kIsDictType<T>;
  )
 
+	//	kIsTCTypePair is used to constrain the arguments to MakeDictObj() and
+	//	friends.
+	template<typename T>
+		constexpr bool kIsTCTypePair =
+			kIsPair<T> &&
+			kIsTCType<typename T::first_type> &&
+			kIsTCType<typename T::second_type>;
+ BINON_IF_CONCEPTS(
+	template<typename T>
+		concept TCTypePair = kIsTCTypePair<T>;
+ )
+
+
  #if BINON_CONCEPTS
 
 	//	FindObj() attempts to locate the key you provide in the dictionary. If
@@ -262,12 +275,54 @@ namespace binon {
 	//---- Make... function templates ------------------------------------------
 
 	template<typename... Pairs>
-		auto MakeDictObj(Pairs&&... pairs) -> DictObj
+		auto MakeDictObj(Pairs&&... pairs)
+		BINON_CONCEPTS_FN(
+			(TCTypePair<Pairs> && ...),
+			(kIsTCTypePair<Pairs> && ...),
+			DictObj
+		)
 	{
 		DictObj dict;
 		dict.value().reserve(sizeof...(Pairs));
 		(	SetCtnrVal(
-				dict, std::forward<Pairs>(pairs).first, std::forward<Pairs>(pairs).second
+				dict, std::forward<Pairs>(pairs).first,
+				std::forward<Pairs>(pairs).second
+			),
+			...
+		);
+		return dict;
+	}
+	template<typename... Pairs>
+		auto MakeSKDict(CodeByte keyCode, Pairs&&... pairs)
+		BINON_CONCEPTS_FN(
+			(TCTypePair<Pairs> && ...),
+			(kIsTCTypePair<Pairs> && ...),
+			SKDict
+		)
+	{
+		SKDict dict{keyCode};
+		dict.value().reserve(sizeof...(Pairs));
+		(	SetCtnrVal(
+				dict, std::forward<Pairs>(pairs).first,
+				std::forward<Pairs>(pairs).second
+			),
+			...
+		);
+		return dict;
+	}
+	template<typename... Pairs>
+		auto MakeSDict(CodeByte keyCode, CodeByte valCode, Pairs&&... pairs)
+		BINON_CONCEPTS_FN(
+			(TCTypePair<Pairs> && ...),
+			(kIsTCTypePair<Pairs> && ...),
+			SDict
+		)
+	{
+		SDict dict{keyCode, valCode};
+		dict.value().reserve(sizeof...(Pairs));
+		(	SetCtnrVal(
+				dict, std::forward<Pairs>(pairs).first,
+				std::forward<Pairs>(pairs).second
 			),
 			...
 		);

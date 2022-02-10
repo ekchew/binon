@@ -63,7 +63,7 @@ namespace binon {
 	 protected:
 		auto calcHash(std::size_t seed) const -> std::size_t;
 	};
-	
+
 	struct ListObj: ListBase, StdCodec<ListObj>  {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"ListObj"};
@@ -79,8 +79,8 @@ namespace binon {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"SList"};
 		CodeByte mElemCode;
-		SList(std::any value, CodeByte elemCode = kNoObjCode);
-		SList(CodeByte elemCode = kNullObjCode);
+		SList(std::any value, CodeByte elemCode);
+		SList(CodeByte elemCode = kNoObjCode);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SList&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
