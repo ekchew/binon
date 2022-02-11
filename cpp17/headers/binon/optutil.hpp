@@ -96,7 +96,8 @@ namespace binon {
 			//	If, for some reason, you need direct access to the underlying
 			//	optional<reference_wrapper<T>>, call as_optional(). (Note: In
 			//	the current implementation, OptRef actually inherits from
-			//	optional<reference_wrapper<T>>, but may be subject to change.)
+			//	optional<reference_wrapper<T>>, but that may be subject to
+			//	change.)
 			constexpr auto as_optional() const& -> const optional_type& {
 					return *this;
 				}
