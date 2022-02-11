@@ -276,7 +276,12 @@ namespace binon {
 		) {
 			auto pAlt = std::get_if<Alt>(this);
 			if(pAlt) {
-				return static_cast<Obj>(pAlt->value());
+				if constexpr(std::is_same_v<Obj, SKDict>) {
+					return static_cast<Obj>(pAlt->value(), pAlt->mKeyCode);
+				}
+				else {
+					return static_cast<Obj>(pAlt->value());
+				}
 			}
 			else {
 				return tryAlts<Obj,Alts...>();
