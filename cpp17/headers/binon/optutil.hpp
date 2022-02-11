@@ -29,7 +29,8 @@ namespace binon {
 	template<typename T>
 		class OptRef: std::optional<std::reference_wrapper<T>> {
 		 public:
-			using TOptRef = std::optional<std::reference_wrapper<T>>;
+			using optional_type = std::optional<std::reference_wrapper<T>>;
+			using reference_type = std::reference_wrapper<T>;
 			using value_type = T;
 
 			using std::optional<std::reference_wrapper<T>>::optional;
@@ -40,35 +41,35 @@ namespace binon {
 
 			BINON_IF_CPP20(constexpr)
 				auto operator-> () const& noexcept -> const T* {
-					return &TOptRef::operator*().get();
+					return &optional_type::operator*().get();
 				}
 			BINON_IF_CPP20(constexpr)
 				auto operator-> () & noexcept -> T* {
-					return &TOptRef::operator*().get();
+					return &optional_type::operator*().get();
 				}
 			BINON_IF_CPP20(constexpr)
 				auto operator* () const& noexcept -> const T& {
-					return TOptRef::operator*().get();
+					return optional_type::operator*().get();
 				}
 			BINON_IF_CPP20(constexpr)
 				auto operator* () & noexcept -> T& {
-					return TOptRef::operator*().get();
+					return optional_type::operator*().get();
 				}
 			BINON_IF_CPP20(constexpr)
 				auto operator* () && noexcept -> T {
-					return std::move(TOptRef::operator*().get());
+					return std::move(optional_type::operator*().get());
 				}
 			BINON_IF_CPP20(constexpr)
 				auto value() const& -> const T& {
-					return TOptRef::value().get();
+					return optional_type::value().get();
 				}
 			BINON_IF_CPP20(constexpr)
 				auto value() & -> T& {
-					return TOptRef::value().get();
+					return optional_type::value().get();
 				}
 			BINON_IF_CPP20(constexpr)
 				auto value() && -> T {
-					return std::move(TOptRef::value().get());
+					return std::move(optional_type::value().get());
 				}
 
 			//	value_or() works a bit differently from std::optional in this
@@ -92,13 +93,17 @@ namespace binon {
 						: static_cast<T>(std::forward<U>(defVal));
 				}
 
-			constexpr auto as_optional() const& -> const TOptRef& {
+			//	If, for some reason, you need direct access to the underlying
+			//	optional<reference_wrapper<T>>, call as_optional(). (Note: In
+			//	the current implementation, OptRef actually inherits from
+			//	optional<reference_wrapper<T>>, but may be subject to change.)
+			constexpr auto as_optional() const& -> const optional_type& {
 					return *this;
 				}
-			constexpr auto as_optional() & -> TOptRef& {
+			constexpr auto as_optional() & -> optional_type& {
 					return *this;
 				}
-			constexpr auto as_optional() && -> TOptRef {
+			constexpr auto as_optional() && -> optional_type {
 					return std::move(*this);
 				}
 		};
