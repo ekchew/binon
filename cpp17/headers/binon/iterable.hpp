@@ -157,10 +157,6 @@ namespace binon {
 	//	single iterator type (called Iter in both cases), but of course the
 	//	ConstIterable version does not let you modify dereferenced iterator
 	//	values.
-	//
-	//	Note that ConstIterable specializations give you cbegin() and cend()
-	//	methods in addition to begin() and end(), though they are functionally
-	//	identical. Iterable only gives you the latter.
 
 	template<typename T, typename Ctnr>
 		struct ConstIterable {
@@ -239,10 +235,8 @@ namespace binon {
 			};
 
 			ConstIterable(const TCtnr& ctnr);
-			auto cbegin() const -> Iter;
-			auto cend() const -> Iter;
-			auto begin() const -> Iter {return cbegin();}
-			auto end() const -> Iter {return cend();}
+			auto begin() const -> Iter;
+			auto end() const -> Iter;
 
 		 private:
 			const TCtnr* mPCtnr;
@@ -468,10 +462,10 @@ namespace binon {
 			};
 		}
 	}
-	template<typename T> auto ConstIterable<T,SList>::cbegin() const -> Iter {
+	template<typename T> auto ConstIterable<T,SList>::begin() const -> Iter {
 		return Iter{*mPCtnr, mPCtnr->value().cbegin()};
 	}
-	template<typename T> auto ConstIterable<T,SList>::cend() const -> Iter {
+	template<typename T> auto ConstIterable<T,SList>::end() const -> Iter {
 		return Iter{*mPCtnr, mPCtnr->value().cend()};
 	}
 
