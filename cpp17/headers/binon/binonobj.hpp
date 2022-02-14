@@ -171,6 +171,12 @@ namespace binon {
 				Obj // return type
 			);
 
+		//	asTypeCodeObj() is like asObj() except it uses a type code to
+		//	determine what type of BinONObj to return. It may perform any of the
+		//	officially supported type conversions automatically.
+		auto asTypeCodeObj(CodeByte typeCode) const& -> BinONObj;
+		auto asTypeCodeObj(CodeByte typeCode) && -> BinONObj;
+
 		//	The print() prints a textual description of a BinONObj to an output
 		//	text stream. This is somewhat reminiscent of printing an object's
 		//	repr() string in Python, and can be helpful in debugging.
