@@ -62,6 +62,7 @@ DEPS := \
 	${HDR}hystr.hpp \
 	${HDR}idgen.hpp \
 	${HDR}intobj.hpp \
+	${HDR}iterable.hpp \
 	${HDR}ioutil.hpp \
 	${HDR}listobj.hpp \
 	${HDR}listhelpers.hpp \

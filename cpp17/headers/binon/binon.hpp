@@ -18,6 +18,7 @@
 #include "hystr.hpp"
 #include "idgen.hpp"
 #include "intobj.hpp"
+#include "iterable.hpp"
 #include "listhelpers.hpp"
 #include "listobj.hpp"
 #include "literals.hpp"
