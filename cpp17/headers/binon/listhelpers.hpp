@@ -2,6 +2,7 @@
 #define BINON_LISTHELPERS_HPP
 
 #include "objhelpers.hpp"
+#include <initializer_list>
 
 namespace binon {
 
@@ -21,13 +22,14 @@ namespace binon {
 	//	These functions create a list object out of any TypeConv-supported
 	//	values you pass in. For example:
 	//
-	//		auto list = MakeListObj(42u, "foo", 3.14f);
+	//		auto list = MakeListObj({42u, "foo", 3.14f});
 	//
 	//	should return a ListObj containing a UIntObj, a StrObj, and a
 	//	Float32Obj.
 	//
-	//auto MakeListObj(TCType auto&&... values) -> ListObj;
-	//auto MakeSList(CodeByte elemCode, TCType auto&&... values) -> SList;
+	auto MakeListObj(std::initializer_list<ObjWrapper> vals) -> ListObj;
+	auto MakeSList(CodeByte elemCode, std::initializer_list<ObjWrapper> vals)
+		-> SList;
 
 	//	GetCtnrVal() is essentially GetObjVal() as applied to a particular list
 	//	element. (Note that dicthelpers.hpp also implements GetCtnrVal and other
@@ -177,26 +179,6 @@ namespace binon {
 		return list;
 	}
 
-	//---- Make... function templates ------------------------------------------
-
-	template<typename... Ts>
-		auto MakeListObj(Ts&&... values)
-		BINON_CONCEPTS_FN((TCType<Ts> && ...), (kIsTCType<Ts> && ...), ListObj)
-	{
-		ListObj list;
-		list.value().reserve(sizeof...(Ts));
-		(AppendVal(list, std::forward<Ts>(values)), ...);
-		return list;
-	}
-	template<typename... Ts>
-		auto MakeSList(CodeByte elemCode, Ts&&... values)
-		BINON_CONCEPTS_FN((TCType<Ts> && ...), (kIsTCType<Ts> && ...), SList)
-	{
-		SList list(elemCode);
-		list.value().reserve(sizeof...(Ts));
-		(AppendVal(list, std::forward<Ts>(values)), ...);
-		return list;
-	}
 }
 
 #endif

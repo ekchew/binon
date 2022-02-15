@@ -36,6 +36,7 @@ SRC_NAMES := \
 	hashutil \
 	intobj \
 	ioutil \
+	listhelpers \
 	listobj \
 	objhelpers \
 	packelems \
@@ -107,6 +108,8 @@ ${OBJ}objhelpers.o: ${SRC}objhelpers.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}objhelpers.cpp -o ${OBJ}objhelpers.o
 ${OBJ}listobj.o: ${SRC}listobj.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}listobj.cpp -o ${OBJ}listobj.o
+${OBJ}listhelpers.o: ${SRC}listhelpers.cpp ${DEPS}
+	${CXX} ${FLAGS} ${SRC}listhelpers.cpp -o ${OBJ}listhelpers.o
 ${OBJ}packelems.o: ${SRC}packelems.cpp ${DEPS}
 	${CXX} ${FLAGS} ${SRC}packelems.cpp -o ${OBJ}packelems.o
 ${OBJ}strobj.o: ${SRC}strobj.cpp ${DEPS}

@@ -8,7 +8,7 @@ namespace binon {
 	//
 	//	For example, you could print an SList of integers like this:
 	//
-	//		auto sList = MakeSList(kIntObjCode, 1, 2, 3);
+	//		auto sList = MakeSList(kIntObjCode, {1, 2, 3});
 	//		for(auto i: AsConstIterable<int>(sList)) {
 	//			std::cout << i << '\n';
 	//		}
@@ -186,7 +186,7 @@ namespace binon {
 	//
 	//	Example:
 	//
-	//		auto sList = MakeSList(kUIntCode, 1U, 2U, 3U);
+	//		auto sList = MakeSList(kUIntCode, {1U, 2U, 3U});
 	//		for(auto& i: Iterable<unsigned int>(sList)) {
 	//			i *= i;
 	//		}
