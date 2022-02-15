@@ -170,13 +170,12 @@ namespace binon {
 		if(!autoAlloc) {
 			return GetCtnrVal(static_cast<const Dict&>(dict), key);
 		}
-		auto& map = dict.value();
-		BinONObj keyObj = MakeObj(key);
-		auto pPair = map.find(keyObj);
-		if(pPair == map.end()) {
-			pPair = map.insert(*pPair, {std::move(keyObj), TValObj<Val>()});
+		auto optObj = FindObj(dict, key);
+		if(optObj) {
+			return *optObj;
 		}
-		return GetObjVal<Val>(pPair->second);
+		SetCtnrVal(dict, key, Val{});
+		return TGetObjVal<Val>{};
 	}
 	template<typename Val, typename Dict, typename Key>
 		auto GetCtnrVal(const Dict& dict, const Key& key)

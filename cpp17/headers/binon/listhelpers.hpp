@@ -130,7 +130,13 @@ namespace binon {
 			List&
 		)
 	{
-		list.value().at(index) = MakeObj(v);
+		auto& elem = list.value().at(index);
+		if constexpr(std::is_base_of_v<SList,List>) {
+			elem = MakeTypeCodeObj(list.mElemCode, v);
+		}
+		else {
+			elem = MakeObj(v);
+		}
 		return list;
 	}
 
@@ -144,7 +150,12 @@ namespace binon {
 			List&
 		)
 	{
-		list.value().push_back(MakeObj(v));
+		if constexpr(std::is_base_of_v<SList,List>) {
+			list.value().push_back(MakeTypeCodeObj(list.mElemCode, v));
+		}
+		else {
+			list.value().push_back(MakeObj(v));
+		}
 		return list;
 	}
 	template<typename List, typename T>
@@ -155,7 +166,14 @@ namespace binon {
 			List&
 		)
 	{
-		list.value().push_back(MakeObj(std::forward<T>(v)));
+		using std::move;
+		if constexpr(std::is_base_of_v<SList,List>) {
+			list.value().push_back(MakeTypeCodeObj(list.mElemCode, move(v)));
+		}
+		else {
+			list.value().push_back(MakeObj(move(v)));
+		}
+
 		return list;
 	}
 

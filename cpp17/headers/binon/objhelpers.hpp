@@ -36,7 +36,7 @@ namespace binon {
 	//	This works because HyStr is StrObj::TValue.
 	//
 	//template<TCType T> auto MakeObj(const T& v) -> TValObj<T>;
-	//template<TValueType T> auto MakeObj(T&& v) noexcept -> TValObj<T>;
+	//template<TValueType T> auto MakeObj(T&& v) -> TValObj<T>;
 
 	//	ObjWrapper offers an alternative to MakeObj as a means of converting an
 	//	arbitrary value into a BinONObj. You can have one of these be a function
@@ -117,10 +117,23 @@ namespace binon {
 		return TValObj<T>(v);
 	}
 
-	template<typename T> auto MakeObj(T&& v) noexcept
+	template<typename T> auto MakeObj(T&& v)
 		BINON_CONCEPTS_FN(TValueType<T>, kIsTValue<T>, TValObj<T>)
 	{
 		return TValObj<T>(std::forward<T>(v));
+	}
+
+	//---- MakeTypeCodeObj -----------------------------------------------------
+
+	template<typename T> auto MakeTypeCodeObj(CodeByte typeCode, const T& v)
+		BINON_CONCEPTS_FN(TCType<T>, kIsTCType<T>, BinONObj)
+	{
+		return BinONObj{MakeObj(v)}.asTypeCodeObj(typeCode);
+	}
+	template<typename T> auto MakeTypeCodeObj(CodeByte typeCode, T&& v)
+		BINON_CONCEPTS_FN(TCType<T>, kIsTCType<T>, BinONObj)
+	{
+		return BinONObj{MakeObj(std::move(v))}.asTypeCodeObj(typeCode);
 	}
 
 	//---- ObjWrapper ----------------------------------------------------------
