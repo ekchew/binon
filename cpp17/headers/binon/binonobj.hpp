@@ -13,6 +13,7 @@
 #include <functional>
 #include <optional>
 #include <ostream>
+#include <sstream>
 #include <type_traits>
 #include <variant>
 
@@ -155,9 +156,12 @@ namespace binon {
 		//
 		//		auto list = std::move(myBinONObj).asObj<ListObj,SList>;
 		//
-		//	Note that asObj() is cslled automatically by TypeConv and the
+		//	Note that asObj() is called automatically by TypeConv and the
 		//	various helper functions that depend on it, so you may never need to
 		//	call it directly.
+		//
+		//	If even the type conversion is not possible, asObj() will throw
+		//	TypeErr.
 		template<typename Obj, typename... Alts>
 			auto asObj() const& BINON_CONCEPTS_FN(
 				ObjType<Obj> && (ObjType<Alts> && ...),
@@ -270,10 +274,16 @@ namespace binon {
 	template<typename Obj>
 		auto BinONObj::tryAlts() const& BINON_CONCEPTS_FN(
 			ObjType<Obj>, kIsObj<Obj>, Obj
-		) {
-			return std::get<Obj>(*this);
-				// should throw std::bad_variant_access
-		}
+		)
+	{
+		std::ostringstream oss;
+		oss << "unsupported BinON type conversion (from type code ";
+		typeCode().printRepr(oss);
+		oss << " to ";
+		Obj::kTypeCode.printRepr(oss);
+		oss << ')';
+		throw TypeErr{oss.str()};
+	}
 	template<typename Obj, typename Alt, typename... Alts>
 		auto BinONObj::tryAlts() const& BINON_CONCEPTS_FN(
 			ObjType<Obj> && ObjType<Alt> && (ObjType<Alts> && ...),
