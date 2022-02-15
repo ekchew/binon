@@ -17,7 +17,7 @@ namespace binon {
 		auto& stdList = list.value();
 		stdList.reserve(vals.size());
 		for(auto& v: vals) {
-			stdList.push_back(v.asTypeCodeObj(elemCode));
+			stdList.push_back(std::move(v).asTypeCodeObj(elemCode));
 		}
 		return list;
 	}

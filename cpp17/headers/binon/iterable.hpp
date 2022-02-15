@@ -33,11 +33,7 @@ namespace binon {
 	//	specializations.
 
 	template<typename T, typename Ctnr>
-		BINON_IF_CONCEPTS(requires TCType<T>)
 		class IterBase {
-		 #if !BINON_CONCEPTS
-			static_assert(kIsTCType<T>, "iterator type T unknown to BinON");
-		 #endif
 		 protected:
 			using TStdCtnr = typename Ctnr::TValue;
 			using TStdIter = typename TStdCtnr::iterator;
@@ -87,11 +83,7 @@ namespace binon {
 	//	ConstIterator specializations.
 
 	template<typename T, typename Ctnr>
-		BINON_IF_CONCEPTS(requires TCType<T>)
 		class ConstIterBase {
-		 #if !BINON_CONCEPTS
-			static_assert(kIsTCType<T>, "iterator type T unknown to BinON");
-		 #endif
 		 protected:
 			using TStdCtnr = typename Ctnr::TValue;
 			using TStdIter = typename TStdCtnr::const_iterator;
@@ -201,11 +193,12 @@ namespace binon {
 
 	template<typename T>
 		struct Iterable<T,SList> {
+			using TValue = T;
 			using TCtnr = SList;
-			using TStdCtnr = SList::TValue;
+			using TStdCtnr = TCtnr::TValue;
 			using TStdIter = TStdCtnr::iterator;
 
-			struct Iter: IterBase<T,TCtnr> {
+			struct Iter: IterBase<TValue,TCtnr> {
 				Iter(TCtnr& ctnr, TStdIter&& stdIter);
 				auto operator++ () -> Iter&;
 				auto operator++ (int) -> Iter;
@@ -223,11 +216,138 @@ namespace binon {
 		};
 	template<typename T>
 		struct ConstIterable<T,SList> {
+			using TValue = T;
 			using TCtnr = SList;
-			using TStdCtnr = SList::TValue;
+			using TStdCtnr = TCtnr::TValue;
 			using TStdIter = TStdCtnr::const_iterator;
 
-			struct Iter: ConstIterBase<T,TCtnr> {
+			struct Iter: ConstIterBase<TValue,TCtnr> {
+				Iter(const TCtnr& ctnr, TStdIter&& stdIter);
+				auto operator++ () -> Iter&;
+				auto operator++ (int) -> Iter;
+				void load() final;
+			};
+
+			ConstIterable(const TCtnr& ctnr);
+			auto begin() const -> Iter;
+			auto end() const -> Iter;
+
+		 private:
+			const TCtnr* mPCtnr;
+		};
+
+	//---- SKDict Iterable and ConstIterable specializations -------------------
+	//
+	//	With an SKDict, you supply a type that maps onto its key. The iterator
+	//	then produces pairs of Key,BinONObj. The flush() method for Iterable
+	//	will only update the BinONObj value since the keys are constant in
+	//	unordered_map iterators.
+
+	template<typename Key>
+		struct Iterable<Key,SKDict> {
+			using TValue = std::pair<Key,BinONObj>;
+			using TCtnr = SKDict;
+			using TStdCtnr = TCtnr::TValue;
+			using TStdIter = TStdCtnr::iterator;
+
+			struct Iter: IterBase<TValue,TCtnr> {
+				Iter(TCtnr& ctnr, TStdIter&& stdIter);
+				auto operator++ () -> Iter&;
+				auto operator++ (int) -> Iter;
+				void load() final;
+				void flush() final;
+				~Iter() override;
+			};
+
+			Iterable(TCtnr& ctnr);
+			auto begin() -> Iter;
+			auto end() -> Iter;
+
+		 private:
+			TCtnr* mPCtnr;
+		};
+	template<typename Key>
+		struct ConstIterable<Key,SKDict> {
+			using TValue = std::pair<Key,BinONObj>;
+			using TCtnr = SKDict;
+			using TStdCtnr = TCtnr::TValue;
+			using TStdIter = TStdCtnr::const_iterator;
+
+			struct Iter: ConstIterBase<TValue,TCtnr> {
+				Iter(const TCtnr& ctnr, TStdIter&& stdIter);
+				auto operator++ () -> Iter&;
+				auto operator++ (int) -> Iter;
+				void load() final;
+			};
+
+			ConstIterable(const TCtnr& ctnr);
+			auto begin() const -> Iter;
+			auto end() const -> Iter;
+
+		 private:
+			const TCtnr* mPCtnr;
+		};
+
+	//---- SDict Iterable and ConstIterable specializations --------------------
+	//
+	//	With an SDict, you provide both key and value types that must map to the
+	//	corresponding type codes in the SDict object. With the AsIterable() and
+	//	AsConstIterable() methods, you need to pack the two types into a
+	//	std::pair.
+	//
+	//	Example:
+	//
+	//		using std::cout;
+	//		using std::pair;
+	//		using std::string_view;
+	//		auto sDict = MakeSDict(
+	//			kStrObjCode, kIntObjCode,
+	//			{{"foo", 1}, {"bar", 2}, {"baz", 3}}
+	//		);
+	//		for(auto& pair: AsIterable<pair<string_view,int>>(sDict)) {
+	//			pair.second *= pair.second;
+	//		}
+	//		for(auto& pair: AsConstIterable<pair<string_view,int>>(sDict)) {
+	//			cout << pair.first << ": " << pair.second << '\n';
+	//		}
+	//
+	//	Possible output:
+	//
+	//		bar: 4
+	//		baz: 9
+	//		foo: 1
+
+	template<typename Key, typename Val>
+		struct Iterable<std::pair<Key,Val>,SDict> {
+			using TValue = std::pair<Key,Val>;
+			using TCtnr = SDict;
+			using TStdCtnr = TCtnr::TValue;
+			using TStdIter = TStdCtnr::iterator;
+
+			struct Iter: IterBase<TValue,TCtnr> {
+				Iter(TCtnr& ctnr, TStdIter&& stdIter);
+				auto operator++ () -> Iter&;
+				auto operator++ (int) -> Iter;
+				void load() final;
+				void flush() final;
+				~Iter() override;
+			};
+
+			Iterable(TCtnr& ctnr);
+			auto begin() -> Iter;
+			auto end() -> Iter;
+
+		 private:
+			TCtnr* mPCtnr;
+		};
+	template<typename Key, typename Val>
+		struct ConstIterable<std::pair<Key,Val>,SDict> {
+			using TValue = std::pair<Key,Val>;
+			using TCtnr = SDict;
+			using TStdCtnr = TCtnr::TValue;
+			using TStdIter = TStdCtnr::const_iterator;
+
+			struct Iter: ConstIterBase<TValue,TCtnr> {
 				Iter(const TCtnr& ctnr, TStdIter&& stdIter);
 				auto operator++ () -> Iter&;
 				auto operator++ (int) -> Iter;
@@ -466,6 +586,260 @@ namespace binon {
 		return Iter{*mPCtnr, mPCtnr->value().cbegin()};
 	}
 	template<typename T> auto ConstIterable<T,SList>::end() const -> Iter {
+		return Iter{*mPCtnr, mPCtnr->value().cend()};
+	}
+
+	//---- Iterable<T,SKDict> --------------------------------------------------
+
+	template<typename K>
+		Iterable<K,SKDict>::Iter::Iter(
+			TCtnr& ctnr, TStdIter&& stdIter
+		):
+		IterBase<TValue,TCtnr>{ctnr, std::forward<TStdIter>(stdIter)}
+	{
+		if(this->validIter()) {
+			load();
+		}
+	}
+	template<typename K>
+		auto Iterable<K,SKDict>::Iter::operator++ ()
+		-> Iter&
+	{
+		return this->increment(), *this;
+	}
+	template<typename K>
+		auto Iterable<K,SKDict>::Iter::operator++ (int)
+		-> Iter
+	{
+		auto copy = *this;
+		return this->increment(), copy;
+	}
+	template<typename K>
+		void Iterable<K,SKDict>::Iter::load()
+	{
+		this->mTemp = std::make_pair(
+			GetObjVal<K>(this->mStdIter->first),
+			this->mStdIter->second
+		);
+	}
+	template<typename K>
+		void Iterable<K,SKDict>::Iter::flush()
+	{
+		this->mStdIter->second = this->mTemp->second;
+	}
+	template<typename K>
+		Iterable<K,SKDict>::Iter::~Iter()
+	{
+		if(this->validIter()) {
+			flush();
+		}
+	}
+	template<typename K>
+		Iterable<K,SKDict>::Iterable(TCtnr& ctnr):
+			mPCtnr{&ctnr}
+	{
+		if(TGetObj<K>::kTypeCode != ctnr.mKeyCode) {
+			throw TypeErr{
+				"Iterable key type does not map to SKDict key code"
+			};
+		}
+	}
+	template<typename K>
+		auto Iterable<K,SKDict>::begin() -> Iter
+	{
+		return Iter{*mPCtnr, mPCtnr->value().begin()};
+	}
+	template<typename K>
+		auto Iterable<K,SKDict>::end() -> Iter
+	{
+		return Iter{*mPCtnr, mPCtnr->value().end()};
+	}
+
+	//---- ConstIterable<T,SKDict> ---------------------------------------------
+
+	template<typename K>
+		ConstIterable<K,SKDict>::Iter::Iter(
+			const TCtnr& ctnr, TStdIter&& stdIter
+		):
+		ConstIterBase<TValue,TCtnr>{ctnr, std::forward<TStdIter>(stdIter)}
+	{
+		if(this->validIter()) {
+			load();
+		}
+	}
+	template<typename K>
+		auto ConstIterable<K,SKDict>::Iter::operator++ ()
+		-> Iter&
+	{
+		return this->increment(), *this;
+	}
+	template<typename K>
+		auto ConstIterable<K,SKDict>::Iter::operator++ (int)
+		-> Iter
+	{
+		auto copy = *this;
+		return this->increment(), copy;
+	}
+	template<typename K>
+		void ConstIterable<K,SKDict>::Iter::load()
+	{
+		this->mTemp = std::make_pair(
+			GetObjVal<K>(this->mStdIter->first),
+			this->mStdIter->second
+		);
+	}
+	template<typename K>
+		ConstIterable<K,SKDict>::ConstIterable(
+			const TCtnr& ctnr
+		):
+		mPCtnr{&ctnr}
+	{
+		if(TGetObj<K>::kTypeCode != ctnr.mKeyCode) {
+			throw TypeErr{
+				"ConstIterable key type does not map to SKDict key code"
+			};
+		}
+	}
+	template<typename K>
+		auto ConstIterable<K,SKDict>::begin() const -> Iter
+	{
+		return Iter{*mPCtnr, mPCtnr->value().cbegin()};
+	}
+	template<typename K>
+		auto ConstIterable<K,SKDict>::end() const -> Iter
+	{
+		return Iter{*mPCtnr, mPCtnr->value().cend()};
+	}
+
+	//---- Iterable<T,SDict> --------------------------------------------------
+
+	template<typename K, typename V>
+		Iterable<std::pair<K,V>,SDict>::Iter::Iter(
+			TCtnr& ctnr, TStdIter&& stdIter
+		):
+		IterBase<TValue,TCtnr>{ctnr, std::forward<TStdIter>(stdIter)}
+	{
+		if(this->validIter()) {
+			load();
+		}
+	}
+	template<typename K, typename V>
+		auto Iterable<std::pair<K,V>,SDict>::Iter::operator++ ()
+		-> Iter&
+	{
+		return this->increment(), *this;
+	}
+	template<typename K, typename V>
+		auto Iterable<std::pair<K,V>,SDict>::Iter::operator++ (int)
+		-> Iter
+	{
+		auto copy = *this;
+		return this->increment(), copy;
+	}
+	template<typename K, typename V>
+		void Iterable<std::pair<K,V>,SDict>::Iter::load()
+	{
+		this->mTemp = std::make_pair(
+			GetObjVal<K>(this->mStdIter->first),
+			GetObjVal<V>(this->mStdIter->second)
+		);
+	}
+	template<typename K, typename V>
+		void Iterable<std::pair<K,V>,SDict>::Iter::flush()
+	{
+		this->mStdIter->second = MakeObj(this->mTemp.second);
+	}
+	template<typename K, typename V>
+		Iterable<std::pair<K,V>,SDict>::Iter::~Iter()
+	{
+		if(this->validIter()) {
+			flush();
+		}
+	}
+	template<typename K, typename V>
+		Iterable<std::pair<K,V>,SDict>::Iterable(TCtnr& ctnr):
+			mPCtnr{&ctnr}
+	{
+		if(TGetObj<K>::kTypeCode != ctnr.mKeyCode) {
+			throw TypeErr{
+				"Iterable key type does not map to SDict key code"
+			};
+		}
+		if(TGetObj<V>::kTypeCode != ctnr.mValCode) {
+			throw TypeErr{
+				"Iterable value type does not map to SDict value code"
+			};
+		}
+	}
+	template<typename K, typename V>
+		auto Iterable<std::pair<K,V>,SDict>::begin() -> Iter
+	{
+		return Iter{*mPCtnr, mPCtnr->value().begin()};
+	}
+	template<typename K, typename V>
+		auto Iterable<std::pair<K,V>,SDict>::end() -> Iter
+	{
+		return Iter{*mPCtnr, mPCtnr->value().end()};
+	}
+
+	//---- ConstIterable<T,SDict> ---------------------------------------------
+
+	template<typename K, typename V>
+		ConstIterable<std::pair<K,V>,SDict>::Iter::Iter(
+			const TCtnr& ctnr, TStdIter&& stdIter
+		):
+		ConstIterBase<TValue,TCtnr>{ctnr, std::forward<TStdIter>(stdIter)}
+	{
+		if(this->validIter()) {
+			load();
+		}
+	}
+	template<typename K, typename V>
+		auto ConstIterable<std::pair<K,V>,SDict>::Iter::operator++ ()
+		-> Iter&
+	{
+		return this->increment(), *this;
+	}
+	template<typename K, typename V>
+		auto ConstIterable<std::pair<K,V>,SDict>::Iter::operator++ (int)
+		-> Iter
+	{
+		auto copy = *this;
+		return this->increment(), copy;
+	}
+	template<typename K, typename V>
+		void ConstIterable<std::pair<K,V>,SDict>::Iter::load()
+	{
+		this->mTemp = std::make_pair(
+			GetObjVal<K>(this->mStdIter->first),
+			GetObjVal<V>(this->mStdIter->second)
+		);
+	}
+	template<typename K, typename V>
+		ConstIterable<std::pair<K,V>,SDict>::ConstIterable(
+			const TCtnr& ctnr
+		):
+		mPCtnr{&ctnr}
+	{
+		if(TGetObj<K>::kTypeCode != ctnr.mKeyCode) {
+			throw TypeErr{
+				"ConstIterable key type does not map to SDict key code"
+			};
+		}
+		if(TGetObj<V>::kTypeCode != ctnr.mValCode) {
+			throw TypeErr{
+				"ConstIterable value type does not map to SDict value code"
+			};
+		}
+	}
+	template<typename K, typename V>
+		auto ConstIterable<std::pair<K,V>,SDict>::begin() const -> Iter
+	{
+		return Iter{*mPCtnr, mPCtnr->value().cbegin()};
+	}
+	template<typename K, typename V>
+		auto ConstIterable<std::pair<K,V>,SDict>::end() const -> Iter
+	{
 		return Iter{*mPCtnr, mPCtnr->value().cend()};
 	}
 
