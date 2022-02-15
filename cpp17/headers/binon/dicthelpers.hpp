@@ -84,36 +84,35 @@ namespace binon {
 	//==== Template Implementation =============================================
 
 	namespace details {
-	 	template<typename Result, typename Callback, typename Key>
-			auto ApplyKey(Callback&& callback, const Key& key)
-			BINON_CONCEPTS_FN(
-				std::regular_invocable<Callback BINON_COMMA BinONObj>
-					&& TCType<Key>,
-				kIsTCType<Key>,
-				Result
-			)
+		template<typename Dict, typename Key>
+			auto MakeKeyObj(const Dict& dict, const Key& key) -> BinONObj
 		{
-			using std::forward;
-			using std::is_same_v;
-			if constexpr(is_same_v<std::decay_t<Key>, BinONObj>) {
-				if constexpr(is_same_v<Result, void>) {
-					forward<Callback>(callback)(key);
-				}
-				else {
-					return static_cast<Result>(
-						forward<Callback>(callback)(key)
-					);
-				}
+			using std::is_base_of_v;
+			if constexpr(std::is_same_v<BinONObj,Key>) {
+				return key;
+			}
+			else if constexpr(
+				is_base_of_v<SKDict,Dict> ||
+				is_base_of_v<SDict,Dict>
+			) {
+				return MakeTypeCodeObj(dict.mKeyCode, key);
 			}
 			else {
-				if constexpr(is_same_v<Result, void>) {
-					forward<Callback>(callback)(MakeObj(key));
-				}
-				else {
-					return static_cast<Result>(
-						forward<Callback>(callback)(MakeObj(key))
-					);
-				}
+				return MakeObj(key);
+			}
+		}
+		template<typename Dict, typename Val>
+			auto MakeValObj(const Dict& dict, const Val& val) -> BinONObj
+		{
+			using std::is_base_of_v;
+			if constexpr(std::is_same_v<BinONObj,Val>) {
+				return val;
+			}
+			else if constexpr(is_base_of_v<SDict,Dict>) {
+				return MakeTypeCodeObj(dict.mValCode, val);
+			}
+			else {
+				return MakeObj(val);
 			}
 		}
 	}
@@ -128,15 +127,13 @@ namespace binon {
 			OptRef<const BinONObj>
 		)
 	{
-		auto find = [&dict](const BinONObj& keyObj) -> OptRef<const BinONObj> {
-			auto& map = dict.value();
-			auto pPair = map.find(keyObj);
-			if(pPair != map.end()) {
-				return pPair->second;
-			}
-			return std::nullopt;
-		};
-		return details::ApplyKey<OptRef<const BinONObj>>(find, key);
+		auto keyObj = details::MakeKeyObj(dict, key);
+		auto& map = dict.value();
+		auto iter = map.find(keyObj);
+		if(iter != map.end()) {
+			return iter->second;
+		}
+		return std::nullopt;
 	}
 	template<typename Dict, typename Key>
 		auto FindObj(Dict& dict, const Key& key)
@@ -146,15 +143,13 @@ namespace binon {
 			OptRef<BinONObj>
 		)
 	{
-		auto find = [&dict](const BinONObj& keyObj) -> OptRef<BinONObj> {
-			auto& map = dict.value();
-			auto pPair = map.find(keyObj);
-			if(pPair != map.end()) {
-				return pPair->second;
-			}
-			return std::nullopt;
-		};
-		return details::ApplyKey<OptRef<BinONObj>>(find, key);
+		auto keyObj = details::MakeKeyObj(dict, key);
+		auto& map = dict.value();
+		auto iter = map.find(keyObj);
+		if(iter != map.end()) {
+			return iter->second;
+		}
+		return std::nullopt;
 	}
 
  	//---- GetCtnrVal function templates ---------------------------------------
@@ -174,8 +169,8 @@ namespace binon {
 		if(optObj) {
 			return *optObj;
 		}
-		SetCtnrVal(dict, key, Val{});
-		return TGetObjVal<Val>{};
+		SetCtnrVal(dict, key, Val());
+		return TGetObjVal<Val>();
 	}
 	template<typename Val, typename Dict, typename Key>
 		auto GetCtnrVal(const Dict& dict, const Key& key)
@@ -185,7 +180,7 @@ namespace binon {
 			TGetObjVal<Val>
 		)
 	{
-		return GetObjVal<Val>(dict.value().at(MakeObj(key)));
+		return GetObjVal<Val>(dict.value().at(details::MakeKeyObj(dict, key)));
 	}
 
 	//---- CtnrTValue function templates ---------------------------------------
@@ -199,13 +194,16 @@ namespace binon {
 		)
 	{
 		auto& map = dict.value();
-		auto keyObj{MakeObj(key)};
+		auto keyObj{details::MakeKeyObj(dict, key)};
 		if(autoAlloc) {
-			auto pPair = map.find(keyObj);
-			if(pPair == map.end()) {
-				pPair = map.insert(*pPair, {keyObj, TValObj<Val>()});
+			auto iter = map.find(keyObj);
+			if(iter == map.end()) {
+				iter = map.insert(
+					*iter,
+					{keyObj, MakeValObj(dict, Val())}
+				);
 			}
-			return ObjTValue<Val>(pPair->second);
+			return ObjTValue<Val>(iter->second);
 		}
 		else {
 			return ObjTValue<Val>(map.at(keyObj));
@@ -222,7 +220,7 @@ namespace binon {
 		)
 	{
 		auto& map = dict.value();
-		return ObjTValue<Val>(map.at(MakeObj(key)));
+		return ObjTValue<Val>(map.at(details::MakeKeyObj(dict, key)));
 	}
 	template<typename Val, typename Dict, typename Key>
 		auto CtnrTValue(
@@ -235,7 +233,9 @@ namespace binon {
 		)
 	{
 		auto& map = dict.value();
-		return ObjTValue<Val>(std::move(map.at(MakeObj(key))));
+		return ObjTValue<Val>(
+			std::move(map.at(details::MakeKeyObj(dict, key)))
+		);
 	}
 
 	//---- SetCtnrVal function templates ---------------------------------------
@@ -248,7 +248,10 @@ namespace binon {
 			Dict&
 		)
 	{
-		dict.value().insert_or_assign(MakeObj(key), MakeObj(val));
+		dict.value().insert_or_assign(
+			details::MakeKeyObj(dict, key),
+			details::MakeValObj(dict, val)
+		);
 		return dict;
 	}
 
@@ -263,7 +266,7 @@ namespace binon {
 		)
 	{
 		auto& map = dict.value();
-		auto iter = map.find(MakeObj(key));
+		auto iter = map.find(details::MakeKeyObj(dict, key));
 		if(iter == map.end()) {
 			return false;
 		}
