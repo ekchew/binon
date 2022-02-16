@@ -20,11 +20,6 @@ namespace binon {
 		mValue{std::move(ctnr)}
 	{
 	}
-	[[noreturn]] void CtnrBase::CastError() {
-		throw TypeErr{
-			"BinON container object constructed with unexpected value type"
-		};
-	}
 
 	//---- ListBase ------------------------------------------------------------
 
@@ -49,7 +44,7 @@ namespace binon {
 			return std::any_cast<TValue&>(mValue);
 		}
 		catch(std::bad_any_cast&) {
-			CastError();
+			this->castError<TValue>();
 		}
 
 	}
@@ -61,7 +56,7 @@ namespace binon {
 			return std::any_cast<TValue&&>(std::move(mValue));
 		}
 		catch(std::bad_any_cast&) {
-			CastError();
+			this->castError<TValue>();
 		}
 	}
 	auto ListBase::value() const& -> const TValue& {
@@ -143,7 +138,7 @@ namespace binon {
 			oss << "SList is missing an element code (";
 			BinONObj{*this}.print(oss);
 			oss << ')';
-			throw TypeErr{oss.str()};
+			throw NoTypeCode{oss.str()};
 		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();

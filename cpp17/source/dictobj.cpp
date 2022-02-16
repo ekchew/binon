@@ -46,7 +46,7 @@ namespace binon {
 			return std::any_cast<TValue&>(mValue);
 		}
 		catch(std::bad_any_cast&) {
-			CastError();
+			this->castError<TValue>();
 		}
 
 	}
@@ -58,7 +58,7 @@ namespace binon {
 			return std::any_cast<TValue&&>(std::move(mValue));
 		}
 		catch(std::bad_any_cast&) {
-			CastError();
+			this->castError<TValue>();
 		}
 	}
 	auto DictBase::value() const& -> const TValue& {
@@ -159,7 +159,7 @@ namespace binon {
 			oss << "SKDict is missing a key code (";
 			BinONObj{*this}.print(oss);
 			oss << ')';
-			throw TypeErr{oss.str()};
+			throw NoTypeCode{oss.str()};
 		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();
@@ -259,7 +259,7 @@ namespace binon {
 			oss << " code (";
 			BinONObj{*this}.print(oss);
 			oss << ')';
-			throw TypeErr{oss.str()};
+			throw NoTypeCode{oss.str()};
 		}
 		RequireIO rio{stream, requireIO};
 		auto& u = value();

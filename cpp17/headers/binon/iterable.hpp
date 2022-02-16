@@ -131,14 +131,14 @@ namespace binon {
 	//
 	//	It is specialized for each of the 3 container types, and the default
 	//	general implementation is actually illegal (similar to the TypeConv
-	//	class). Its constructor will throw a TypeErr.
+	//	class). Its constructor will throw a NonCtnrType.
 	//
 	//	There is an AsIterable<T>() helper function which you would typically
 	//	call to instantiate this struct.
 
 	template<typename T, typename Ctnr>
 		struct Iterable {
-			Iterable(Ctnr); // throws TypeErr
+			Iterable(Ctnr); // throws NonCtnrType
 		};
 
 	//---- ConstIterable struct template ---------------------------------------
@@ -152,7 +152,7 @@ namespace binon {
 
 	template<typename T, typename Ctnr>
 		struct ConstIterable {
-			ConstIterable(Ctnr); // throws TypeErr
+			ConstIterable(Ctnr); // throws NonCtnrType
 		};
 
 	//---- Helper functions ----------------------------------------------------
@@ -462,9 +462,9 @@ namespace binon {
 	template<typename T, typename C>
 		Iterable<T,C>::Iterable(C)
 	{
-		throw TypeErr(
+		throw NonCtnrType{
 			"binon::Iterable requires container type"
-		);
+		};
 	}
 
 	//---- ConstIterable -------------------------------------------------------
@@ -472,9 +472,9 @@ namespace binon {
 	template<typename T, typename C>
 		ConstIterable<T,C>::ConstIterable(C)
 	{
-		throw TypeErr(
+		throw NonCtnrType{
 			"binon::ConstIterable requires container type"
-		);
+		};
 	}
 
 	//---- Helper functions ----------------------------------------------------
@@ -535,7 +535,7 @@ namespace binon {
 		Iterable<T,SList>::Iterable(TCtnr& ctnr): mPCtnr{&ctnr}
 	{
 		if(TGetObj<T>::kTypeCode != ctnr.mElemCode) {
-			throw TypeErr{
+			throw BadIterType{
 				"Iterable type T does not map to SList element code"
 			};
 		}
@@ -577,7 +577,7 @@ namespace binon {
 		ConstIterable<T,SList>::ConstIterable(const TCtnr& ctnr): mPCtnr{&ctnr}
 	{
 		if(TGetObj<T>::kTypeCode != ctnr.mElemCode) {
-			throw TypeErr{
+			throw BadIterType{
 				"ConstIterable type T does not map to SList element code"
 			};
 		}
@@ -639,7 +639,7 @@ namespace binon {
 			mPCtnr{&ctnr}
 	{
 		if(TGetObj<K>::kTypeCode != ctnr.mKeyCode) {
-			throw TypeErr{
+			throw BadIterType{
 				"Iterable key type does not map to SKDict key code"
 			};
 		}
@@ -695,7 +695,7 @@ namespace binon {
 		mPCtnr{&ctnr}
 	{
 		if(TGetObj<K>::kTypeCode != ctnr.mKeyCode) {
-			throw TypeErr{
+			throw BadIterType{
 				"ConstIterable key type does not map to SKDict key code"
 			};
 		}
@@ -761,12 +761,12 @@ namespace binon {
 			mPCtnr{&ctnr}
 	{
 		if(TGetObj<K>::kTypeCode != ctnr.mKeyCode) {
-			throw TypeErr{
+			throw BadIterType{
 				"Iterable key type does not map to SDict key code"
 			};
 		}
 		if(TGetObj<V>::kTypeCode != ctnr.mValCode) {
-			throw TypeErr{
+			throw BadIterType{
 				"Iterable value type does not map to SDict value code"
 			};
 		}
@@ -822,12 +822,12 @@ namespace binon {
 		mPCtnr{&ctnr}
 	{
 		if(TGetObj<K>::kTypeCode != ctnr.mKeyCode) {
-			throw TypeErr{
+			throw BadIterType{
 				"ConstIterable key type does not map to SDict key code"
 			};
 		}
 		if(TGetObj<V>::kTypeCode != ctnr.mValCode) {
-			throw TypeErr{
+			throw BadIterType{
 				"ConstIterable value type does not map to SDict value code"
 			};
 		}

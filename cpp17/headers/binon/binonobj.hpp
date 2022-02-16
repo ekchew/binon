@@ -160,8 +160,7 @@ namespace binon {
 		//	various helper functions that depend on it, so you may never need to
 		//	call it directly.
 		//
-		//	If even the type conversion is not possible, asObj() will throw
-		//	TypeErr.
+		//	asObj() may throw BadObjConv if the conversion fails.
 		template<typename Obj, typename... Alts>
 			auto asObj() const& BINON_CONCEPTS_FN(
 				ObjType<Obj> && (ObjType<Alts> && ...),
@@ -282,7 +281,7 @@ namespace binon {
 		oss << " to ";
 		Obj::kTypeCode.printRepr(oss);
 		oss << ')';
-		throw TypeErr{oss.str()};
+		throw BadObjConv{oss.str()};
 	}
 	template<typename Obj, typename Alt, typename... Alts>
 		auto BinONObj::tryAlts() const& BINON_CONCEPTS_FN(

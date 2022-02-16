@@ -57,7 +57,7 @@ namespace binon {
 			case kTrueObjCode.asUInt(): {
 				auto boolObj{GetObj<BoolObj>(*this)};
 				if(!boolObj.value()) {
-					throw TypeErr{"BoolObj could not convert to TrueObj"};
+					throw BadTypeConv{"BoolObj could not convert to TrueObj"};
 				}
 				return boolObj;
 			}
@@ -97,7 +97,7 @@ namespace binon {
 			case kTrueObjCode.asUInt(): {
 				auto boolObj{GetObj<BoolObj>(move(*this))};
 				if(!boolObj.value()) {
-					throw TypeErr{"BoolObj could not convert to TrueObj"};
+					throw BadTypeConv{"BoolObj could not convert to TrueObj"};
 				}
 				return move(boolObj);
 			}

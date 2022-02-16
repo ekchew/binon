@@ -1,45 +1,160 @@
 #ifndef BINON_ERRORS_HPP
 #define BINON_ERRORS_HPP
 
+#include <any>
+#include <sstream>
 #include <stdexcept>
 
 namespace binon {
 
-	//	The NoComparing and/or NoHashing exceptions may come up when trying to
-	//	use a container type as a dictionary key. This is currently not
-	//	supported.
-	struct NoComparing: std::invalid_argument {
-		using std::invalid_argument::invalid_argument;
-	};
-	struct NoHashing: std::invalid_argument {
+	//---- Exception Hierarchy -------------------------------------------------
+
+	//	std::exception
+	//		std::logic_error
+	//			std::invalid_argument
+	//				TypeErr
+	//					BadElemType
+	//					BadTypeConv
+	//						BadAnyCast
+	//							BadCtnrVal
+	//						BadIterType
+	//						BadObjConv
+	//						NonCtnrType
+	//						NonTCType
+	//					NoTypeCode
+
+	//---- General Exception Types ---------------------------------------------
+	//
+	//	These may be generally useful outside BinON.
+
+	//	TypeErr: an error involving data types
+	struct TypeErr: std::invalid_argument {
 		using std::invalid_argument::invalid_argument;
 	};
 
-	//	NullDeref indicates at attempt to dereference a null pointer (including
-	//	smart pointers such as std::unique_ptr and std::shared_ptr). This error
-	//	used to come up in the binon library back when objects were all
-	//	dynamically allocated. The newer implentation uses std::variant to
-	//	manage BinON objects, so NullDeref no longer comes up. But the error
-	//	type will be left in because it may have future use potential.
-	struct NullDeref: std::out_of_range {
-		using std::out_of_range::out_of_range;
+	//	BadTypeConv: a failed type conversion
+	struct BadTypeConv: TypeErr {
+		using TypeErr::TypeErr;
 	};
 
-	//	TypeErr is thrown in the following circumstances:
-	//		1. You forget to set the type code(s) for simple list or dictionary
-	//		   objects before you encode them.
-	//		2. The type codes of elements within simple containers do not match
-	//		   the specified code. (Again, this is checked at encoding time.)
-	//		3. The various functions in typeconv.hpp cannot ascertain the BinON
-	//		   object type corresponding to the general type you supply.
-	//		4. You initialize a list or dictionary object with something other
-	//		   than a TList or TDict. (This type check cannot be performed at
-	//		   compile-time as would normally be the case, so it is done when
-	//		   the value() method is called instead. See StdCtnr in mixins.hpp
-	//		   for an explanation.)
-	struct TypeErr: std::logic_error {
-		using std::logic_error::logic_error;
+	//	BadAnyCast: an alternative to std::bad_any_cast
+	//
+	//	Typically you would throw a BadAnyCast after catching a
+	//	std::bad_any_cast. The Make() class function gives you the opportunity
+	//	to provide a more informative error message.
+	//
+	struct BadAnyCast: BadTypeConv {
+		using BadTypeConv::BadTypeConv;
+
+		//	The Make() class function helps build a sensible message string for
+		//	the exception.
+		//
+		//	The context string would be something of the form "doing so-and-so".
+		//	(It can also be "" if you prefer not to supply one.) The error
+		//	message takes the form "bad any cast CONTEXT (casting from FROM_TYPE
+		//	to TO_TYPE)". Here, FROM_TYPE and TO_TYPE are std::type_info::name()
+		//	strings generated from the std::any-stored type and the casting
+		//	target type T you supply, respectively.
+		//
+		//	The second argument is the returned class type. It defaults to
+		//	BadAnyCast as you might expect, but if you subclass from this, you
+		//	can make it that class instead.
+		template<typename T, typename Cls=BadAnyCast>
+			static auto Make(const std::any& obj, const std::string& context)
+				-> Cls;
 	};
+
+	//---- BinON-Specific Exception Types --------------------------------------
+
+	//	BadElemType: illegal container element type
+	//
+	//	This exception typically occurs when you are trying to encode a simple
+	//	container type (SList, SKDict, or SDict) and fixed element, key, or
+	//	value type does not match that of a particular item in the container.
+	//	For example, if you had an SList with element code kStrObj and you stuck
+	//	an IntObj in it. (Note: if you use high-level helper functions like
+	//	MakeSList(), SetCtnrVal(), etc., such problems should be caught earlier
+	//	and most likely lead to a BadObjConv exception instead when it becomes
+	//	clear that an IntObj cannot convert to a StrObj.)
+	struct BadElemType: TypeErr {
+		using TypeErr::TypeErr;
+	};
+
+	//	BadCtnrVal: expected TValue instance missing from container object
+	//
+	//	Since container types like ListObj, DictObj, etc. store their value
+	//	internally as a std::any, it is possible they may have been constructed
+	//	with something other than they expected data type (e.g. ListObj::TValue,
+	//	or std::vector<BinONObj,BINON_ALLOCATOR<BinONObj>> to be precise). This
+	//	will become clear when you call value() on the container object and it
+	//	throws this exception.
+	struct BadCtnrVal: BadAnyCast {
+		using BadAnyCast::BadAnyCast;
+	};
+
+	//	If you use a type with Iterable or ConstIterable that doesn't map onto
+	//	the expected object type for a container element/key/value, you may see
+	//	this exception. For example, if you had an SList with element code
+	//	kStrObjCode and you tried to iterate it with an Iterable<int>, this
+	//	would be trouble.
+	struct BadIterType: BadTypeConv {
+		using BadTypeConv::BadTypeConv;
+	};
+
+	//	BadObjConv: conversion failure between specific BinON object types
+	//
+	//	This may be thrown by BinONObj::AsObj(),BinONObj::asTypeCodeObj(), and
+	//	other helper functions like GetObj() that call these internally.
+	struct BadObjConv: BadTypeConv {
+		using BadTypeConv::BadTypeConv;
+	};
+
+	//	NonCtnrType: a container type is needed
+	//
+	//	This exception is thrown if you try to pass a non-container type to
+	//	either the Iteratable or ConstIterable class.
+	struct NonCtnrType: BadTypeConv {
+		using BadTypeConv::BadTypeConv;
+	};
+
+	//	NonTCType: type is unknown to the TypeConv struct
+	//
+	//	TypeConv is a special data structure used to map common types like int
+	//	or std::string onto BinON object types like IntObj or StrObj. NonTCType
+	//	comes up when you give a type it cannot handle.
+	struct NonTCType: BadTypeConv {
+		using BadTypeConv::BadTypeConv;
+	};
+
+	//	NoTypeCode: no type code specified for simple container
+	//
+	//	This would typically come up if you allowed an SList, SKDict, or SDict
+	//	to default-construct and then never assigned the required
+	//	element/key/value type code(s) for it before trying to encode the
+	//	container.
+	struct NoTypeCode: TypeErr {
+		using TypeErr::TypeErr;
+	};
+
+	//==== Template Implementation =============================================
+
+	//---- BadAnyCast ----------------------------------------------------------
+
+	template<typename T, typename Cls>
+		auto BadAnyCast::Make(
+			const std::any& obj, const std::string& context
+		) -> Cls
+	{
+		std::ostringstream oss;
+		oss << "bad any cast";
+		if(context.length() > 0) {
+			oss << ' ' << context;
+		}
+		oss << " (casting from "
+			<< obj.type().name() << " to "
+			<< typeid(T).name() << ')';
+		return Cls{oss.str()};
+	}
 }
 
 #endif

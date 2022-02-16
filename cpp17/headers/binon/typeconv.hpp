@@ -71,7 +71,7 @@ namespace binon {
 	type. For example, ListObj::TValue and SList::TValue are the same type:
 	std::vector<BinONObj>. (That means technically, you could mix object types
 	even in a SList, but when you go to encode it, you will get a
-	binon::TypeErr exception. So don't!)
+	binon::BadElemType exception. So don't!)
 
 	Where you see "native value type" in the notes, this is the type the
 	enclosing object uses to store its data. For example, BoolObj::TValue is
@@ -140,11 +140,11 @@ namespace binon {
 			using TVal = void;
 			static auto ValTypeName() -> HyStr;
 			[[ noreturn ]] static auto GetObj(const BinONObj&) -> TObj;
-				// throws TypeErr
+				// throws NonTCType
 			[[ noreturn ]] static auto GetObj(BinONObj&&) -> TObj;
-				// throws TypeErr
+				// throws NonTCType
 			[[ noreturn ]] static auto GetVal(const BinONObj&) -> TVal;
-				// throws TypeErr
+				// throws NonTCType
 		};
 
 	//	kIsTCType<T> is true if T is one of the types known to TypeConv.
@@ -209,7 +209,9 @@ namespace binon {
 	template<typename T, typename Enable>
 		auto TypeConv<T,Enable>::GetVal(const BinONObj&) -> TVal
 	{
-		throw TypeErr{"type unknown to binon::TypeConv"};
+		std::ostringstream oss;
+		oss << "type " << typeid(T).name() << "unknown to binon::TypeConv";
+		throw NonTCType{oss.str()};
 	}
 
 	//---- TypeConv specializations --------------------------------------------

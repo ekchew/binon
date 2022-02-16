@@ -37,14 +37,14 @@ namespace binon {
 	//	the expected TList for list types or TDict for dictionary types, there
 	//	can be no compile-time check that constructor is called with the right
 	//	argument type. Instead, the value() methods perform this check at
-	//	run-time and throw TypeErr if there is a problem.
+	//	run-time and throw BadCtnrVal if there is a problem.
 	struct CtnrBase{
 		CtnrBase(const std::any& ctnr);
 		CtnrBase(std::any&& ctnr) noexcept;
 		CtnrBase() = default;
 	 protected:
 		std::any mValue;
-		[[noreturn]] static void CastError();
+		template<typename T> [[noreturn]] void castError();
 	};
 
 	//	ListBase implements a number of methods shared by ListObj and SList. In
@@ -90,6 +90,17 @@ namespace binon {
 	};
 
 	//	See also list helper functions defined in listhelpers.hpp.
+
+	//==== Template Implementation =============================================
+
+	//---- CtnrBase ------------------------------------------------------------
+
+	template<typename T> [[noreturn]] void CtnrBase::castError() {
+		throw BadAnyCast::Make<T,BadCtnrVal>(
+			mValue,
+			"accessing BinON container value"
+		);
+	}
 }
 
 #endif

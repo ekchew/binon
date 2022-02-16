@@ -16,7 +16,7 @@ namespace binon {
 		RequireIO rio{mStream, requireIO};
 		if(varObj.typeCode() != mElemCode) {
 			std::ostringstream oss;
-			oss << "expected BinON element " << mIndex
+			oss << "expected BinON container element " << mIndex
 				<< " to have type code ";
 			mElemCode.printRepr(oss);
 			oss << " rather than ";
@@ -24,7 +24,7 @@ namespace binon {
 			oss << " (object: ";
 			varObj.print(oss);
 			oss << ")";
-			throw TypeErr{oss.str()};
+			throw BadElemType{oss.str()};
 		}
 		if(mElemCode == kBoolObjCode) {
 			auto v = std::get<BoolObj>(varObj).mValue;
