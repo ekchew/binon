@@ -27,33 +27,36 @@ namespace binon {
 			{ return std::to_integer<unsigned int>(mValue >> 4); }
 		constexpr auto subtype() const noexcept -> unsigned int
 			{ return std::to_integer<unsigned int>(mValue & 0x0f_byte); }
-		constexpr auto typeCode() const noexcept -> CodeByte
-			//	A type code uniquely identifies the class of BinON object. It is
-			//	identical to a regular CodeByte except it does not allow the
-			//	default subtype of 0. typeCode() will raise this to the base
-			//	subtype of 1.
-			//
-			//	Suppose you have just decoded a FloatObj with code byte 0x30. If
-			//	you want to check that you are dealing with a FloatObj, you an
-			//	go myObj.typeCode() == kFloatObjCode. kFloatObjCode is 0x31, so
-			//	the typeCode() call makes sure you are comparing 0x31 to 0x31.
-			{
+
+		//	A type code uniquely identifies the class of BinON object. It is
+		//	identical to a regular CodeByte except it does not allow the default
+		//	subtype of 0. typeCode() will raise this to the base subtype of 1.
+		//
+		//	Suppose you have just decoded a FloatObj with code byte 0x30. If you
+		//	want to check that you are dealing with a FloatObj, you an go
+		//	myObj.typeCode() == kFloatObjCode. kFloatObjCode is 0x31, so the
+		//	typeCode() call makes sure you are comparing 0x31 to 0x31.
+		constexpr auto typeCode() const noexcept -> CodeByte {
 				auto i = toInt<int>();
 				if((i & 0x0F) == 0) {
 					return FromInt(i + 1);
 				}
 				return *this;
 			}
-		constexpr auto asUInt() const noexcept -> unsigned
-			//	This accessor was added mainly so that you can test CodeByte
-			//	values in a switch.
-			{ return static_cast<unsigned>(mValue); }
+
+		//	This accessor was added mainly so that you can test CodeByte values
+		//	in a switch.
+		constexpr auto asUInt() const noexcept -> unsigned {
+				return static_cast<unsigned>(mValue);
+			}
+
 		void write(TOStream& stream, bool requireIO=true) const;
 		void printRepr(std::ostream& stream) const;
 
 	 private:
 		std::byte mValue;
 	};
+	auto operator<< (std::ostream& stream, const CodeByte& cb) -> std::ostream&;
 
 	namespace details {
 
