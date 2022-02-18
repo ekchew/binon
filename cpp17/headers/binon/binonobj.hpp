@@ -143,7 +143,7 @@ namespace binon {
 		//			If value is > 2 ^ 63, it will be stored in vector form in
 		//			the IntObj.
 		//		IntObj -> UIntObj
-		//			Throws std::out_of_range if IntObj holds negative value
+		//			Throws NegUnsigned if IntObj holds negative value
 		//		Float32Obj -> FloatObj
 		//		SList -> ListObj
 		//		SKDict -> DictObj

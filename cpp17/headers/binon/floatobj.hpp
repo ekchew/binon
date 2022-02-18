@@ -1,6 +1,7 @@
 #ifndef BINON_FLOATOBJ_HPP
 #define BINON_FLOATOBJ_HPP
 
+#include "floattypes.hpp"
 #include "mixins.hpp"
 
 namespace binon {

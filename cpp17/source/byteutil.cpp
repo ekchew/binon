@@ -1,5 +1,4 @@
 #include "binon/byteutil.hpp"
-#include "binon/literals.hpp"
 
 #include <algorithm>
 #if !BINON_CPP20

@@ -67,7 +67,6 @@ DEPS := \
 	${HDR}ioutil.hpp \
 	${HDR}listobj.hpp \
 	${HDR}listhelpers.hpp \
-	${HDR}literals.hpp \
 	${HDR}macros.hpp \
 	${HDR}mixins.hpp \
 	${HDR}nullobj.hpp \

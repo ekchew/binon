@@ -6,6 +6,8 @@
 #include <limits>
 #include <sstream>
 
+#include <iostream>
+
 namespace binon {
 
 	//---- Local functions -----------------------------------------------------
@@ -100,12 +102,12 @@ namespace binon {
 			using std::optional;
 			if(std::holds_alternative<Scalar>(var)) {
 				auto scalar = get<Scalar>(var);
-				int n = sizeof(Scalar) - 8;
+				auto n = sizeof(Scalar) * 8u;
 				return [scalar, n]() mutable -> optional<byte> {
-					if(n <= 0) {
+					if(n == 0u) {
 						return nullopt;
 					}
-					n -= 8;
+					n -= 8u;
 					return ToByte(scalar >> n & 0xff);
 				};
 			}
@@ -270,12 +272,16 @@ namespace binon {
 		return oss.str();
 	}
 	auto IntVal::asScalar() const noexcept -> TScalar {
+		if(isScalar()) {
+			return scalar(kSkipNormalize);
+		}
 		TScalar i = 0;
 		auto pbg = PaddedByteGen(*this, sizeof(TScalar));
 		auto optByte = pbg();
 		while(optByte.has_value()) {
 			i <<= 8;
 			i |= std::to_integer<TScalar>(*optByte) & 0xff;
+			optByte = pbg();
 		}
 		return i;
 	}
@@ -307,12 +313,16 @@ namespace binon {
 		return oss.str();
 	}
 	auto UIntVal::asScalar() const noexcept -> TScalar {
+		if(isScalar()) {
+			return scalar(kSkipNormalize);
+		}
 		TScalar i = 0;
 		auto pbg = PaddedByteGen(*this, sizeof(TScalar));
 		auto optByte = pbg();
 		while(optByte.has_value()) {
 			i <<= 8;
 			i |= std::to_integer<TScalar>(*optByte) & 0xff;
+			optByte = pbg();
 		}
 		return i;
 	}
@@ -325,7 +335,7 @@ namespace binon {
 				std::numeric_limits<IntVal::TScalar>::max()
 			);
 		UIntVal::TScalar i;
-		if(v.isScalar() and (i = v.scalar()) <= kMaxInt) {
+		if(v.isScalar() and (i = v.scalar(kSkipNormalize)) <= kMaxInt) {
 			mValue = static_cast<IntVal::TScalar>(i);
 		}
 		else {
@@ -346,8 +356,8 @@ namespace binon {
 		-> const IntObj&
 	{
 		RequireIO rio{stream, requireIO};
-		if(mValue.canBeScalar()) {
-			auto v = mValue.scalar();
+		if(mValue.isScalar()) {
+			auto v = mValue.scalar(kSkipNormalize);
 			if(-0x40 <= v && v < 0x40) {
 				WriteWord(ToByte(v & 0x7f), stream, kSkipRequireIO);
 			}
@@ -451,8 +461,8 @@ namespace binon {
 	UIntObj::UIntObj(const IntVal& v) {
 		bool neg = false;
 		if(v.isScalar()) {
-			auto sc = v.scalar();
-			if(v.scalar() < 0) {
+			auto sc = v.scalar(kSkipNormalize);
+			if(sc < 0) {
 				neg = true;
 			}
 			else {
@@ -469,7 +479,7 @@ namespace binon {
 			}
 		}
 		if(neg) {
-			throw std::out_of_range{
+			throw NegUnsigned{
 				"cannot convert negative IntObj to UIntObj"
 			};
 		}
@@ -482,8 +492,8 @@ namespace binon {
 		-> const UIntObj&
 	{
 		RequireIO rio{stream, requireIO};
-		if(mValue.canBeScalar()) {
-			auto v = mValue.scalar();
+		if(mValue.isScalar()) {
+			auto v = mValue.scalar(kSkipNormalize);
 			if(v < 0x80) {
 				WriteWord(ToByte(v), stream, kSkipRequireIO);
 			}
@@ -574,8 +584,10 @@ auto std::hash<binon::IntVal>::operator() (
 {
 	using binon::IntVal;
 	using std::string_view;
-	if(iv.canBeScalar()) {
-		return std::hash<binon::IntVal::TScalar>{}(iv.scalar());
+	if(iv.isScalar()) {
+		return std::hash<binon::IntVal::TScalar>{}(
+			iv.scalar(binon::kSkipNormalize)
+		);
 	}
 	//	Works in clang++, broken in g++
 	//return std::hash<binon::IntVal::TVect>{}(iv.vect());
@@ -592,8 +604,10 @@ auto std::hash<binon::UIntVal>::operator() (
 {
 	using binon::UIntVal;
 	using std::string_view;
-	if(iv.canBeScalar()) {
-		return std::hash<binon::UIntVal::TScalar>{}(iv.scalar());
+	if(iv.isScalar()) {
+		return std::hash<binon::UIntVal::TScalar>{}(
+			iv.scalar(binon::kSkipNormalize)
+		);
 	}
 	//	Works in clang++, broken in g++
 	//return std::hash<binon::IntVal::TVect>{}(iv.vect());

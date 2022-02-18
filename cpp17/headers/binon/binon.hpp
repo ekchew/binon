@@ -21,7 +21,6 @@
 #include "iterable.hpp"
 #include "listhelpers.hpp"
 #include "listobj.hpp"
-#include "literals.hpp"
 #include "macros.hpp"
 #include "nullobj.hpp"
 #include "objhelpers.hpp"

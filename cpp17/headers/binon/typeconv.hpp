@@ -328,7 +328,7 @@ namespace binon {
 					return TypeConv<TObj>::GetObj(std::move(obj));
 				}
 			static auto GetVal(const BinONObj& obj) -> TVal {
-					return GetObj(obj).value().scalar();
+					return GetObj(obj).value().asScalar();
 				}
 		};
  #if BINON_CONCEPTS
@@ -363,7 +363,7 @@ namespace binon {
 					return TypeConv<TObj>::GetObj(std::move(obj));
 				}
 			static auto GetVal(const BinONObj& obj) -> TVal {
-					return GetObj(obj).value().scalar();
+					return GetObj(obj).value().asScalar();
 				}
 		};
 	template<>

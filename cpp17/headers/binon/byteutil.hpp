@@ -1,8 +1,8 @@
 #ifndef BINON_BYTEUTIL_HPP
 #define BINON_BYTEUTIL_HPP
 
+#include "errors.hpp"
 #include "ioutil.hpp"
-#include "literals.hpp"
 
 #include <algorithm>
 #include <array>
@@ -20,6 +20,31 @@
 
 namespace binon {
 	static_assert(CHAR_BIT == 8, "binon requires 8-bit bytes");
+
+	//-------------------------------------------------------------------------
+	//
+	//	_byte Literal
+	//
+	//	std::byte's implementation does not seem to include a format for byte
+	//	literals. So with this user-defined literal, you can now write 0x42_byte
+	//	instead of std::byte{0x42}.
+	//
+	//	It is currently the only definition within the binon::literals
+	//	namespace.
+	//
+	//	Note that you will likely see a ByteTrunc exception at compile time if
+	//	you try to specify a byte greater than 0xff_byte.
+	//
+	//-------------------------------------------------------------------------
+
+	inline namespace literals {
+		constexpr auto operator ""_byte(unsigned long long i) {
+				if(i > std::numeric_limits<std::uint8_t>::max()) {
+					throw ByteTrunc{"_byte literal out of range"};
+				}
+				return std::byte{static_cast<unsigned char>(i)};
+			}
+	}
 
 	//-------------------------------------------------------------------------
 	//
@@ -43,7 +68,7 @@ namespace binon {
 	//		i (integral type): value to convert to std::byte assertRange (bool,
 	//		optional): make sure i fits in a byte?
 	//			This option defaults to true only in debug builds. When true,
-	//			ToByte may throw a std::out_of_range if i's value lies outside
+	//			ToByte may throw a ByteTrunc if i's value lies outside
 	//			of what can be represented by a byte. To put it another way, i
 	//			must lie in the range [-128,255].
 	//
@@ -56,7 +81,7 @@ namespace binon {
 			if(	assertRange &&
 				static_cast<std::make_unsigned_t<I>>(i) >= 0x100u)
 			{
-				throw std::out_of_range{"int to byte conversion loses data"};
+				throw ByteTrunc{"int to byte conversion loses data"};
 			}
 			return std::byte{static_cast<unsigned char>(i)};
 		}

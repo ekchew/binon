@@ -22,6 +22,11 @@ namespace binon {
 	//						NonCtnrType
 	//						NonTCType
 	//					NoTypeCode
+	//			std::out_of_range
+	//				NegUnsigned
+	//				TruncErr
+	//					ByteTrunc
+	//					IntTrunc
 
 	//---- General Exception Types ---------------------------------------------
 	//
@@ -62,6 +67,43 @@ namespace binon {
 		template<typename T, typename Cls=BadAnyCast>
 			static auto Make(const std::any& obj, const std::string& context)
 				-> Cls;
+	};
+
+	//	NegUnsigned signifies you are trying to assign a negative value to an
+	//	unsigned integral container. In BinON terms, the automatic type
+	//	conversion from IntObj to UIntObj that can happen with helper functions
+	//	like GetObjVal() may throw this. BinON is quite strict in terms of not
+	//	allowing conversions among its own data structures that cause any sort
+	//	of loss of information.
+	struct NegUnsigned: std::out_of_range {
+		using std::out_of_range::out_of_range;
+	};
+
+	//	This error signifies some sort of data loss through truncation.
+	//	Typically, it indicates you are losing the most-significant bits of a
+	//	value through type narrowing.
+	struct TruncErr: std::out_of_range {
+		using std::out_of_range::out_of_range;
+	};
+
+	//	ByteTrunc throws when you try to squeeze a large integral value into a
+	//	std::byte container (see byteutil.hpp).
+	struct ByteTrunc: TruncErr {
+		using TruncErr::TruncErr;
+	};
+
+	//	IntTrunc may throw when casting a wide integral type into a narrower one
+	//	leads to data loss. BinON currently only throws this if you call
+	//	IntVal::scalar() or UIntVal::scalar() when the stored value is in byte
+	//	vector form and exceeds what would fit a 64-bit representation. (Note
+	//	that you can call asScalar() instead if you don't mind the truncation.)
+	//
+	//	BinON does NOT perform a range check when you go something like
+	//	GetObjVal<int>(myIntObj). There is an implied static_cast when you are
+	//	converting to a basic type like int and it assumes you know what you are
+	//	doing.
+	struct IntTrunc: TruncErr {
+		using TruncErr::TruncErr;
 	};
 
 	//---- BinON-Specific Exception Types --------------------------------------
