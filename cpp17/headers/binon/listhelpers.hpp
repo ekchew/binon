@@ -17,8 +17,6 @@ namespace binon {
 		concept ListType = kIsListType<T>;
  )
 
- #if BINON_CONCEPTS
-
 	//	These functions create a list object out of any TypeConv-supported
 	//	values you pass in. For example:
 	//
@@ -71,8 +69,6 @@ namespace binon {
 	//	auto AppendVal(List& list, const T& v) -> List&;
 	//template<ListType List, TCType T>
 	//	auto AppendVal(List& list, T&& v) -> List&;
-
- #endif
 
 	//==== Template Implementation =============================================
 
