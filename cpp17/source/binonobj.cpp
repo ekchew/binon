@@ -1,4 +1,3 @@
-#include "binon/binonobj.hpp"
 #include "binon/objhelpers.hpp"
 
 #include <iostream>

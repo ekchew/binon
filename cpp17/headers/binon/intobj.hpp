@@ -1,7 +1,6 @@
 #ifndef BINON_INTOBJ_HPP
 #define BINON_INTOBJ_HPP
 
-#include "errors.hpp"
 #include "hystr.hpp"
 #include "mixins.hpp"
 #include <ostream>

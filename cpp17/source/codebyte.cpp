@@ -1,5 +1,4 @@
 #include "binon/codebyte.hpp"
-#include "binon/byteutil.hpp"
 
 #include <sstream>
 

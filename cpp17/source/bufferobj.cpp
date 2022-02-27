@@ -1,5 +1,4 @@
 #include "binon/bufferobj.hpp"
-#include "binon/intobj.hpp"
 
 #include <cstring>
 

@@ -3,11 +3,9 @@
 
 #include "nullobj.hpp"
 #include "boolobj.hpp"
-#include "intobj.hpp"
 #include "floatobj.hpp"
 #include "bufferobj.hpp"
 #include "strobj.hpp"
-#include "listobj.hpp"
 #include "dictobj.hpp"
 #include "optutil.hpp"
 #include <functional>

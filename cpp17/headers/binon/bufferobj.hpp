@@ -1,8 +1,6 @@
 #ifndef BINON_BUFFEROBJ_HPP
 #define BINON_BUFFEROBJ_HPP
 
-#include "byteutil.hpp"
-#include "hystr.hpp"
 #include "intobj.hpp"
 #include <ostream>
 

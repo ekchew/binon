@@ -23,93 +23,153 @@ target:
 ${TEST_DIR}: ${HDR}/binon.hpp
 	mkdir -p ${TEST_DIR}
 
-SRC := source/
-SRC_NAMES := \
-	binonobj \
-	boolobj \
-	bufferobj \
-	byteutil \
-	codebyte \
-	dicthelpers \
-	dictobj \
-	floatobj \
-	hashutil \
-	intobj \
-	ioutil \
-	listhelpers \
-	listobj \
-	objhelpers \
-	packelems \
-	strobj
-OBJ := ${DEST_DIR}/obj/
-OBJS := ${addprefix ${OBJ},${SRC_NAMES}}
-OBJS := ${addsuffix .o,${OBJS}}
+OBJS := \
+	build/packelems.o \
+	build/codebyte.o \
+	build/listhelpers.o \
+	build/hashutil.o \
+	build/binonobj.o \
+	build/ioutil.o \
+	build/listobj.o \
+	build/dictobj.o \
+	build/floatobj.o \
+	build/strobj.o \
+	build/intobj.o \
+	build/boolobj.o \
+	build/dicthelpers.o \
+	build/objhelpers.o \
+	build/bufferobj.o \
+	build/byteutil.o
 
 ${DEST_DIR}/lib/libbinon.a: ${OBJS}
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
-DEPS := \
-	${HDR}binonobj.hpp \
-	${HDR}boolobj.hpp \
-	${HDR}bufferobj.hpp \
-	${HDR}byteutil.hpp \
-	${HDR}codebyte.hpp \
-	${HDR}dicthelpers.hpp \
-	${HDR}dictobj.hpp \
-	${HDR}errors.hpp \
-	${HDR}floatobj.hpp \
-	${HDR}floattypes.hpp \
-	${HDR}hashutil.hpp \
-	${HDR}hystr.hpp \
-	${HDR}idgen.hpp \
-	${HDR}intobj.hpp \
-	${HDR}iterable.hpp \
-	${HDR}ioutil.hpp \
-	${HDR}listobj.hpp \
-	${HDR}listhelpers.hpp \
-	${HDR}macros.hpp \
-	${HDR}mixins.hpp \
-	${HDR}nullobj.hpp \
-	${HDR}objhelpers.hpp \
-	${HDR}optutil.hpp \
-	${HDR}packelems.hpp \
-	${HDR}strobj.hpp \
-	${HDR}typeconv.hpp \
-	${HDR}typeutil.hpp \
+binon_errors_hpp_deps := \
+	headers/binon/errors.hpp \
 	makefile
-${HDR}/binon.hpp: ${DEPS}
+binon_macros_hpp_deps := \
+	headers/binon/macros.hpp \
+	makefile
+binon_ioutil_hpp_deps := \
+	headers/binon/ioutil.hpp \
+	${binon_macros_hpp_deps}
+binon_byteutil_hpp_deps := \
+	headers/binon/byteutil.hpp \
+	${binon_errors_hpp_deps} \
+	${binon_ioutil_hpp_deps}
+binon_typeutil_hpp_deps := \
+	headers/binon/typeutil.hpp \
+	${binon_macros_hpp_deps}
+binon_hashutil_hpp_deps := \
+	headers/binon/hashutil.hpp \
+	${binon_byteutil_hpp_deps} \
+	${binon_typeutil_hpp_deps}
+binon_codebyte_hpp_deps := \
+	headers/binon/codebyte.hpp \
+	${binon_byteutil_hpp_deps}
+binon_mixins_hpp_deps := \
+	headers/binon/mixins.hpp \
+	${binon_hashutil_hpp_deps} \
+	${binon_codebyte_hpp_deps}
+binon_nullobj_hpp_deps := \
+	headers/binon/nullobj.hpp \
+	${binon_mixins_hpp_deps}
+binon_optutil_hpp_deps := \
+	headers/binon/optutil.hpp \
+	makefile
+binon_boolobj_hpp_deps := \
+	headers/binon/boolobj.hpp \
+	${binon_mixins_hpp_deps}
+binon_listobj_hpp_deps := \
+	headers/binon/listobj.hpp \
+	${binon_mixins_hpp_deps}
+binon_dictobj_hpp_deps := \
+	headers/binon/dictobj.hpp \
+	${binon_listobj_hpp_deps}
+binon_hystr_hpp_deps := \
+	headers/binon/hystr.hpp \
+	${binon_macros_hpp_deps}
+binon_intobj_hpp_deps := \
+	headers/binon/intobj.hpp \
+	${binon_mixins_hpp_deps} \
+	${binon_hystr_hpp_deps}
+binon_bufferobj_hpp_deps := \
+	headers/binon/bufferobj.hpp \
+	${binon_intobj_hpp_deps}
+binon_strobj_hpp_deps := \
+	headers/binon/strobj.hpp \
+	${binon_mixins_hpp_deps} \
+	${binon_hystr_hpp_deps}
+binon_floattypes_hpp_deps := \
+	headers/binon/floattypes.hpp \
+	makefile
+binon_floatobj_hpp_deps := \
+	headers/binon/floatobj.hpp \
+	${binon_mixins_hpp_deps} \
+	${binon_floattypes_hpp_deps}
+binon_binonobj_hpp_deps := \
+	headers/binon/binonobj.hpp \
+	${binon_nullobj_hpp_deps} \
+	${binon_optutil_hpp_deps} \
+	${binon_boolobj_hpp_deps} \
+	${binon_dictobj_hpp_deps} \
+	${binon_bufferobj_hpp_deps} \
+	${binon_strobj_hpp_deps} \
+	${binon_floatobj_hpp_deps}
+binon_packelems_hpp_deps := \
+	headers/binon/packelems.hpp \
+	${binon_binonobj_hpp_deps}
+binon_typeconv_hpp_deps := \
+	headers/binon/typeconv.hpp \
+	${binon_binonobj_hpp_deps}
+binon_objhelpers_hpp_deps := \
+	headers/binon/objhelpers.hpp \
+	${binon_typeconv_hpp_deps}
+binon_listhelpers_hpp_deps := \
+	headers/binon/listhelpers.hpp \
+	${binon_objhelpers_hpp_deps}
+binon_dicthelpers_hpp_deps := \
+	headers/binon/dicthelpers.hpp \
+	${binon_objhelpers_hpp_deps}
+
+headers/binon/binon.hpp: \
+	${binon_iterable_hpp_deps} \
+	${binon_dicthelpers_hpp_deps} \
+	${binon_idgen_hpp_deps} \
+	${binon_listhelpers_hpp_deps}
 	touch ${HDR}/binon.hpp
 
-${OBJ}binonobj.o: ${SRC}binonobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}binonobj.cpp -o ${OBJ}binonobj.o
-${OBJ}boolobj.o: ${SRC}boolobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}boolobj.cpp -o ${OBJ}boolobj.o
-${OBJ}bufferobj.o: ${SRC}bufferobj.cpp ${HDR}bufferobj.hpp \
-	${HDR}intobj.hpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}bufferobj.cpp -o ${OBJ}bufferobj.o
-${OBJ}byteutil.o: ${SRC}byteutil.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}byteutil.cpp -o ${OBJ}byteutil.o
-${OBJ}codebyte.o: ${SRC}codebyte.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}codebyte.cpp -o ${OBJ}codebyte.o
-${OBJ}dicthelpers.o: ${SRC}dicthelpers.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}dicthelpers.cpp -o ${OBJ}dicthelpers.o
-${OBJ}dictobj.o: ${SRC}dictobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}dictobj.cpp -o ${OBJ}dictobj.o
-${OBJ}floatobj.o: ${SRC}floatobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}floatobj.cpp -o ${OBJ}floatobj.o
-${OBJ}hashutil.o: ${SRC}hashutil.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}hashutil.cpp -o ${OBJ}hashutil.o
-${OBJ}intobj.o: ${SRC}intobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}intobj.cpp -o ${OBJ}intobj.o
-${OBJ}ioutil.o: ${SRC}ioutil.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}ioutil.cpp -o ${OBJ}ioutil.o
-${OBJ}objhelpers.o: ${SRC}objhelpers.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}objhelpers.cpp -o ${OBJ}objhelpers.o
-${OBJ}listobj.o: ${SRC}listobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}listobj.cpp -o ${OBJ}listobj.o
-${OBJ}listhelpers.o: ${SRC}listhelpers.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}listhelpers.cpp -o ${OBJ}listhelpers.o
-${OBJ}packelems.o: ${SRC}packelems.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}packelems.cpp -o ${OBJ}packelems.o
-${OBJ}strobj.o: ${SRC}strobj.cpp ${DEPS}
-	${CXX} ${FLAGS} ${SRC}strobj.cpp -o ${OBJ}strobj.o
+build/packelems.o: source/packelems.cpp ${binon_packelems_hpp_deps}
+	${CXX} ${FLAGS} source/packelems.cpp -o build/packelems.o
+build/codebyte.o: source/codebyte.cpp ${binon_codebyte_hpp_deps}
+	${CXX} ${FLAGS} source/codebyte.cpp -o build/codebyte.o
+build/listhelpers.o: source/listhelpers.cpp ${binon_listhelpers_hpp_deps}
+	${CXX} ${FLAGS} source/listhelpers.cpp -o build/listhelpers.o
+build/hashutil.o: source/hashutil.cpp ${binon_hashutil_hpp_deps}
+	${CXX} ${FLAGS} source/hashutil.cpp -o build/hashutil.o
+build/binonobj.o: source/binonobj.cpp ${binon_objhelpers_hpp_deps}
+	${CXX} ${FLAGS} source/binonobj.cpp -o build/binonobj.o
+build/ioutil.o: source/ioutil.cpp ${binon_ioutil_hpp_deps}
+	${CXX} ${FLAGS} source/ioutil.cpp -o build/ioutil.o
+build/listobj.o: source/listobj.cpp ${binon_packelems_hpp_deps}
+	${CXX} ${FLAGS} source/listobj.cpp -o build/listobj.o
+build/dictobj.o: source/dictobj.cpp ${binon_packelems_hpp_deps}
+	${CXX} ${FLAGS} source/dictobj.cpp -o build/dictobj.o
+build/floatobj.o: source/floatobj.cpp ${binon_floatobj_hpp_deps}
+	${CXX} ${FLAGS} source/floatobj.cpp -o build/floatobj.o
+build/strobj.o: source/strobj.cpp \
+	${binon_intobj_hpp_deps} \
+	${binon_strobj_hpp_deps}
+	${CXX} ${FLAGS} source/strobj.cpp -o build/strobj.o
+build/intobj.o: source/intobj.cpp ${binon_intobj_hpp_deps}
+	${CXX} ${FLAGS} source/intobj.cpp -o build/intobj.o
+build/boolobj.o: source/boolobj.cpp ${binon_boolobj_hpp_deps}
+	${CXX} ${FLAGS} source/boolobj.cpp -o build/boolobj.o
+build/dicthelpers.o: source/dicthelpers.cpp ${binon_dicthelpers_hpp_deps}
+	${CXX} ${FLAGS} source/dicthelpers.cpp -o build/dicthelpers.o
+build/objhelpers.o: source/objhelpers.cpp ${binon_objhelpers_hpp_deps}
+	${CXX} ${FLAGS} source/objhelpers.cpp -o build/objhelpers.o
+build/bufferobj.o: source/bufferobj.cpp ${binon_bufferobj_hpp_deps}
+	${CXX} ${FLAGS} source/bufferobj.cpp -o build/bufferobj.o
+build/byteutil.o: source/byteutil.cpp ${binon_byteutil_hpp_deps}
+	${CXX} ${FLAGS} source/byteutil.cpp -o build/byteutil.o
