@@ -5,6 +5,8 @@
 #include <optional>
 #include <utility>
 
+#include "macros.hpp"
+
 namespace binon {
 
 	//	OptRef class template

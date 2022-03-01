@@ -44,19 +44,22 @@ OBJS := \
 ${DEST_DIR}/lib/libbinon.a: ${OBJS}
 	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
 
-binon_errors_hpp_deps := \
-	headers/binon/errors.hpp \
-	makefile
 binon_macros_hpp_deps := \
 	headers/binon/macros.hpp \
 	makefile
 binon_ioutil_hpp_deps := \
 	headers/binon/ioutil.hpp \
 	${binon_macros_hpp_deps}
+binon_errors_hpp_deps := \
+	headers/binon/errors.hpp \
+	makefile
 binon_byteutil_hpp_deps := \
 	headers/binon/byteutil.hpp \
-	${binon_errors_hpp_deps} \
-	${binon_ioutil_hpp_deps}
+	${binon_ioutil_hpp_deps} \
+	${binon_errors_hpp_deps}
+binon_codebyte_hpp_deps := \
+	headers/binon/codebyte.hpp \
+	${binon_byteutil_hpp_deps}
 binon_typeutil_hpp_deps := \
 	headers/binon/typeutil.hpp \
 	${binon_macros_hpp_deps}
@@ -64,42 +67,16 @@ binon_hashutil_hpp_deps := \
 	headers/binon/hashutil.hpp \
 	${binon_byteutil_hpp_deps} \
 	${binon_typeutil_hpp_deps}
-binon_codebyte_hpp_deps := \
-	headers/binon/codebyte.hpp \
-	${binon_byteutil_hpp_deps}
 binon_mixins_hpp_deps := \
 	headers/binon/mixins.hpp \
-	${binon_hashutil_hpp_deps} \
-	${binon_codebyte_hpp_deps}
+	${binon_codebyte_hpp_deps} \
+	${binon_hashutil_hpp_deps}
 binon_nullobj_hpp_deps := \
 	headers/binon/nullobj.hpp \
 	${binon_mixins_hpp_deps}
-binon_optutil_hpp_deps := \
-	headers/binon/optutil.hpp \
-	makefile
 binon_boolobj_hpp_deps := \
 	headers/binon/boolobj.hpp \
 	${binon_mixins_hpp_deps}
-binon_listobj_hpp_deps := \
-	headers/binon/listobj.hpp \
-	${binon_mixins_hpp_deps}
-binon_dictobj_hpp_deps := \
-	headers/binon/dictobj.hpp \
-	${binon_listobj_hpp_deps}
-binon_hystr_hpp_deps := \
-	headers/binon/hystr.hpp \
-	${binon_macros_hpp_deps}
-binon_intobj_hpp_deps := \
-	headers/binon/intobj.hpp \
-	${binon_mixins_hpp_deps} \
-	${binon_hystr_hpp_deps}
-binon_bufferobj_hpp_deps := \
-	headers/binon/bufferobj.hpp \
-	${binon_intobj_hpp_deps}
-binon_strobj_hpp_deps := \
-	headers/binon/strobj.hpp \
-	${binon_mixins_hpp_deps} \
-	${binon_hystr_hpp_deps}
 binon_floattypes_hpp_deps := \
 	headers/binon/floattypes.hpp \
 	makefile
@@ -107,15 +84,38 @@ binon_floatobj_hpp_deps := \
 	headers/binon/floatobj.hpp \
 	${binon_mixins_hpp_deps} \
 	${binon_floattypes_hpp_deps}
+binon_listobj_hpp_deps := \
+	headers/binon/listobj.hpp \
+	${binon_mixins_hpp_deps}
+binon_dictobj_hpp_deps := \
+	headers/binon/dictobj.hpp \
+	${binon_listobj_hpp_deps}
+binon_optutil_hpp_deps := \
+	headers/binon/optutil.hpp \
+	${binon_macros_hpp_deps}
+binon_hystr_hpp_deps := \
+	headers/binon/hystr.hpp \
+	${binon_macros_hpp_deps}
+binon_strobj_hpp_deps := \
+	headers/binon/strobj.hpp \
+	${binon_hystr_hpp_deps} \
+	${binon_mixins_hpp_deps}
+binon_intobj_hpp_deps := \
+	headers/binon/intobj.hpp \
+	${binon_hystr_hpp_deps} \
+	${binon_mixins_hpp_deps}
+binon_bufferobj_hpp_deps := \
+	headers/binon/bufferobj.hpp \
+	${binon_intobj_hpp_deps}
 binon_binonobj_hpp_deps := \
 	headers/binon/binonobj.hpp \
 	${binon_nullobj_hpp_deps} \
-	${binon_optutil_hpp_deps} \
 	${binon_boolobj_hpp_deps} \
+	${binon_floatobj_hpp_deps} \
 	${binon_dictobj_hpp_deps} \
-	${binon_bufferobj_hpp_deps} \
+	${binon_optutil_hpp_deps} \
 	${binon_strobj_hpp_deps} \
-	${binon_floatobj_hpp_deps}
+	${binon_bufferobj_hpp_deps}
 binon_packelems_hpp_deps := \
 	headers/binon/packelems.hpp \
 	${binon_binonobj_hpp_deps}
