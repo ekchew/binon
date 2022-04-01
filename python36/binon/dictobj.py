@@ -9,7 +9,7 @@ class DictObj(BinONObj):
 	same length, this length is only encoded once ahead of the keys list.
 	"""
 	kBaseType = 9
-	
+
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
 		keys = ListObj.DecodeData(inF, asObj)
@@ -19,7 +19,7 @@ class DictObj(BinONObj):
 			values = values.value
 		dct = {k:v for k,v in zip(keys, values)}
 		return cls(dct) if asObj else dct
-	
+
 	@classmethod
 	def _OptimalObj(cls, value, inList):
 		if cls._OptimizeLog():
@@ -59,7 +59,7 @@ class DictObj(BinONObj):
 					)
 				return SKDict(value, keyCls=keys.elemCls)
 		return cls(value)
-	
+
 	def __init__(self, value=None):
 		super().__init__(value or {})
 	def encodeData(self, outF):
@@ -73,7 +73,7 @@ class SKDict(DictObj):
 	more general ListObj).
 	"""
 	kSubtype = 2
-	
+
 	def __init__(self, value, keyCls=None):
 		super().__init__(value)
 		if keyCls:
@@ -87,7 +87,7 @@ class SKDict(DictObj):
 				raise ValueError("could not determine SKDict key type")
 	def __repr__(self):
 		return f"SKDict({self.value!r}, keyCls={self.keyCls.__name__})"
-	
+
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
 		keys = SList.DecodeData(inF, asObj)
@@ -97,7 +97,7 @@ class SKDict(DictObj):
 			values = values.value
 		dct = {k:v for k,v in zip(keys, values)}
 		return cls(dct) if asObj else dct
-	
+
 	def encodeData(self, outF):
 		SList(self.value.keys(), elemCls=self.keyCls).encodeData(outF)
 		ListObj(self.value.values()).encodeElems(outF)
@@ -109,7 +109,7 @@ class SDict(DictObj):
 	allows both the keys and values to be encoded internally as SList data.
 	"""
 	kSubtype = 3
-	
+
 	def __init__(self, value, keyCls=None, valCls=None):
 		super().__init__(value)
 		if keyCls and valCls:
@@ -120,13 +120,13 @@ class SDict(DictObj):
 				key, val = next(iter(self.value.items()))
 			except StopIteration:
 				raise ValueError("could not determine SDict key/value types")
-			self.keyCls = keyCls if keyCls else type(self.AsObj(key))
-			self.valCls = valCls if valCls else type(self.AsObj(val))
+			self.keyCls = keyCls if keyCls else type(self.BaseObj(key))
+			self.valCls = valCls if valCls else type(self.BaseObj(val))
 	def __repr__(self):
 		return "SKDict({!r}, keyCls={}, valCls={})".format(
 			self.value, self.keyCls.__name__, self.valCls.__name__
 		)
-	
+
 	@classmethod
 	def DecodeData(cls, inF, asObj=False):
 		keys = SList.DecodeData(inF, asObj)
@@ -136,7 +136,7 @@ class SDict(DictObj):
 			values = values.value
 		dct = {k:v for k,v in zip(keys, values)}
 		return cls(dct) if asObj else dct
-	
+
 	def encodeData(self, outF):
 		SList(self.value.keys(), elemCls=self.keyCls).encodeData(outF)
 		SList(self.value.values(), elemCls=self.valCls).encodeElems(outF)
