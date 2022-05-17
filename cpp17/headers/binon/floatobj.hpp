@@ -18,7 +18,11 @@ namespace binon {
 		static constexpr auto kTypeCode = kFloatObjCode;
 		static constexpr auto kClsName = std::string_view{"FloatObj"};
 		TValue mValue;
+		explicit FloatObj(const Float32Obj& obj);
+		FloatObj(const FloatObj&) = default;
 		FloatObj(TValue v = 0.0);
+		auto operator= (const FloatObj&) -> FloatObj& = default;
+		auto operator= (FloatObj&&) noexcept -> FloatObj& = default;
 		auto operator== (const FloatObj& rhs) const noexcept
 			{ return equals(rhs); }
 		auto operator!= (const FloatObj& rhs) const noexcept

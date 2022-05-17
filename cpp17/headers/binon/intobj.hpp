@@ -231,9 +231,12 @@ namespace binon {
 		static constexpr auto kTypeCode = kIntObjCode;
 		static constexpr auto kClsName = std::string_view{"IntObj"};
 		TValue mValue;
-		explicit IntObj(const UIntVal& obj);
+		explicit IntObj(const UIntObj& obj);
+		IntObj(const IntObj&) = default;
 		IntObj(TValue v);
 		IntObj() = default;
+		auto operator= (const IntObj&) -> IntObj& = default;
+		auto operator= (IntObj&&) noexcept -> IntObj& = default;
 		auto operator== (const IntObj& rhs) const noexcept
 			{ return equals(rhs); }
 		auto operator!= (const IntObj& rhs) const noexcept
@@ -255,9 +258,12 @@ namespace binon {
 		static constexpr auto kTypeCode = kUIntCode;
 		static constexpr auto kClsName = std::string_view{"UIntObj"};
 		TValue mValue;
-		explicit UIntObj(const IntVal& obj);
+		explicit UIntObj(const IntObj& obj);
+		UIntObj(const UIntObj&) = default;
 		UIntObj(TValue v);
 		UIntObj() = default;
+		auto operator= (const UIntObj&) -> UIntObj& = default;
+		auto operator= (UIntObj&&) noexcept -> UIntObj& = default;
 		auto operator== (const UIntObj& rhs) const noexcept
 			{ return equals(rhs); }
 		auto operator!= (const UIntObj& rhs) const noexcept

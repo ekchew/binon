@@ -329,7 +329,8 @@ namespace binon {
 
 	//---- IntObj -------------------------------------------------------------
 
-	IntObj::IntObj(const UIntVal& v) {
+	IntObj::IntObj(const UIntObj& obj) {
+		auto v = obj.value();
 		constexpr auto kMaxInt =
 			static_cast<UIntVal::TScalar>(
 				std::numeric_limits<IntVal::TScalar>::max()
@@ -458,7 +459,8 @@ namespace binon {
 
 	//---- UIntObj ------------------------------------------------------------
 
-	UIntObj::UIntObj(const IntVal& v) {
+	UIntObj::UIntObj(const IntObj& obj) {
+		auto v = obj.value();
 		bool neg = false;
 		if(v.isScalar()) {
 			auto sc = v.scalar(kSkipNormalize);

@@ -293,7 +293,7 @@ namespace binon {
 					return static_cast<Obj>(pAlt->value(), pAlt->mKeyCode);
 				}
 				else {
-					return static_cast<Obj>(pAlt->value());
+					return static_cast<Obj>(*pAlt);
 				}
 			}
 			else {

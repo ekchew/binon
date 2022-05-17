@@ -10,6 +10,8 @@
 #include <unordered_map>
 
 namespace binon {
+	struct SKDict;
+	struct SDict;
 
 	//	TDict is the value type of all dictionary objects (e.g. it is synomymous
 	//	with DictObj::TValue). It is an unordered map where both key and value
@@ -24,7 +26,11 @@ namespace binon {
 	//	value() methods return a TDict rather than a TList, of course.
 	struct DictBase: CtnrBase {
 		using TValue = TDict;
-		using CtnrBase::CtnrBase;
+		DictBase(const DictBase&) = default;
+		DictBase(DictBase&&) = default;
+		DictBase() = default;
+		auto operator= (const DictBase&) -> DictBase& = default;
+		auto operator= (DictBase&&) noexcept -> DictBase& = default;
 		auto operator == (const DictBase& rhs) const -> bool;
 		auto operator != (const DictBase& rhs) const -> bool;
 		auto hasDefVal() const -> bool;
@@ -39,7 +45,13 @@ namespace binon {
 	struct DictObj: DictBase, StdCodec<DictObj> {
 		static constexpr auto kTypeCode = kDictObjCode;
 		static constexpr auto kClsName = std::string_view{"DictObj"};
-		using DictBase::DictBase;
+		explicit DictObj(const SKDict& obj);
+		explicit DictObj(const SDict& obj);
+		DictObj(const DictObj&) = default;
+		DictObj(DictObj&&) = default;
+		DictObj() = default;
+		auto operator= (const DictObj&) -> DictObj& = default;
+		auto operator= (DictObj&&) noexcept -> DictObj& = default;
 		auto encodeData(TOStream&, bool requireIO = true) const
 			-> const DictObj&;
 		auto decodeData(TIStream&, bool requireIO = true)
@@ -54,6 +66,11 @@ namespace binon {
 		SKDict(const std::any& value, CodeByte keyCode);
 		SKDict(std::any&& value, CodeByte keyCode) noexcept;
 		SKDict(CodeByte keyCode = kNoObjCode) noexcept;
+		explicit SKDict(const SDict& obj);
+		SKDict(const SKDict&) = default;
+		SKDict(SKDict&&) = default;
+		auto operator= (const SKDict&) -> SKDict& = default;
+		auto operator= (SKDict&&) noexcept -> SKDict& = default;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SKDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

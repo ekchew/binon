@@ -14,6 +14,7 @@
 
 namespace binon {
 	struct BinONObj;
+	struct SList;
 
 	using TList = std::vector<BinONObj,BINON_ALLOCATOR<BinONObj>>;
 
@@ -39,9 +40,11 @@ namespace binon {
 	//	argument type. Instead, the value() methods perform this check at
 	//	run-time and throw BadCtnrVal if there is a problem.
 	struct CtnrBase{
-		CtnrBase(const std::any& ctnr);
-		CtnrBase(std::any&& ctnr) noexcept;
+		CtnrBase(const CtnrBase& ctnrBase);
+		CtnrBase(CtnrBase&& ctnrBase) noexcept;
 		CtnrBase() = default;
+		auto operator= (const CtnrBase&) -> CtnrBase& = default;
+		auto operator= (CtnrBase&&) noexcept -> CtnrBase& = default;
 	 protected:
 		std::any mValue;
 		template<typename T> [[noreturn]] void castError();
@@ -52,7 +55,11 @@ namespace binon {
 	//	out of the CtnrBase's internal std::any member.
 	struct ListBase: CtnrBase {
 		using TValue = TList;
-		using CtnrBase::CtnrBase;
+		ListBase(const ListBase&) = default;
+		ListBase(ListBase&&) = default;
+		ListBase() = default;
+		auto operator= (const ListBase&) -> ListBase& = default;
+		auto operator= (ListBase&&) noexcept -> ListBase& = default;
 		auto operator == (const ListBase& rhs) const -> bool;
 		auto operator != (const ListBase& rhs) const -> bool;
 		auto hasDefVal() const -> bool;
@@ -67,7 +74,12 @@ namespace binon {
 	struct ListObj: ListBase, StdCodec<ListObj>  {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"ListObj"};
-		using ListBase::ListBase;
+		explicit ListObj(const SList& obj);
+		ListObj(const ListObj&) = default;
+		ListObj(ListObj&&) = default;
+		ListObj() = default;
+		auto operator= (const ListObj&) -> ListObj& = default;
+		auto operator= (ListObj&&) noexcept -> ListObj& = default;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const ListObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

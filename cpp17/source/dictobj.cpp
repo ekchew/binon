@@ -75,6 +75,12 @@ namespace binon {
 
 	//---- DictObj -------------------------------------------------------------
 
+	DictObj::DictObj(const SKDict& obj) {
+		value() = obj.value();
+	}
+	DictObj::DictObj(const SDict& obj) {
+		value() = obj.value();
+	}
 	auto DictObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const DictObj&
 	{
@@ -135,18 +141,23 @@ namespace binon {
 	//---- SKDict --------------------------------------------------------------
 
 	SKDict::SKDict(const std::any& value, CodeByte keyCode):
-		DictBase{value},
 		mKeyCode{keyCode}
 	{
+		this->mValue = value;
 	}
 	SKDict::SKDict(std::any&& value, CodeByte keyCode) noexcept:
-		DictBase{std::move(value)},
 		mKeyCode{keyCode}
 	{
+		this->mValue = std::move(value);
 	}
 	SKDict::SKDict(CodeByte keyCode) noexcept:
 		mKeyCode{keyCode}
 	{
+	}
+	SKDict::SKDict(const SDict& obj):
+		mKeyCode{obj.mKeyCode}
+	{
+		this->mValue = obj.value();
 	}
 	auto SKDict::encodeData(TOStream& stream, bool requireIO) const
 		-> const SKDict&
@@ -222,16 +233,16 @@ namespace binon {
 	//---- SDict ---------------------------------------------------------------
 
 	SDict::SDict(const std::any& value, CodeByte keyCode, CodeByte valCode):
-		DictBase{value},
 		mKeyCode{keyCode},
 		mValCode{valCode}
 	{
+		this->mValue = value;
 	}
 	SDict::SDict(std::any&& value, CodeByte keyCode, CodeByte valCode) noexcept:
-		DictBase{std::move(value)},
 		mKeyCode{keyCode},
 		mValCode{valCode}
 	{
+		this->mValue = std::move(value);
 	}
 	SDict::SDict(CodeByte keyCode, CodeByte valCode) noexcept:
 		mKeyCode{keyCode},

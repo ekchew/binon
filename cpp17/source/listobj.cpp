@@ -7,12 +7,12 @@ namespace binon {
 
 	//---- CtnrBase ------------------------------------------------------------
 
-	CtnrBase::CtnrBase(const std::any& ctnr):
-		mValue{ctnr}
+	CtnrBase::CtnrBase(const CtnrBase& ctnrBase):
+		mValue{ctnrBase.mValue}
 	{
 	}
-	CtnrBase::CtnrBase(std::any&& ctnr) noexcept:
-		mValue{std::move(ctnr)}
+	CtnrBase::CtnrBase(CtnrBase&& ctnrBase) noexcept:
+		mValue{std::move(ctnrBase.mValue)}
 	{
 	}
 
@@ -69,6 +69,9 @@ namespace binon {
 
 	//---- ListObj -------------------------------------------------------------
 
+	ListObj::ListObj(const SList& obj) {
+		this->mValue = obj.value();
+	}
 	auto ListObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const ListObj&
 	{
@@ -117,9 +120,9 @@ namespace binon {
 	//---- SList --------------------------------------------------------------
 
 	SList::SList(std::any value, CodeByte elemCode):
-		ListBase::ListBase{std::move(value)},
 		mElemCode{elemCode}
 	{
+		this->mValue = std::move(value);
 	}
 	SList::SList(CodeByte elemCode):
 		mElemCode{elemCode}

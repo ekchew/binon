@@ -4,6 +4,10 @@ namespace binon {
 
 	//---- FloatObj -----------------------------------------------------------
 
+	FloatObj::FloatObj(const Float32Obj& obj):
+		mValue{obj.mValue}
+	{
+	}
 	FloatObj::FloatObj(TValue v):
 		mValue{v}
 	{
