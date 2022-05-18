@@ -72,6 +72,12 @@ namespace binon {
 	ListObj::ListObj(const SList& obj) {
 		this->mValue = obj.value();
 	}
+	ListObj::ListObj(const TList& list) {
+		this->mValue = list;
+	}
+	ListObj::ListObj(TList&& list) noexcept {
+		this->mValue = std::move(list);
+	}
 	auto ListObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const ListObj&
 	{
@@ -119,10 +125,15 @@ namespace binon {
 
 	//---- SList --------------------------------------------------------------
 
-	SList::SList(std::any value, CodeByte elemCode):
+	SList::SList(const TList& list, CodeByte elemCode):
 		mElemCode{elemCode}
 	{
-		this->mValue = std::move(value);
+		this->mValue = list;
+	}
+	SList::SList(TList&& list, CodeByte elemCode) noexcept:
+		mElemCode{elemCode}
+	{
+		this->mValue = std::move(list);
 	}
 	SList::SList(CodeByte elemCode):
 		mElemCode{elemCode}

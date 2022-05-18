@@ -26,11 +26,7 @@ namespace binon {
 	//	value() methods return a TDict rather than a TList, of course.
 	struct DictBase: CtnrBase {
 		using TValue = TDict;
-		DictBase(const DictBase&) = default;
-		DictBase(DictBase&&) = default;
-		DictBase() = default;
-		auto operator= (const DictBase&) -> DictBase& = default;
-		auto operator= (DictBase&&) noexcept -> DictBase& = default;
+		using CtnrBase::CtnrBase;
 		auto operator == (const DictBase& rhs) const -> bool;
 		auto operator != (const DictBase& rhs) const -> bool;
 		auto hasDefVal() const -> bool;
@@ -47,11 +43,7 @@ namespace binon {
 		static constexpr auto kClsName = std::string_view{"DictObj"};
 		explicit DictObj(const SKDict& obj);
 		explicit DictObj(const SDict& obj);
-		DictObj(const DictObj&) = default;
-		DictObj(DictObj&&) = default;
-		DictObj() = default;
-		auto operator= (const DictObj&) -> DictObj& = default;
-		auto operator= (DictObj&&) noexcept -> DictObj& = default;
+		using DictBase::DictBase;
 		auto encodeData(TOStream&, bool requireIO = true) const
 			-> const DictObj&;
 		auto decodeData(TIStream&, bool requireIO = true)
@@ -67,10 +59,7 @@ namespace binon {
 		SKDict(std::any&& value, CodeByte keyCode) noexcept;
 		SKDict(CodeByte keyCode = kNoObjCode) noexcept;
 		explicit SKDict(const SDict& obj);
-		SKDict(const SKDict&) = default;
-		SKDict(SKDict&&) = default;
-		auto operator= (const SKDict&) -> SKDict& = default;
-		auto operator= (SKDict&&) noexcept -> SKDict& = default;
+		using DictBase::DictBase;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SKDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

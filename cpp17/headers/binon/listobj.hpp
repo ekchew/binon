@@ -55,11 +55,7 @@ namespace binon {
 	//	out of the CtnrBase's internal std::any member.
 	struct ListBase: CtnrBase {
 		using TValue = TList;
-		ListBase(const ListBase&) = default;
-		ListBase(ListBase&&) = default;
-		ListBase() = default;
-		auto operator= (const ListBase&) -> ListBase& = default;
-		auto operator= (ListBase&&) noexcept -> ListBase& = default;
+		using CtnrBase::CtnrBase;
 		auto operator == (const ListBase& rhs) const -> bool;
 		auto operator != (const ListBase& rhs) const -> bool;
 		auto hasDefVal() const -> bool;
@@ -75,11 +71,9 @@ namespace binon {
 		static constexpr auto kTypeCode = kListObjCode;
 		static constexpr auto kClsName = std::string_view{"ListObj"};
 		explicit ListObj(const SList& obj);
-		ListObj(const ListObj&) = default;
-		ListObj(ListObj&&) = default;
-		ListObj() = default;
-		auto operator= (const ListObj&) -> ListObj& = default;
-		auto operator= (ListObj&&) noexcept -> ListObj& = default;
+		ListObj(const TList& list);
+		ListObj(TList&& list) noexcept;
+		using ListBase::ListBase;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const ListObj&;
 		auto decodeData(TIStream& stream, bool requireIO = true)
@@ -91,7 +85,8 @@ namespace binon {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"SList"};
 		CodeByte mElemCode;
-		SList(std::any value, CodeByte elemCode);
+		SList(const TList& list, CodeByte elemCode);
+		SList(TList&& list, CodeByte elemCode) noexcept;
 		SList(CodeByte elemCode = kNoObjCode);
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SList&;
