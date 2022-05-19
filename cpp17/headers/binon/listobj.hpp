@@ -1,7 +1,6 @@
 #ifndef BINON_LISTOBJ_HPP
 #define BINON_LISTOBJ_HPP
 
-#include <any>
 #include <functional>
 #include <initializer_list>
 #include <optional>
@@ -18,52 +17,26 @@ namespace binon {
 
 	using TList = std::vector<BinONObj,BINON_ALLOCATOR<BinONObj>>;
 
-	//	CtnrBase lies at the base of a class hierarchy that looks like this:
-	//
-	//		CtnrBase
-	//			ListBase
-	//				ListObj SList
-	//			DictBase
-	//				DictObj SKDict SDict
-	//
-	//	It stores the value used by all these classes in a std::any instance.
-	//	This was done to get around a circular dependency problem. (For example,
-	//	ListObj is built around a vector of BinONObj, but a BinONObj can itself
-	//	be a ListObj. Each needs to know what the other is before it can be
-	//	defined, leading to an impass. By using std::any, BinONObj no longer
-	//	needs to know that a ListObj can contain them, thereby placating the
-	//	compiler.)
-	//
-	//	Since any container object can be initialized with any data type besides
-	//	the expected TList for list types or TDict for dictionary types, there
-	//	can be no compile-time check that constructor is called with the right
-	//	argument type. Instead, the value() methods perform this check at
-	//	run-time and throw BadCtnrVal if there is a problem.
-	struct CtnrBase{
-		CtnrBase(const CtnrBase& ctnrBase);
-		CtnrBase(CtnrBase&& ctnrBase) noexcept;
-		CtnrBase() = default;
-		auto operator= (const CtnrBase&) -> CtnrBase& = default;
-		auto operator= (CtnrBase&&) noexcept -> CtnrBase& = default;
-	 protected:
-		std::any mValue;
-		template<typename T> [[noreturn]] void castError();
-	};
-
 	//	ListBase implements a number of methods shared by ListObj and SList. In
 	//	particular, it implements the value() methods used to extract a TList
 	//	out of the CtnrBase's internal std::any member.
-	struct ListBase: CtnrBase {
+	struct ListBase {
 		using TValue = TList;
-		using CtnrBase::CtnrBase;
+		ListBase(const ListBase&) = default;
+		ListBase(ListBase&&) noexcept = default;
+		ListBase() = default;
+		auto operator= (const ListBase&) -> ListBase& = default;
+		auto operator= (ListBase&&) noexcept -> ListBase& = default;
 		auto operator == (const ListBase& rhs) const -> bool;
 		auto operator != (const ListBase& rhs) const -> bool;
-		auto hasDefVal() const -> bool;
-		auto value() & -> TValue&;
-		auto value() && -> TValue;
-		auto value() const& -> const TValue&;
-		auto size() const -> std::size_t;
+		auto value() & -> TValue& { return mValue; }
+		auto value() && -> TValue { return std::move(mValue); }
+		auto value() const& -> const TValue& { return mValue; }
+		auto size() const -> std::size_t { return mValue.size(); }
+		auto hasDefVal() const -> bool { return size() == 0; }
+
 	 protected:
+		TList mValue;
 		auto calcHash(std::size_t seed) const -> std::size_t;
 	};
 
@@ -81,6 +54,7 @@ namespace binon {
 		auto hash() const -> std::size_t;
 		void printArgs(std::ostream& stream) const;
 	};
+
 	struct SList: ListBase, StdCodec<SList> {
 		static constexpr auto kTypeCode = kSListCode;
 		static constexpr auto kClsName = std::string_view{"SList"};
@@ -97,17 +71,6 @@ namespace binon {
 	};
 
 	//	See also list helper functions defined in listhelpers.hpp.
-
-	//==== Template Implementation =============================================
-
-	//---- CtnrBase ------------------------------------------------------------
-
-	template<typename T> [[noreturn]] void CtnrBase::castError() {
-		throw BadAnyCast::Make<T,BadCtnrVal>(
-			mValue,
-			"accessing BinON container value"
-		);
-	}
 }
 
 #endif

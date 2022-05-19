@@ -3,6 +3,7 @@
 
 #include "listobj.hpp"
 
+#include <any>
 #include <functional>
 #include <optional>
 #include <sstream>
@@ -24,9 +25,13 @@ namespace binon {
 
 	//	DictBase is very much the dictionary counterpart to ListBase. Its
 	//	value() methods return a TDict rather than a TList, of course.
-	struct DictBase: CtnrBase {
+	struct DictBase {
 		using TValue = TDict;
-		using CtnrBase::CtnrBase;
+		DictBase(const DictBase&) = default;
+		DictBase(DictBase&&) noexcept = default;
+		DictBase() = default;
+		auto operator= (const DictBase&) -> DictBase& = default;
+		auto operator= (DictBase&&) noexcept -> DictBase& = default;
 		auto operator == (const DictBase& rhs) const -> bool;
 		auto operator != (const DictBase& rhs) const -> bool;
 		auto hasDefVal() const -> bool;
@@ -35,7 +40,9 @@ namespace binon {
 		auto value() const& -> const TValue&;
 		auto size() const -> std::size_t;
 	 protected:
-	   auto calcHash(std::size_t seed) const -> std::size_t;
+		std::any mValue;
+		auto calcHash(std::size_t seed) const -> std::size_t;
+		template<typename T> [[noreturn]] void castError();
 	};
 
 	struct DictObj: DictBase, StdCodec<DictObj> {
@@ -90,6 +97,17 @@ namespace binon {
 	};
 
 	//	See also dict helper functions defined in dicthelpers.hpp.
+
+	//==== Template Implementation =============================================
+
+	//---- CtnrBase ------------------------------------------------------------
+
+	template<typename T> [[noreturn]] void DictBase::castError() {
+		throw BadAnyCast::Make<T,BadCtnrVal>(
+			mValue,
+			"accessing BinON container value"
+		);
+	}
 }
 
 #endif

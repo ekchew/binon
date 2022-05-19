@@ -5,17 +5,6 @@
 
 namespace binon {
 
-	//---- CtnrBase ------------------------------------------------------------
-
-	CtnrBase::CtnrBase(const CtnrBase& ctnrBase):
-		mValue{ctnrBase.mValue}
-	{
-	}
-	CtnrBase::CtnrBase(CtnrBase&& ctnrBase) noexcept:
-		mValue{std::move(ctnrBase.mValue)}
-	{
-	}
-
 	//---- ListBase ------------------------------------------------------------
 
 	auto ListBase::operator == (const ListBase& rhs) const -> bool {
@@ -27,38 +16,6 @@ namespace binon {
 	}
 	auto ListBase::operator != (const ListBase& rhs) const -> bool {
 		return !(*this == rhs);
-	}
-	auto ListBase::hasDefVal() const -> bool {
-		return value().size() == 0;
-	}
-	auto ListBase::value() & -> TValue& {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&>(mValue);
-		}
-		catch(std::bad_any_cast&) {
-			this->castError<TValue>();
-		}
-
-	}
-	auto ListBase::value() && -> TValue {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&&>(std::move(mValue));
-		}
-		catch(std::bad_any_cast&) {
-			this->castError<TValue>();
-		}
-	}
-	auto ListBase::value() const& -> const TValue& {
-		return const_cast<ListBase*>(this)->value();
-	}
-	auto ListBase::size() const -> std::size_t {
-		return value().size();
 	}
 	auto ListBase::calcHash(std::size_t seed) const -> std::size_t {
 		for(auto& elem: value()) {
