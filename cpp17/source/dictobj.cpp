@@ -36,27 +36,11 @@ namespace binon {
 		return value().size() == 0;
 	}
 	auto DictBase::value() & -> TValue& {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&>(mValue);
-		}
-		catch(std::bad_any_cast&) {
-			this->castError<TValue>();
-		}
+		return std::any_cast<TValue&>(mValue);
 
 	}
 	auto DictBase::value() && -> TValue {
-		if(!mValue.has_value()) {
-			mValue = TValue();
-		}
-		try {
-			return std::any_cast<TValue&&>(std::move(mValue));
-		}
-		catch(std::bad_any_cast&) {
-			this->castError<TValue>();
-		}
+		return std::any_cast<TValue&&>(std::move(mValue));
 	}
 	auto DictBase::value() const& -> const TValue& {
 		return const_cast<DictBase*>(this)->value();
@@ -140,16 +124,6 @@ namespace binon {
 
 	//---- SKDict --------------------------------------------------------------
 
-	SKDict::SKDict(const std::any& value, CodeByte keyCode):
-		mKeyCode{keyCode}
-	{
-		this->mValue = value;
-	}
-	SKDict::SKDict(std::any&& value, CodeByte keyCode) noexcept:
-		mKeyCode{keyCode}
-	{
-		this->mValue = std::move(value);
-	}
 	SKDict::SKDict(CodeByte keyCode) noexcept:
 		mKeyCode{keyCode}
 	{
@@ -232,18 +206,6 @@ namespace binon {
 
 	//---- SDict ---------------------------------------------------------------
 
-	SDict::SDict(const std::any& value, CodeByte keyCode, CodeByte valCode):
-		mKeyCode{keyCode},
-		mValCode{valCode}
-	{
-		this->mValue = value;
-	}
-	SDict::SDict(std::any&& value, CodeByte keyCode, CodeByte valCode) noexcept:
-		mKeyCode{keyCode},
-		mValCode{valCode}
-	{
-		this->mValue = std::move(value);
-	}
 	SDict::SDict(CodeByte keyCode, CodeByte valCode) noexcept:
 		mKeyCode{keyCode},
 		mValCode{valCode}

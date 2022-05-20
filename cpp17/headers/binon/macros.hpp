@@ -111,6 +111,37 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 			//	contains commas, you will need to escape them with BINON_COMMA.)
 			#define BINON_CONCEPTS_FN(req, cond, res) -> res requires req
 
+			//	This is similar to BINON_CONCEPTS_FN but oriented towards
+			//	constructor methods in which the former will not work because
+			//	constructors lack a return type. BINON_CONCEPTS_CONSTRUCTOR
+			//	solves this by adding an extra enable_if argument to the
+			//	method in the pre-C++20 case. To leave room for this argument,
+			//	you must not supply the close parenthesis in the argument list.
+			//
+			//	For example,
+			//
+			//		template<typename I> Foo(I i
+			//			BINON_CONCEPTS_CONSTRUCTOR(
+			//				std::integral<I>, std::is_integral_v<I>,
+			//			): mInt{i} {}
+			//
+			//	looks like this in C++20 (or later):
+			//
+			//		template<typename I> Foo(I i) requires std::integral<I>:
+			//			mInt{i} {}
+			//
+			//	or this in C++17:
+			//
+			//		template<typename I> Foo(I i,
+			//			std::enable_if_t<std::is_integral_v<I>>* = nullptr):
+			//			mInt{i} {}
+			//
+			//	The 3rd ext argument gets inserted immediately after the
+			//	close parenthesis. This would typically be used to add a
+			//	qualifier such as noexcept.
+			#define BINON_CONCEPTS_CONSTRUCTOR(req, cond, ext) \
+				) ext requires req
+
 			#if BINON_GOT_VERSION
 				#include <concepts>
 			#endif
@@ -131,6 +162,8 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 	#define BINON_IF_CONCEPTS(code)
 	#define BINON_IF_CONCEPTS_ELSE(code, alt) alt
 	#define BINON_CONCEPTS_FN(req, cond, res) -> std::enable_if_t<cond, res>
+	#define BINON_CONCEPTS_CONSTRUCTOR(req, cond, ext) \
+		, std::enable_if_t<cond>* = nullptr) ext
 #endif
 
 //	Defines to help use execution policies where available

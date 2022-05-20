@@ -48,6 +48,16 @@ namespace binon {
 	struct DictObj: DictBase, StdCodec<DictObj> {
 		static constexpr auto kTypeCode = kDictObjCode;
 		static constexpr auto kClsName = std::string_view{"DictObj"};
+		template<typename T> DictObj(const T& dict
+			BINON_CONCEPTS_CONSTRUCTOR(
+				std::same_as<T BINON_COMMA TDict>,
+				std::is_same_v<T BINON_COMMA TDict>,
+			);
+		template<typename T> DictObj(T&& dict
+			BINON_CONCEPTS_CONSTRUCTOR(
+				std::same_as<T BINON_COMMA TDict>,
+				std::is_same_v<T BINON_COMMA TDict>, noexcept
+			);
 		explicit DictObj(const SKDict& obj);
 		explicit DictObj(const SDict& obj);
 		using DictBase::DictBase;
@@ -62,8 +72,18 @@ namespace binon {
 		static constexpr auto kTypeCode = kSKDictCode;
 		static constexpr auto kClsName = std::string_view{"SKDict"};
 		CodeByte mKeyCode;
-		SKDict(const std::any& value, CodeByte keyCode);
-		SKDict(std::any&& value, CodeByte keyCode) noexcept;
+		template<typename T>
+			SKDict(const T& value, CodeByte keyCode
+			BINON_CONCEPTS_CONSTRUCTOR(
+				std::same_as<T BINON_COMMA TDict>,
+				std::is_same_v<T BINON_COMMA TDict>,
+			);
+		template<typename T>
+			SKDict(T&& value, CodeByte keyCode
+			BINON_CONCEPTS_CONSTRUCTOR(
+				std::same_as<T BINON_COMMA TDict>,
+				std::is_same_v<T BINON_COMMA TDict>, noexcept
+			);
 		SKDict(CodeByte keyCode = kNoObjCode) noexcept;
 		explicit SKDict(const SDict& obj);
 		using DictBase::DictBase;
@@ -79,12 +99,20 @@ namespace binon {
 		static constexpr auto kClsName = std::string_view{"SDict"};
 		CodeByte mKeyCode;
 		CodeByte mValCode;
-		SDict(const std::any& value,
+		template<typename T>
+			SDict(const T& value,
 			CodeByte keyCode, CodeByte valCode
+			BINON_CONCEPTS_CONSTRUCTOR(
+				std::same_as<T BINON_COMMA TDict>,
+				std::is_same_v<T BINON_COMMA TDict>,
 			);
-		SDict(std::any&& value,
+		template<typename T>
+			SDict(T&& value,
 			CodeByte keyCode, CodeByte valCode
-			) noexcept;
+			BINON_CONCEPTS_CONSTRUCTOR(
+				std::same_as<T BINON_COMMA TDict>,
+				std::is_same_v<T BINON_COMMA TDict>, noexcept
+			);
 		SDict(
 			CodeByte keyCode = kNoObjCode, CodeByte valCode = kNoObjCode
 			) noexcept;
@@ -100,13 +128,65 @@ namespace binon {
 
 	//==== Template Implementation =============================================
 
-	//---- CtnrBase ------------------------------------------------------------
+	//---- DictObj -------------------------------------------------------------
 
-	template<typename T> [[noreturn]] void DictBase::castError() {
-		throw BadAnyCast::Make<T,BadCtnrVal>(
-			mValue,
-			"accessing BinON container value"
-		);
+	template<typename T> DictObj::DictObj(const T& dict
+		BINON_CONCEPTS_CONSTRUCTOR(
+			std::same_as<T BINON_COMMA TDict>,
+			std::is_same_v<T BINON_COMMA TDict>,
+		)
+	{
+		this->mValue = dict;
+	}
+	template<typename T> DictObj::DictObj(T&& dict
+		BINON_CONCEPTS_CONSTRUCTOR(
+			std::same_as<T BINON_COMMA TDict>,
+			std::is_same_v<T BINON_COMMA TDict>, noexcept
+		)
+	{
+		this->mValue = std::move(dict);
+	}
+
+	//---- SKDict --------------------------------------------------------------
+
+	template<typename T>
+		SKDict::SKDict(const T& value, CodeByte keyCode
+		BINON_CONCEPTS_CONSTRUCTOR(
+			std::same_as<T BINON_COMMA TDict>,
+			std::is_same_v<T BINON_COMMA TDict>,
+		): mKeyCode{keyCode}
+	{
+		this->mValue = value;
+	}
+	template<typename T>
+		SKDict::SKDict(T&& value, CodeByte keyCode
+		BINON_CONCEPTS_CONSTRUCTOR(
+			std::same_as<T BINON_COMMA TDict>,
+			std::is_same_v<T BINON_COMMA TDict>, noexcept
+		): mKeyCode{keyCode}
+	{
+		this->mValue = std::move(value);
+	}
+
+	//---- SDict --------------------------------------------------------------
+
+	template<typename T>
+		SDict::SDict(const T& value, CodeByte keyCode, CodeByte valCode
+		BINON_CONCEPTS_CONSTRUCTOR(
+			std::same_as<T BINON_COMMA TDict>,
+			std::is_same_v<T BINON_COMMA TDict>,
+		): mKeyCode{keyCode}, mValCode{valCode}
+	{
+		this->mValue = value;
+	}
+	template<typename T>
+		SDict::SDict(T&& value, CodeByte keyCode, CodeByte valCode
+		BINON_CONCEPTS_CONSTRUCTOR(
+			std::same_as<T BINON_COMMA TDict>,
+			std::is_same_v<T BINON_COMMA TDict>, noexcept
+		): mKeyCode{keyCode}, mValCode{valCode}
+	{
+		this->mValue = std::move(value);
 	}
 }
 

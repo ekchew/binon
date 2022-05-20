@@ -17,9 +17,7 @@ namespace binon {
 
 	using TList = std::vector<BinONObj,BINON_ALLOCATOR<BinONObj>>;
 
-	//	ListBase implements a number of methods shared by ListObj and SList. In
-	//	particular, it implements the value() methods used to extract a TList
-	//	out of the CtnrBase's internal std::any member.
+	//	ListBase implements a number of methods shared by ListObj and SList.
 	struct ListBase {
 		using TValue = TList;
 		ListBase(const ListBase&) = default;
