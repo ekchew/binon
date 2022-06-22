@@ -131,7 +131,7 @@ namespace binon {
 	//---- DictObj -------------------------------------------------------------
 
 	template<typename T> DictObj::DictObj(const T& dict
-		BINON_CONCEPTS_CONSTRUCTOR(
+		BINON_CONCEPTS_CONSTRUCTOR_DEF(
 			std::same_as<T BINON_COMMA TDict>,
 			std::is_same_v<T BINON_COMMA TDict>,
 		)
@@ -139,7 +139,7 @@ namespace binon {
 		this->mValue = dict;
 	}
 	template<typename T> DictObj::DictObj(T&& dict
-		BINON_CONCEPTS_CONSTRUCTOR(
+		BINON_CONCEPTS_CONSTRUCTOR_DEF(
 			std::same_as<T BINON_COMMA TDict>,
 			std::is_same_v<T BINON_COMMA TDict>, noexcept
 		)
@@ -151,7 +151,7 @@ namespace binon {
 
 	template<typename T>
 		SKDict::SKDict(const T& value, CodeByte keyCode
-		BINON_CONCEPTS_CONSTRUCTOR(
+		BINON_CONCEPTS_CONSTRUCTOR_DEF(
 			std::same_as<T BINON_COMMA TDict>,
 			std::is_same_v<T BINON_COMMA TDict>,
 		): mKeyCode{keyCode}
@@ -160,7 +160,7 @@ namespace binon {
 	}
 	template<typename T>
 		SKDict::SKDict(T&& value, CodeByte keyCode
-		BINON_CONCEPTS_CONSTRUCTOR(
+		BINON_CONCEPTS_CONSTRUCTOR_DEF(
 			std::same_as<T BINON_COMMA TDict>,
 			std::is_same_v<T BINON_COMMA TDict>, noexcept
 		): mKeyCode{keyCode}
@@ -172,7 +172,7 @@ namespace binon {
 
 	template<typename T>
 		SDict::SDict(const T& value, CodeByte keyCode, CodeByte valCode
-		BINON_CONCEPTS_CONSTRUCTOR(
+		BINON_CONCEPTS_CONSTRUCTOR_DEF(
 			std::same_as<T BINON_COMMA TDict>,
 			std::is_same_v<T BINON_COMMA TDict>,
 		): mKeyCode{keyCode}, mValCode{valCode}
@@ -181,7 +181,7 @@ namespace binon {
 	}
 	template<typename T>
 		SDict::SDict(T&& value, CodeByte keyCode, CodeByte valCode
-		BINON_CONCEPTS_CONSTRUCTOR(
+		BINON_CONCEPTS_CONSTRUCTOR_DEF(
 			std::same_as<T BINON_COMMA TDict>,
 			std::is_same_v<T BINON_COMMA TDict>, noexcept
 		): mKeyCode{keyCode}, mValCode{valCode}

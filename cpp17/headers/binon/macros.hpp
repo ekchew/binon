@@ -142,6 +142,14 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 			#define BINON_CONCEPTS_CONSTRUCTOR(req, cond, ext) \
 				) ext requires req
 
+			//	This is a slight variation on BINON_CONCEPTS_CONSTRUCTOR
+			//	meant for out-of-line definitions of the constructor method.
+			//	(It suppresses the "= nullptr" part for C++17 that would
+			//	otherwise be redefining the default argument from the
+			//	method prototype.)
+			#define BINON_CONCEPTS_CONSTRUCTOR_DEF(req, cond, ext) \
+				) ext requires req
+
 			#if BINON_GOT_VERSION
 				#include <concepts>
 			#endif
@@ -164,6 +172,8 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 	#define BINON_CONCEPTS_FN(req, cond, res) -> std::enable_if_t<cond, res>
 	#define BINON_CONCEPTS_CONSTRUCTOR(req, cond, ext) \
 		, std::enable_if_t<cond>* = nullptr) ext
+	#define BINON_CONCEPTS_CONSTRUCTOR_DEF(req, cond, ext) \
+		, std::enable_if_t<cond>*) ext
 #endif
 
 //	Defines to help use execution policies where available
