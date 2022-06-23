@@ -29,7 +29,7 @@ namespace binon {
 		using TValue = TDict;
 		DictBase(const DictBase&) = default;
 		DictBase(DictBase&&) noexcept = default;
-		DictBase() = default;
+		DictBase() noexcept;
 		auto operator= (const DictBase&) -> DictBase& = default;
 		auto operator= (DictBase&&) noexcept -> DictBase& = default;
 		auto operator == (const DictBase& rhs) const -> bool;
@@ -60,7 +60,7 @@ namespace binon {
 			);
 		explicit DictObj(const SKDict& obj);
 		explicit DictObj(const SDict& obj);
-		using DictBase::DictBase;
+		DictObj() = default;
 		auto encodeData(TOStream&, bool requireIO = true) const
 			-> const DictObj&;
 		auto decodeData(TIStream&, bool requireIO = true)
@@ -86,7 +86,6 @@ namespace binon {
 			);
 		SKDict(CodeByte keyCode = kNoObjCode) noexcept;
 		explicit SKDict(const SDict& obj);
-		using DictBase::DictBase;
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const SKDict&;
 		auto decodeData(TIStream& stream, bool requireIO = true)

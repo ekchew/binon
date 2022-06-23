@@ -6,6 +6,10 @@ namespace binon {
 
 	//---- DictBase ------------------------------------------------------------
 
+	DictBase::DictBase() noexcept:
+		mValue(TValue{})
+	{
+	}
 	auto DictBase::operator == (const DictBase& rhs) const -> bool {
 		//	Where unordered_map is concerned, the usual approach of iterating
 		//	through the 2 containers and comparing corresponding elements is
