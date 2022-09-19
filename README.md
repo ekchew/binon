@@ -23,15 +23,23 @@ BinON is a JSON-like object notation that uses a more condensed binary format.
 		* [BinONObj.Decode()](#py_decode)
 	* [Low-Level Interface](#py_low_level)
 	    * [encodeData() and DecodeData()](#py_encode_data)
+* [C++ Interface](#cpp)
+	* [Building Library](#cpp_build)
+	* [Data Structures](#cpp_structs)
+		* [BinONObj and Object Helpers](#cpp_binonobj)
+		* [BufferObj and BufferVal](#cpp_bufferobj)
+		* [DictObj, SKDict, SDict, and Helper Functions](#cpp_dictobj)
+		* [IntObj, UIntObj, IntVal, and UIntVal](#cpp_intobj)
+		* [ListObj, SList and Helper Functions](#cpp_listobj)
+		* [StrObj and HyStr](#cpp_strobj)
 
 <a name="requirements"></a>
 ## Requirements
 
 The complete codec has been implemented in Python 3.6.
-It is a self-contained repository with no dependencies outside of standard
-Python modules.
+It is a self-contained repository with no dependencies outside of standard Python modules.
 
-*(A C++ implementation is in the works.)*
+The C++ implementation requires C++17 or later, but has some optimizatins for C++20 where available. It has been compiled under versions of clang++ and g++ under macOS and Ubuntu, though the code should be relatively portable to other compilers.
 
 <a name="data_format"></a>
 ## Data Format
@@ -373,3 +381,103 @@ For example, `IntObj(42).encode(outF)` should output the hexadecimal: 21 2a. `In
 `encodeData()` leaves object type identification in your hands, so you must later call the correct counterpart `DecodeData()` method; in this case, `IntObj.DecodeData(inF)`. (Note that BinON follows a convention that class methods begin with a capital letter while instance methods begin in lower case.)
 
 Note that with the exception of `NullObj`, `encodeData()` will always write at least one byte of data. You may recall that with `Encode()`/`encode()` has a special optimization in which the default value for a data type (e.g. 0 for an `IntObj`) need not encode any data since the code byte itself can indicate the value. But `encodeData()` cannot make that optimization since there is no code byte. It will write a `0x00` byte in the case of an integer zero.
+
+<a name="cpp"></a>
+## C++ Interface
+
+The C++ interface for BinON is still something of a work in progress,
+though it is sufficiently complete/stable that I have started using it in production code at this point.
+
+<a name="cpp_build"></a>
+### Building Library
+
+At this point, there is nothing more than a simple gnu makefile to build a static library called libbinon.a. The top few lines give you options to set your compiler of choice and perhaps target c++20 over the default c++17 if your compiler supports it. (Most of the 20-level support in the code base involves using concepts where available.)
+
+You can then `make debug`, `make release`, or `make clean` (to remove all binaries). `make` on its own will build both the debug and release libraries
+
+To use the library, you can simply include the "binon/binon.hpp" header, which in turn includes all of the others. (This header is also touched whenever the binon project is modified, so you can make it a dependency in your own project to make sure things get recompiled when binon gets updated.)
+
+<a name="cpp_structs"></a>
+### Data Structures
+
+To begin with, the entire binon interface for C++ is wrapped within the
+`namespace binon`.
+
+As with the Python implementation, the C++ defines structures representing the fundamental BinON data types.
+
+* BoolObj
+* [BufferObj](#cpp_bufferobj)
+* [DictObj](#cpp_dictobj)
+* [SKDict](#cpp_dictobj)
+* [SDict](#cpp_dictobj)
+* FloatObj
+* Float32Obj
+* [ListObj](#cpp_listobj)
+* [SList](#cpp_listobj)
+* [IntObj](#cpp_intobj)
+* [UIntObj](#cpp_intobj)
+* [StrObj](#cpp_strobj)
+
+In comparing these to their Python counterparts, you may notice the latter goes with `UInt` rather than `UIntObj` and `Float32`. This was a design decision bases on the idea that `UInt` and `Float32` may be pretty common names in a lot of C++ libraries and I wanted to prevent naming collisions (even though they are within the `binon` namespace). If you want use `UInt` and `Float32` however, they are defined within `namespace binon::types`.
+
+<a name="cpp_binonobj"></a>
+#### BinONObj and Object Helpers
+
+While the Python implementation has a base `BinONObj` class from which all of the specific classes inherit, the C++ implementation builds a `std::variant` around all the above types to produce a `BinONObj`.
+
+Some of the usual suspects from the Python side can be found here, such as the `encode()`, `encodeData()`, and `decodeData()` methods, as well as the `Decode()` class method.
+
+There is no `Encode()` class method, however. You need to produce a `BinONObj` first and then call its `encode()` method.
+
+The easiest way to create a `BinONObj` is to use one of the helper functions defined in "objhelpers.hpp". Though each specific class has an internal data type defined by `TValue` (e.g. `BoolObj::TValue` which is `bool`), the helper functions defined here let you use more traditional C++ types to create or read the value out of objects.
+
+For example, if you wrote:
+
+	auto obj = MakeObj(10U);
+
+`obj` would be the `UIntObj` variant of a `BinONObj` containing the value 10. You could read this value back with:
+
+	auto i = GetObjVal<unsigned int>(obj);
+
+<a name="cpp_bufferobj"></a>
+#### BufferObj and BufferVal
+
+The `TValue` type for a `BufferObj` is `BufferVal`. This data structure is similar to the `HyStr` used by [StrObj](#cpp_strobj) but uses `std::byte` rather than `char` for its "character" type.
+
+`BufferVal`s also print to `std::ostream`s as hexadecimal codes rather
+than regular characters.
+
+<a name="cpp_dictobj"></a>
+#### DictObj, SKDict, SDict, and Helper Functions
+
+As with [list containers](#cpp_listobj), dictionaries have helper functions that make life easier.
+
+	SDict dict(kStrObjCode, kIntObjCode);
+	SetCtnrVal("hello", 1);
+	SetCntrVal("world", 2);
+
+<a name="cpp_intobj"></a>
+#### IntObj, UIntObj, IntVal, and UIntVal
+
+The `TValue` types for `IntObj` and `UIntObj` are `IntVal` and `UIntVal`, respectively. The latter are also BinON data structures as opposed to a built-in C++ integer type.
+
+The reason for this is that BinON allows for big integers as can appear in Python at times. `IntVal`, then, can contain either a `std::int64_t` or a `std::basic_string<std::byte>` for cases in which the internal
+value would not fit in 64 bits.
+
+Look at the documentation in "intobj.hpp" for info on how this works. Of particular note, while both the `scalar()` and `asScalar()` methods of `IntVal` and `UIntVal` return a 64-bit integer, `scalar()` may throw an exception if it must be truncated down from a big integer while `asScalar()` will simply return the truncated int. (Note: helper functions like `GetObjVal()` will use `asScalar()` internally. The idea here is if you wrote `GetObjVal<std::int16_t>(obj)`, it's assumed to behave like a `static_cast<std::int16_t>(val)`, so you are effectively authorizing the truncation.)
+
+<a name="cpp_listobj"></a>
+#### ListObj, SList, and Helper Functions
+
+While the `TValue` type for `ListObj` and `SList` are `std::vector<BinONObj>`, you may find it easier to manage individual elements using the helper functions defined in "listhelpers.hpp". For example, you could write:
+
+	SList list(kStrObjCode);
+	AppendVal(list, "hello");
+	AppendVal(list, "world");
+
+to create a list of strings containing "hello" and "world" elements.
+
+<a name="cpp_strobj"></a>
+#### StrObj and HyStr
+
+The `TValue` type for a `StrObj` is a `HyStr`. This is a stand-alone BinON data type standing for "hybrid string". It is essentially a cross between a `std::string` and a `std::string_view`. Read the "hystr.hpp" documentation for details on how it works, but understand the reason why it exists. When you decode a `StrObj`, it will always contain the `std::string` variant of a `HyStr`. But when you are creating one yourself for encoding, it may only need a `std::string_view` for the short time a `std::BinONObj` may exist.
