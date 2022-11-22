@@ -64,7 +64,7 @@ namespace binon {
 	template<typename Child>
 		struct StdEq {
 		 protected:
-			auto equals(const Child& rhs) const noexcept {
+			auto equals(const Child& rhs) const noexcept -> bool {
 					return static_cast<const Child*>(this)->value()
 						== rhs.value();
 				}
