@@ -2,7 +2,12 @@ CXX ?= c++
 DBG_FLAGS ?= -g -D DEBUG
 REL_FLAGS ?= -O2
 CMN_FLAGS ?= -std=c++17
-LIB_NAME ?= binon  # -> libbinon.a static library by default
+
+# The default "binon" library name should produce the static libraries:
+#      build/debug/lib/libbinon.a
+#      build/release/lib/libbinon.a
+# In other words, the "lib" prefix and ".a" suffix get added automatically.
+LIB_NAME ?= binon
 
 BASE_FLAGS := -c -Iheaders ${CMN_FLAGS}
 HDR := headers/binon/
