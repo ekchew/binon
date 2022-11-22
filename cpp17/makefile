@@ -2,6 +2,7 @@ CXX ?= c++
 DBG_FLAGS ?= -g -D DEBUG
 REL_FLAGS ?= -O2
 CMN_FLAGS ?= -std=c++17
+LIB_NAME ?= binon  # -> libbinon.a static library by default
 
 BASE_FLAGS := -c -Iheaders ${CMN_FLAGS}
 HDR := headers/binon/
@@ -18,7 +19,7 @@ clean:
 target:
 	${MAKE} TEST_DIR=${DEST_DIR}/obj ${DEST_DIR}/obj
 	${MAKE} TEST_DIR=${DEST_DIR}/lib ${DEST_DIR}/lib
-	${MAKE} ${DEST_DIR}/lib/libbinon.a
+	${MAKE} ${DEST_DIR}/lib/lib${LIB_NAME}.a
 
 ${TEST_DIR}: ${HDR}/binon.hpp
 	mkdir -p ${TEST_DIR}
@@ -42,8 +43,8 @@ OBJS := \
 	${OBJ_DIR}/packelems.o \
 	${OBJ_DIR}/strobj.o
 
-${DEST_DIR}/lib/libbinon.a: ${OBJS}
-	ar -crs ${DEST_DIR}/lib/libbinon.a ${OBJS}
+${DEST_DIR}/lib/lib${LIB_NAME}.a: ${OBJS}
+	ar -crs ${DEST_DIR}/lib/lib${LIB_NAME}.a ${OBJS}
 
 binon_macros_hpp_deps := \
 	headers/binon/macros.hpp \
