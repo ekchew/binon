@@ -89,7 +89,7 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 			#define BINON_IF_CONCEPTS(code) code
 			#define BINON_IF_NO_CONCEPTS(code)
 			#define BINON_IF_CONCEPTS_ELSE(code, alt) code
-			
+
 			//	In a template declaration, you can write say:
 			//
 			//		template<BINON_CONCEPT(std::integral) I>
@@ -107,7 +107,22 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 			//	This will not be enough if you are trying to specialize a
 			//	template. In that case, you may need to use something more like
 			//	BINON_CONCEPTS_FN().
-			#define BINON_CONCEPT(T) T
+			#define BINON_CONCEPT(C) C
+
+			//	The expression:
+			//
+			//		BINON_AUTO(std::integral)
+			//
+			//	evaluates to
+			//
+			//		std::integral auto
+			//
+			//	if concepts are available or simply
+			//
+			//		auto
+			//
+			//	if not.
+			#define BINON_AUTO(C) C auto
 
 			//	This macro can be useful in declaring a function template that
 			//	applies constraints on argument types. For example:
@@ -192,6 +207,7 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 	#define BINON_IF_NO_CONCEPTS(code) code
 	#define BINON_IF_CONCEPTS_ELSE(code, alt) alt
 	#define BINON_CONCEPT(T) typename
+	#define BINON_AUTO(C) auto
 	#define BINON_CONCEPTS_FN(req, cond, res) -> std::enable_if_t<cond, res>
 	#define BINON_CONCEPTS_CONSTRUCTOR(req, cond, ext) \
 		, std::enable_if_t<cond>* = nullptr) ext
