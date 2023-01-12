@@ -87,7 +87,7 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 		#if defined(__cpp_concepts) && defined(__cpp_lib_concepts)
 			#define BINON_CONCEPTS true
 			#define BINON_IF_CONCEPTS(code) code
-			#define BINON_IF_NO_CONCEPTS(code)
+			#define BINON_NO_CONCEPTS(code)
 			#define BINON_IF_CONCEPTS_ELSE(code, alt) code
 
 			//	In a template declaration, you can write say:
@@ -204,7 +204,7 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 #endif
 #if !BINON_CONCEPTS
 	#define BINON_IF_CONCEPTS(code)
-	#define BINON_IF_NO_CONCEPTS(code) code
+	#define BINON_NO_CONCEPTS(code) code
 	#define BINON_IF_CONCEPTS_ELSE(code, alt) alt
 	#define BINON_CONCEPT(T) typename
 	#define BINON_AUTO(C) auto
