@@ -47,9 +47,11 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 #if __cplusplus > 201703L
 	#define BINON_CPP20 true
 	#define BINON_IF_CPP20(code) code
+	#define BINON_IF_CPP20_ELSE(code, alt) code
 #else
 	#define BINON_CPP20 false
 	#define BINON_IF_CPP20(code)
+	#define BINON_IF_CPP20_ELSE(code, alt) alt
 #endif
 
 //	Here we look for specific C++ features.
