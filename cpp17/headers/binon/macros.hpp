@@ -235,4 +235,13 @@ static_assert(__cplusplus > 201402L, "BinON requires C++17 or later");
 //	Comma escape for macros that take arguments.
 #define BINON_COMMA ,
 
+//	BINON_RESTRICT evaluates to __restrict where available.
+#if defined(__GNUC__) && __GNUC__ > 3
+	#define BINON_RESTRICT __restrict
+#elif defined(_MSC_VER) && _MSC_VER >= 1400
+	#define BINON_RESTRICT __restrict
+#else
+	#define BINON_RESTRICT
+#endif
+
 #endif
