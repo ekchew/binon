@@ -7,7 +7,7 @@
 
 namespace binon {
 
-	//---- Exception Hierarchy -------------------------------------------------
+	//---- Exception Hierarchy ------------------------------------------------
 
 	//	std::exception
 	//		std::logic_error
@@ -28,7 +28,7 @@ namespace binon {
 	//					ByteTrunc
 	//					IntTrunc
 
-	//---- General Exception Types ---------------------------------------------
+	//---- General Exception Types --------------------------------------------
 	//
 	//	These may be generally useful outside BinON.
 
@@ -54,12 +54,12 @@ namespace binon {
 		//	The Make() class function helps build a sensible message string for
 		//	the exception.
 		//
-		//	The context string would be something of the form "doing so-and-so".
-		//	(It can also be "" if you prefer not to supply one.) The error
-		//	message takes the form "bad any cast CONTEXT (casting from FROM_TYPE
-		//	to TO_TYPE)". Here, FROM_TYPE and TO_TYPE are std::type_info::name()
-		//	strings generated from the std::any-stored type and the casting
-		//	target type T you supply, respectively.
+		//	The context string would be something of the form "doing
+		//	so-and-so". (It can also be "" if you prefer not to supply one.)
+		//	The error message takes the form "bad any cast CONTEXT (casting
+		//	from FROM_TYPE to TO_TYPE)". Here, FROM_TYPE and TO_TYPE are
+		//	std::type_info::name() strings generated from the std::any-stored
+		//	type and the casting target type T you supply, respectively.
 		//
 		//	The second argument is the returned class type. It defaults to
 		//	BadAnyCast as you might expect, but if you subclass from this, you

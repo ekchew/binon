@@ -9,54 +9,130 @@
 
 namespace binon {
 
-	struct CodeByte
-		//	Wraps a std::byte containing a BinON code byte value.
-	{
-		template<typename I> static constexpr auto FromInt(I i) noexcept
+	//---- CodeByte Class -----------------------------------------------------
+	//
+	//	Wraps a std::byte containing a BinON code byte value.
+
+	class CodeByte {
+		std::byte _value;
+	
+	public:
+
+		//---- Factory Functions ----------------------------------------------
+
+		//	FromInt class method
+		//
+		//	Makes a CodeByte out of an integer in the range [0,255]
+		//	(or [-128,255] if signed).
+		//
+		static constexpr auto FromInt(std::integral auto i) noexcept
 			{ return CodeByte(ToByte(i)); }
+		
+		//	Read class method
+		//
+		//	Reads a CodeByte from an input stream.
+		//
+		//	Args:
+		//		stream: an input stream
+		//			(This should be a std::istream unless you modify TIStream's
+		//			definition in ioutil.hpp.)
+		//		requireIO: throw std::failure if read fails? (defaults to true)
+		//
 		static auto Read(TIStream& stream, bool requireIO=true) -> CodeByte;
 
-		constexpr CodeByte(std::byte value=0x00_byte) noexcept:
-			mValue{value} {}
-		constexpr operator std::byte() const noexcept {return mValue;}
-		constexpr auto operator = (std::byte value) noexcept -> CodeByte&
-			{ return mValue = value, *this; }
-		template<typename I> constexpr auto toInt() const noexcept -> I
-			{ return std::to_integer<I>(mValue); }
-		constexpr auto baseType() const noexcept -> unsigned int
-			{ return std::to_integer<unsigned int>(mValue >> 4); }
-		constexpr auto subtype() const noexcept -> unsigned int
-			{ return std::to_integer<unsigned int>(mValue & 0x0f_byte); }
-
-		//	A type code uniquely identifies the class of BinON object. It is
-		//	identical to a regular CodeByte except it does not allow the default
-		//	subtype of 0. typeCode() will raise this to the base subtype of 1.
+		//---- Main Constructor -----------------------------------------------
 		//
-		//	Suppose you have just decoded a FloatObj with code byte 0x30. If you
-		//	want to check that you are dealing with a FloatObj, you an go
+		//	This takes a std::byte which defaults to 0x00_byte.
+		//	(See byteutil.hpp regarding _byte literals.)
+		//
+		//	Other constructors and assignment operators like copy/move are
+		//	implicitly defined.
+
+		constexpr CodeByte(std::byte value=0x00_byte) noexcept:
+			_value{value} {}
+		
+		//---- Accessors ------------------------------------------------------
+
+		//	A CodeByte implicitly converts to std::byte in a read-only
+		//	capacity.
+		constexpr operator std::byte() const noexcept {return _value;}
+
+		//	asInt method
+		//
+		//	Returns the byte value as an integer whose type you can specify in
+		//	a template arg. (It defaults to unsigned int.)
+		//
+		template<typename Int=unsigned int> constexpr
+			auto asInt() const noexcept -> Int {
+				return std::to_integer<I>(_value);
+			}
+		
+		//	baseType, subtype methods
+		//
+		//	These extract the 2 values making up a CodeByte in unsigned int
+		//	form. (See also the BaseType and Subtype accessor classes defined
+		//	further down.)
+		//
+		constexpr auto baseType() const noexcept -> unsigned int
+			{ return std::to_integer<unsigned int>(_value >> 4); }
+		constexpr auto subtype() const noexcept -> unsigned int
+			{ return std::to_integer<unsigned int>(_value & 0x0f_byte); }
+
+		//	typeCode method
+		//
+		//	A type code uniquely identifies the class of a BinON object. It is
+		//	identical to a regular CodeByte except it does not allow the
+		//	default subtype of 0. typeCode() will raise this to the base
+		//	subtype of 1.
+		//
+		//	Suppose you have just decoded a FloatObj with code byte 0x30. If
+		//	you want to check that you are dealing with a FloatObj, you an go
 		//	myObj.typeCode() == kFloatObjCode. kFloatObjCode is 0x31, so the
 		//	typeCode() call makes sure you are comparing 0x31 to 0x31.
+		//
 		constexpr auto typeCode() const noexcept -> CodeByte {
-				auto i = toInt<int>();
+				auto i = asInt<int>();
 				if((i & 0x0F) == 0) {
 					return FromInt(i + 1);
 				}
 				return *this;
 			}
 
-		//	This accessor was added mainly so that you can test CodeByte values
-		//	in a switch.
-		constexpr auto asUInt() const noexcept -> unsigned {
-				return static_cast<unsigned>(mValue);
-			}
+		//---- Output Methods--------------------------------------------------
 
+		//	write method
+		//
+		//	Writes a CodeByte to an output stream. (See also Read().)
+		//
+		//	Args:
+		//		stream: the output stream
+		//			(This should be a std::ostream unless you modify TOStream's
+		//			definition in ioutil.hpp.)
+		//		requireIO: throw std::failure if read fails? (defaults to true)
+		//
 		void write(TOStream& stream, bool requireIO=true) const;
+
+		//	printRepr method
+		//
+		//	This prints the current type code as the name of one of the
+		//	type code constant defined further down (e.g. "kIntObjCode").
+		//	(See also the overloaded << operator.)
+		//
+		//	Args:
+		//		stream: a std::ostream
+		//			(Unlike with write(), you cannot change this type since
+		//			it is not for writing BinON binary data.)
+		//
 		void printRepr(std::ostream& stream) const;
 
-	 private:
-		std::byte mValue;
 	};
-	auto operator<< (std::ostream& stream, const CodeByte& cb) -> std::ostream&;
+	
+	//	CodeByte's << operator is overloaded to call printRepr() when printing
+	//	to a std::ostream.
+	auto operator << (
+		std::ostream& stream, const CodeByte& cb) -> std::ostream&;
+
+	//-------------------------------------------------------------------------
 
 	namespace details {
 
@@ -82,18 +158,23 @@ namespace binon {
 
 	}
 
-	//	BaseType and Subtype are CodeByte accessor classes that let you work
-	//	directly with the two fields of a code byte as unsigned int values.
+	//---- BaseType and Subtype Classes ---------------------------------------
+	//
+	//	These are essentially referency proxy classes that let you access the
+	//	base and subtype fields within a CodeByte as if they were independent
+	//	variables.
+
 	class BaseType: public details::CodeBaseField<BaseType> {
-	 public:
+	public:
 		using details::CodeBaseField<BaseType>::CodeBaseField;
 		constexpr operator unsigned int() const noexcept
 			{ return mCodeByte.toInt<unsigned int>() >> 4; }
 		constexpr auto operator = (unsigned int value) noexcept -> BaseType&
 			{ return mCodeByte = ToByte(value << 4), *this; }
 	};
+
 	class Subtype: public details::CodeBaseField<Subtype> {
-	 public:
+	public:
 
 		//	Constants defining default and base subtypes.
 		static constexpr unsigned int
@@ -109,6 +190,8 @@ namespace binon {
 					ToByte(value) & 0x0F_byte, *this;
 			}
 	};
+
+	//---- Type Codes ---------------------------------------------------------
 
 	//	Type codes for every BinONObj type.
 	constexpr CodeByte
@@ -131,6 +214,8 @@ namespace binon {
 	//	simple list or dict types.
 	constexpr CodeByte
 		kNoObjCode{0xff_byte};
+
+	//-------------------------------------------------------------------------
 
 	class BadCodeByte: public std::range_error {
 	 public:

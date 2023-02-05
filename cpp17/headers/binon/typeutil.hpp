@@ -2,114 +2,117 @@
 #define BINON_TYPEUTIL_HPP
 
 #include "macros.hpp"
+
+#include <concepts>
 #include <type_traits>
 #include <utility>
 #include <variant>
 
 namespace binon {
 
-	//	kArgsOfType helps check if all the arguments you pass to a variadic
-	//	template function match the type you specify. Consider the example:
-	//
-	//		template<typename... Ints> auto SumInts(Ints... ints)
-	//			-> std::enable_if_t<kArgsOfType<int,Ints...>, int>
-	//		{
-	//			return (0 + ... + ints);
-	//		}
-	//
-	//	A SumInts() call will only compile if all its arguments are of type int
-	//	(or intrinsically convertible to int).
-	//
-	//	You can get sort of a similar effect by using std::initializer_list, but
-	//	this class has some limitations. For example, it does not support move
-	//	semantics.
-	//
-	//	Note that in C++20, you don't really need kArgsOfType anymore since you
-	//	can use the std::convertible_to concept like this:
-	//
-	//		template<std::convertible_to<int>... Ints>
-	//			auto SumInts(Ints... ints) -> int
-	//		{
-	//			return (0 + ... + ints);
-	//		}
-	template<typename T, typename... Args>
-		constexpr bool kArgsOfType =
-			(std::is_convertible_v<Args,T> && ... && true);
+	namespace details {
+		template<typename T, typename Variant>
+			struct IsVariantMember;
+		template<typename T, typename... Types>
+			struct IsVariantMember<T, std::variant<Types...>>:
+				std::disjunction<std::is_same<T, Types>...> {};
+	}
 
-	//	Some nifty code off the Internet that determines if a given type is
-	//	among the possible members of a std::variant.
-	template<typename T, typename Variant> struct IsVariantMember;
-	template<typename T, typename... EveryT>
-		struct IsVariantMember<T, std::variant<EveryT...>>:
-			std::disjunction<std::is_same<T, EveryT>...>
-		{
-		};
+	//---- VariantMember concept ----------------------------------------------
+	//
+	//	This restricts types to only those belonging to a specified variant.
+	//
 	template<typename T, typename Variant>
-		constexpr bool kIsVariantMember = IsVariantMember<T,Variant>::value;
- #if BINON_CONCEPTS
-	template<typename Variant, typename T>
-		concept VariantMember = kIsVariantMember<T,Variant>;
- #endif
+		concept VariantMember = details::IsVariantMember<T,Variant>::value;
 
-	//	CustomFold is a struct template that allows you to apply custom folding
-	//	behaviour in C++17 fold expressions. It stores a value of arbitrary type
-	//	T (the 2nd template argument) which may be inferred from a value you
-	//	pass into the constructor (though it is not a bad idea to declare it
-	//	explicitly).
+	//---- CustomFold class ---------------------------------------------------
 	//
-	//	You must, however, always supply the 1st template argument. This is a
-	//	function taking 2 arguments of type T and returning a T. What CustomFold
-	//	does is overload the + operator to call your function instead.
+	//	Given a pack of parameters of type T (or at least implicitly
+	//	convertible to a type T), this class lets you apply a custom functor to
+	//	fold the parameters into a single T value. It does so by overloading
+	//	the + operator to call your functor.
 	//
-	//	For example, let's say at each stage, you wanted to double the current
-	//	number and add the new one. If your arguments were 3, 4, and 5, you
-	//	would be calculating (3 * 2 + 4) * 2 + 5 = 25. You could write this like
-	//	so:
+	//	For example, say you had a pack of integers 3, 4, and 5, and you wanted
+	//	to fold them by doubling each number before adding the next one. In
+	//	other words, you wanted to calculate:
 	//
-	//		int fn(int a, int b) { return a * 2 + b; }
-	//		template<typename... Ints> int calculate(Ints... ints) {
-	//			return (... + CustomFold<fn,int>(ints));
+	//		(3 * 2 + 4) * 2 + 5
+	//
+	//	You could write:
+	//
+	//		constexpr int calculate(std::convertible_to<int> auto... ints) {
+	//			auto fn = [](int a, int b) constexpr { return a * 2 + b; };
+	//			return (... + MakeCustomFold<int>(ints, fn));
 	//		}
 	//
-	//	Note that C++17 does not allow you to use lambdas as template arguments.
-	//	You need to pass in a regular function. But in C++20, you could write:
+	//	and later call:
 	//
-	//		template<typename... Ints> int calculate(Ints... ints) {
-	//			auto fn = [](int a, int b) { return a * 2 + b; };
-	//			return (... + CustomFold<fn,int>(ints));
-	//		}
-#if BINON_CONCEPTS
-	template<auto Fn, typename T>
-		concept CustomFoldable = requires(T a, T b) {
+	//		std::cout << calculate(3, 4, 5) << '\n';
+	//
+	//	Output:
+	//
+	//		25
+	
+	//	Your custom fold function should take 2 args of type T and return a
+	//	T value.
+	template<typename Fn, typename T>
+		concept CustomFoldFn = requires(Fn fn, T a, T b) {
 			{ Fn(a, b) } -> std::convertible_to<T>;
 		};
-	template<auto Fn, typename T> requires CustomFoldable<Fn,T>
-#else
-	template<auto Fn, typename T>
-#endif
-		struct CustomFold {
-			using value_type = T;
-			T value = T();
-			constexpr CustomFold(const T& v): value{v} {}
-			constexpr CustomFold(T&& v) noexcept:
-				value{std::move(v)} {}
-			constexpr CustomFold() = default;
-			constexpr operator T&() & { return value; }
-			constexpr operator const T&() const& { return value; }
-			constexpr operator T() && { return std::move(value); }
-			constexpr auto& operator = (const T& v) {
-					return value = v, *this;
-				}
-			constexpr auto& operator = (T&& v) noexcept {
-					return value = std::move(v), *this;
-				}
-			constexpr auto operator + (const CustomFold& rhs) {
-					return CustomFold{Fn(value, rhs.value)};
-				}
-			constexpr auto& operator += (const CustomFold& rhs) {
-					return value = Fn(value, rhs.value), *this;
-				}
-		};
+	
+	template<typename T, CustomFoldFn<T> Fn> struct CustomFold {
+	 	using function_type = Fn;
+		using value_type = T;
+
+		Fn fn;
+		T value;
+
+		//	If you are certain all the parameters share the exact same type,
+		//	you can use this constructor and infer the type from the v arg.
+		//	But calling the MakeCustomFold() factory function should be safer.
+		constexpr CustomFold(T&& v, Fn&& fn):
+			v{std::forward<T>(v)}, fn{std::forward<Fn>(fn)} {}
+
+		//	The fold expression evaluates to a CustomFold object. You can get
+		//	the final value out of this by either accessing the value field
+		//	directly or relying on implicit conversion to the type T.
+		constexpr operator const T&() const& noexcept { return this->value; }
+		constexpr operator T&() & noexcept { return this->value; }
+		constexpr operator T() && { return std::move(this->value); }
+	};
+
+	template<typename T, CustomFoldFn<T> Fn> constexpr
+		auto operator + (CustomFold<T,Fn>&& lhs, CustomFold<T,Fn>&& rhs) {
+			using std::move;
+			return CustomFold<T,Fn>{
+				rhs.fn(move(lhs.value), move(rhs.value)),
+				move(lhs.fn)
+				};
+		}
+
+	//	MakeCustomFold factory function
+	//
+	//	This function returns a CustomFold<T> where T is specified as an
+	//	explicit template arg. The value you actually pass in as v need not
+	//	match T's type exactly as long as it can implicitly convert to it.
+	//
+	//	Template args:
+	//		T: the data type for the fold
+	//
+	//	Function args:
+	//		v: the value for this instance of CustomFold
+	//		fn: your custom folding functor
+	//			Note that for best performance, you want to keep this lean.
+	//			Don't capture a huge amount of state, since it will be copied
+	//			nearly 2N times, since that's how many CustomFold instances get
+	//			constructed during the folding process.
+
+	template<typename T, std::convertible_to<T> U, CustomFoldFn<T> Fn>
+		constexpr auto MakeCustomFold(U&& v, Fn&& fn) {
+			using std::forward;
+			return CustomFold<T,Fn>{forward<U>(v), forward<Fn>(fn)};
+		}
+
 }
 
 #endif

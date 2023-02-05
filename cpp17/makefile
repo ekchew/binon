@@ -1,17 +1,30 @@
+# This is a simple GNU makefile to build a static binon library.
+# You can customize the options immediately below either directly or from
+# some other makefile.
+#
+# Note that touching this file will force a rebuild of the whole library.
+# (In other words, the makefile is itself a source dependency on all the
+# object files.)
+#
+# Also, any change to a header will touch binon.hpp when you rebuild.
+# This is the only header you need to include to use BinON, so if you make
+# your own source files dependent on it, they should automatically rebuild
+# whenever you pull a BinON update which modifies any binon/header.
+
 CXX ?= c++
 DBG_FLAGS ?= -g -D DEBUG
 REL_FLAGS ?= -O2
-CMN_FLAGS ?= -std=c++17
+CMN_FLAGS ?= -std=c++20
 
 # SUFFIX is an optional string that gets added to the end of all build products
 # just before the file extension. The idea is that you can create different
 # builds for different compile options. For example, you could run:
 #
-#     CMN_FLAGS=-std=c++20 SUFFIX=_cpp20 make
+#     CMN_FLAGS=-std=c++23 SUFFIX=_cpp23 make
 #
-# This will build for C++20 (the library does have some support for C++20
-# concepts) but build libbinon_cpp20.a libraries (as well as whatever_cpp20.o
-# object files on the way there).
+# This will build for C++23 but build libbinon_cpp23.a libraries (as well as
+# whatever_cpp23.o object files it needs on the way there).
+#
 SUFFIX ?=
 
 BASE_FLAGS := -c -Iheaders ${CMN_FLAGS}
@@ -39,7 +52,6 @@ OBJS := \
 	${OBJ_DIR}/binonobj${SUFFIX}.o \
 	${OBJ_DIR}/boolobj${SUFFIX}.o \
 	${OBJ_DIR}/bufferobj${SUFFIX}.o \
-	${OBJ_DIR}/byteutil${SUFFIX}.o \
 	${OBJ_DIR}/codebyte${SUFFIX}.o \
 	${OBJ_DIR}/dicthelpers${SUFFIX}.o \
 	${OBJ_DIR}/dictobj${SUFFIX}.o \
@@ -157,8 +169,6 @@ ${OBJ_DIR}/boolobj${SUFFIX}.o: source/boolobj.cpp ${binon_boolobj_hpp_deps}
 	${CXX} ${FLAGS} source/boolobj.cpp -o ${OBJ_DIR}/boolobj${SUFFIX}.o
 ${OBJ_DIR}/bufferobj${SUFFIX}.o: source/bufferobj.cpp ${binon_bufferobj_hpp_deps}
 	${CXX} ${FLAGS} source/bufferobj.cpp -o ${OBJ_DIR}/bufferobj${SUFFIX}.o
-${OBJ_DIR}/byteutil${SUFFIX}.o: source/byteutil.cpp ${binon_byteutil_hpp_deps}
-	${CXX} ${FLAGS} source/byteutil.cpp -o ${OBJ_DIR}/byteutil${SUFFIX}.o
 ${OBJ_DIR}/codebyte${SUFFIX}.o: source/codebyte.cpp ${binon_codebyte_hpp_deps}
 	${CXX} ${FLAGS} source/codebyte.cpp -o ${OBJ_DIR}/codebyte${SUFFIX}.o
 ${OBJ_DIR}/dicthelpers${SUFFIX}.o: source/dicthelpers.cpp ${binon_dicthelpers_hpp_deps}

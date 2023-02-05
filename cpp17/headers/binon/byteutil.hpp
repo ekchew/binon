@@ -6,29 +6,28 @@
 
 #include <algorithm>
 #include <array>
-#include <climits>
+#include <bit>
 #include <cstddef>
-#include <cstring>
-#include <optional>
+#include <iterator>
 #include <limits>
-#include <stdexcept>
-#include <string>
 #include <type_traits>
-#include <utility>
-#if BINON_CPP20
-	#include <bit>
+
+#if !BINON_BIT_CAST
+	#include <cstring>
 #endif
 
 namespace binon {
-	static_assert(CHAR_BIT == 8, "binon requires 8-bit bytes");
+	static_assert(
+		std::numeric_limits<unsigned char>::digits == 8,
+		"BinON requires 8-bit bytes");
 
 	//-------------------------------------------------------------------------
 	//
 	//	_byte Literal
 	//
 	//	std::byte's implementation does not seem to include a format for byte
-	//	literals. So with this user-defined literal, you can now write 0x42_byte
-	//	instead of std::byte{0x42}.
+	//	literals. So with this user-defined literal, you can now write
+	//	0x42_byte instead of std::byte{0x42}.
 	//
 	//	It is currently the only definition within the binon::literals
 	//	namespace.
@@ -53,7 +52,7 @@ namespace binon {
 	//
 	//-------------------------------------------------------------------------
 
-	//	ToByte function template
+	//	ToByte function
 	//
 	//	While you can easily convert a std::byte to an integer by calling
 	//
@@ -62,218 +61,202 @@ namespace binon {
 	//	there does not appear to be a corresponding std::to_byte function, so
 	//	here is an alternative.
 	//
-	//	Template Args:
-	//		I (type, inferred)
+	//	Template args:
+	//		AssertRange: check that input value lies in appropriate range?
+	//			Defaults to true in debug mode or false otherwise.
+	//			An unsigned value should lie in the range [0,255].
+	//			A signed value should lie in the range [-128,255].
+	//		Int: an integral type (inferred from function arg i)
 	//
-	//	Args:
-	//		i (integral type): value to convert to std::byte assertRange (bool,
-	//		optional): make sure i fits in a byte?
-	//			This option defaults to true only in debug builds. When true,
-	//			ToByte may throw a ByteTrunc if i's value lies outside
-	//			of what can be represented by a byte. To put it another way, i
-	//			must lie in the range [-128,255].
+	//	Function args:
+	//		i: the value to convert into a std::byte
 	//
 	//	Returns:
-	//		std::byte: the byte form of i
-	template<typename I> constexpr auto ToByte(
-		I i, bool assertRange=BINON_DEBUG
-		) -> std::byte
-		{
-			if(	assertRange &&
-				static_cast<std::make_unsigned_t<I>>(i) >= 0x100u)
-			{
-				throw ByteTrunc{"int to byte conversion loses data"};
+	//		the std::byte version of i
+	//
+	template<bool AssertRange=BINON_DEBUG, std::integral Int> constexpr
+		auto ToByte(Int i) noexcept(not AssertRange) -> std::byte {
+			if constexpr(AssertRange) {
+				if(static_cast<std::make_unsigned_t<Int>>(i) >= 0x100u) {
+					throw ByteTrunc{"int to byte conversion loses data"};
+				}
 			}
 			return std::byte{static_cast<unsigned char>(i)};
 		}
 
-	//	AsHexC function
-	//
-	//	This is a low-level function to convert a std::byte into a zero-padded
-	//	hexadecimal C string.
-	//
-	//	Args:
-	//		value (std::byte): byte to convert capitalize (bool, optional):
-	//		return "AB" rather than "ab"?
-	//			Defaults to false.
-	//
-	//	Returns:
-	//		std::array<char,3>: 2 hexadecimal digits followed by null terminator
-	auto AsHexC(std::byte value, bool capitalize=false) noexcept
-		-> std::array<char,3>;
-
 	//	AsHex function
 	//
-	//	This is like AsHexC except it returns a std::string. This might be
-	//	somewhat less efficient, though thanks to the small string optimization,
-	//	it may not necessarily require any dynamic allocation at least.
+	//	Converts a std::byte into a 2-digit hexadecimal string.
 	//
-	//	Args:
-	//		value (std::byte): byte to convert capitalize (bool, optional):
-	//		return "AB" rather than "ab"?
-	//			Defaults to false.
+	//	Template args:
+	//		Capitalize: return "AB" rather than "ab"? (defaults to false)
+	//
+	//	Function args:
+	//		value: a std::byte
 	//
 	//	Returns:
-	//		std::string: 2 hexadecimal digits
-	auto AsHex(std::byte value, bool capitalize=false) -> std::string;
-
-	//	PrintByte function
+	//		a std::string containing 2 hexadecimal digits
 	//
-	//	This function prints a std::byte as 2 hexadecimal digits to a text
-	//	stream.
+	//	Note:
+	//		Thanks to the small-string optimization, most standard library
+	//		implementations should not allocate any dynamic memory for a
+	//		string as short as this, but this cannot be guaranteed.
 	//
-	//	Args:
-	//		value (std::byte): byte to print stream (std::ostream&):
-	//			target text output stream
-	//		capitalize (bool, optional): return "AB" rather than "ab"?
-	//			Defaults to false.
-	void PrintByte(std::byte value, std::ostream& stream,
-		bool capitalize=false);
+	template<bool Capitalize=false> constexpr
+		auto AsHex(std::byte value) -> std::string {
+			auto hexDigit = [](unsigned i) constexpr -> char {
+				if constexpr(Capitalize) {
+					return "0123456789ABCDEF"[i & 0xF];
+				}
+				else {
+					return "0123456789abcdef"[i & 0xF];
+				}
+			};
+			unsigned i = std::to_integer<unsigned>(value);
+			return {hexDigit(i >> 4), hexDigit(i)};
+		}
 
 	//-------------------------------------------------------------------------
 	//
-	//	Byte Order Functions
+	//	Byte Packing Functions
 	//
 	//-------------------------------------------------------------------------
+
+	//	Number concept
+	//
+	//	This matches any integral or floating-point type. It is used in
+	//	conjunction with the PackNumber() and UnpackNumber() functions defined
+	//	further down.
+	//
+	template<typename T>
+		concept Number = std::is_arithmetic_v<T>;
+	
+	//	ByteIt concept
+	//
+	//	This matches any iterator whose value_type is a single byte type like
+	//	char, std::byte, etc. Again, this is used by PackNumber() and
+	//	UnpackNumber().
+	//
+	template<typename T>
+		concept ByteIt =
+			(sizeof(typename std::iterator_traits<T>::value_type) == 1U);
 
 	//	LittleEndian function
 	//
-	//	C++20 can determine the byte order convention at compile time, while
-	//	C++17 requires some runtime logic (unless you look at precompiler macros
-	//	which would be compiler-dependent -- the current implementation does not
-	//	do so).
-	//
 	//	Returns:
 	//		bool: compiler target uses little-endian byte order?
-#if BINON_CPP20
-	constexpr auto LittleEndian() noexcept -> bool {
-		return std::endian::native == std::endian::little;
-	}
- #else
-	auto LittleEndian() noexcept -> bool;
- #endif
+	//
+	constexpr auto LittleEndian() noexcept -> bool
+		{ return std::endian::native == std::endian::little; }
 
-	//	WriteWord function template - byte buffer variant
+	//	PackNumber function
 	//
-	//	Writes a scalar value such as an integer into a byte buffer following a
-	//	big-endian byte order.
-	//
-	//	Template Args:
-	//		Word (type, inferred)
-	//			You are strongly advised to use a type with a rigorously-defined
-	//			size such as std::int32_t or binon::types::TFloat64 for code
-	//			portability's sake.
+	//	This function takes an integer or floating-point number and packs it
+	//	into a binary sequence following a big-endian byte order convention.
+	//	It is strongly recommended that you call it with types that have a
+	//	well-defined size, such as std::int32_t.
 	//
 	//	Args:
-	//		word (Word): value to serialize buffer (std::byte*): base address of
-	//		a byte buffer
-	//			The buffer must have a minimum capacity of sizeof(Word) bytes.
+	//		num: the number to pack
+	//		it: an output iterator whose value_type is std::byte
+	//	
+#if BINON_BIT_CAST
+	constexpr void PackNumber(Number auto num, ByteIt auto it) noexcept {
+			using T = typename std::iterator_traits<It>::value_type;
+			alignas(decltype(num)) std::array<T, sizeof num> tmp;
+			tmp = std::bit_cast<decltype(tmp)>(num);
+			if constexpr(LittleEndian()) {
+				std::reverse_copy(tmp.begin(), tmp.end(), it);
+			}
+			else std::copy(tmp.begin(), tmp.end(), it);
+		}
+#else
+	void PackNumber(Number auto num, ByteIt auto it) noexcept {
+			using T = typename std::iterator_traits<It>::value_type;
+			alignas(decltype(num)) std::array<T, sizeof num> tmp;
+			std::memcpy(tmp.data(), &num, sizeof num);
+			if constexpr(LittleEndian()) {
+				std::reverse_copy(tmp.begin(), tmp.end(), it);
+			}
+			else std::copy(tmp.begin(), tmp.end(), it);
+		}
+#endif
+	
+	//	UnpackNumber function
+	//
+	//	This function unpacks a number from a sequence of bytes after having
+	//	been packed by PackNumber().
+	//
+	//	Template args:
+	//		Num: the numeric return type
+	//		It: inferred from the functin arg: it
+	//
+	//	Function args:
+	//		it: an input iterator whose value_type is std::byte
 	//
 	//	Returns:
-	//		std::byte*: buffer
-	//			This is the same address you input, but of course now it should
-	//			be pointing at your serialized word data.
-	template<typename Word>
-		auto WriteWord(Word word, std::byte* buffer) noexcept -> std::byte* {
-			if constexpr(sizeof word == 1U) {
-				buffer[0] = reinterpret_cast<std::byte&>(word);
-			}
-			else if constexpr(sizeof word > 1U) {
-				std::memcpy(buffer, &word, sizeof(Word));
-				if BINON_IF_CPP20(constexpr)(LittleEndian()) {
-					std::reverse(buffer, buffer + sizeof(Word));
+	//		a number read from the input iterator's bytes
+	//
+#if BINON_BIT_CAST
+	template<Number Num, ByteIt It> constexpr
+		auto UnpackNumber(It it) noexcept -> Num {
+			using T = typename std::iterator_traits<It>::value_type;
+			alignas(Num) std::array<T, sizeof(Num)> tmp;
+			if constexpr(LittleEndian()) {
+				if constexpr(std::random_access_iterator<It>) {
+					std::reverse_copy(it, it + sizeof(Num), tmp.begin());
+				}
+				else {
+					std::copy_n(it, sizeof(Num), tmp.begin());
+					std::reverse(tmp.begin(), tmp.end());
 				}
 			}
-			return buffer;
+			else {
+				std::copy_n(it, sizeof(Num), tmp.begin());
+			}
+			return std::bit_cast<Num>(tmp);
 		}
-
-	//	WriteWord function template - stream variant
-	//
-	//	In this case, your word is written to a binary output stream instead of
-	//	a byte buffer.
-	//
-	//	Template Args:
-	//		Word (type, inferred)
-	//
-	//	Args:
-	//		word (Word): see WriteWOrd byte buffer variant
-	//		stream (TOStream):
-	//			binary output stream
-	//		requireIO (bool, optional): set std::ios exception bits?
-	//			See also RequireIO class in ioutil.hpp.
-	template<typename Word>
-		void WriteWord(Word word, TOStream& stream, bool requireIO=true) {
-			RequireIO rio{stream, requireIO};
-			if constexpr(sizeof word == 1U) {
-				stream.write(reinterpret_cast<TStreamByte*>(&word), 1);
-			}
-			else if constexpr(sizeof word > 1U) {
-				std::array<std::byte, sizeof word> buffer;
-				WriteWord(word, buffer.data());
-				stream.write(
-					reinterpret_cast<TStreamByte*>(buffer.data()),
-					sizeof word
-				);
-			}
-		}
-
-	//	ReadWord function template - byte buffer variant
-	//
-	//	Reads back the word you wrote into a byte buffer with WriteWord.
-	//
-	//	Template Args:
-	//		Word (type, required): word type to read back
-	//
-	//	Args:
-	//		buffer (const std::byte*): base address of byte buffer
-	//
-	//	Returns:
-	//		Word: reconstituted word value
-	template<typename Word>
-		auto ReadWord(const std::byte* buffer) noexcept -> Word {
-			Word word;
-			if constexpr(sizeof word == 1U) {
-				word = reinterpret_cast<const Word*>(buffer)[0];
-			}
-			else if constexpr(sizeof word > 1U) {
-				std::memcpy(&word, buffer, sizeof word);
-				if BINON_IF_CPP20(constexpr)(LittleEndian()) {
-					auto p = reinterpret_cast<std::byte*>(&word);
-					std::reverse(p, p + sizeof(Word));
+#else
+	template<Number Num, ByteIt It>
+  		auto UnpackNumber(It it) noexcept -> Num {
+			using T = typename std::iterator_traits<It>::value_type;
+			alignas(Num) std::array<T, sizeof(Num)> tmp;
+			if constexpr(LittleEndian()) {
+				if constexpr(std::random_access_iterator<It>) {
+					std::reverse_copy(it, it + sizeof(Num), tmp.begin());
+				}
+				else {
+					std::copy_n(it, sizeof(Num), tmp.begin());
+					std::reverse(tmp.begin(), tmp.end());
 				}
 			}
-			return word;
+			else {
+				std::copy_n(it, sizeof(Num), tmp.begin());
+			}
+			Num num;
+			std::memcpy(&num, tmp.data(), sizeof num);
+			return num;
+		}
+#endif
+
+		void WriteNumber(
+			TOStream& stream, Number auto num, bool requireIO = true)
+		{
+			std::array tmp<TStreamByte, sizeof num> tmp;
+			PackNumber(num, tmp.begin());
+			RequireIO rio(stream, requireIO);
+			stream.write(tmp.data(), tmp.size());
 		}
 
-	//	ReadWord function template - stream variant
-	//
-	//	Template Args:
-	//		Word (type, required): word type to read back
-	//
-	//	Args:
-	//		stream (TIStream): binary input stream requireIO (bool, optional):
-	//		requireIO (bool, optional): set std::ios exception bits?
-	//			See also RequireIO class in ioutil.hpp.
-	//
-	//		Returns:
-	//			Word: reconstituted word value
-	template<typename Word>
-		auto ReadWord(TIStream& stream, bool requireIO=true) -> Word {
-			Word word{};
-			RequireIO rio{stream, requireIO};
-			if constexpr(sizeof word == 1U) {
-				stream.read(reinterpret_cast<TStreamByte*>(&word), 1);
-			}
-			else if constexpr(sizeof word > 1U) {
-				std::array<std::byte, sizeof word> buffer;
-				stream.read(
-					reinterpret_cast<TStreamByte*>(buffer.data()),
-					sizeof word
-				);
-				word = ReadWord<Word>(buffer.data());
-			}
-			return word;
+		template<Number Num>
+			auto ReadNumber(TIStream& stream, bool requireIO = true) -> Num
+		{
+			std::array tmp<TStreamByte, sizeof(Num)> tmp;
+			RequireIO rio(stream, requireIO);
+			stream.read(tmp.data(), tmp.szie());
+			return UnpackNum<decltype(num)>(tmp.begin());
 		}
+
 }
 
 #endif

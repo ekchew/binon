@@ -5,13 +5,20 @@
 namespace binon {
 
 	auto CodeByte::Read(TIStream& stream, bool requireIO) -> CodeByte {
-		return ReadWord<std::byte>(stream, requireIO);
+		RequireIO rio{stream, requireIO};
+		TStreamByte sb;
+		stream.read(&sb, 1);
+		return CodeByte::FromInt(sb);
 	}
+
 	void CodeByte::write(TOStream& stream, bool requireIO) const {
-		WriteWord(mValue, stream, requireIO);
+		RequireIO rio{stream, requireIO};
+		auto sb = this->asInt<TStreamByte>();
+		stream.write(&sb, 1);
 	}
+
 	void CodeByte::printRepr(std::ostream& stream) const {
-		switch(asUInt()) {
+		switch(typeCode()) {
 		 case kNullObjCode.asUInt():
 			stream << "kNullObjCode";
 			break;
@@ -59,14 +66,15 @@ namespace binon {
 			break;
 		 default:
 			stream << "CodeByte{";
-			PrintByte(mValue, stream);
+			PrintByte(_value, stream);
 			stream << '}';
 		}
 	}
-	auto operator<< (std::ostream& stream, const CodeByte& cb) -> std::ostream&
+
+	auto operator << (std::ostream& stream, const CodeByte& cb)
+		-> std::ostream&
 	{
-		cb.printRepr(stream);
-		return stream;
+		return cb.printRepr(stream), stream;
 	}
 
 	auto BadCodeByte::WhatStr(CodeByte cb) -> std::string {
