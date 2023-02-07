@@ -148,7 +148,8 @@ headers/binon/binon.hpp: \
 	${binon_dicthelpers_hpp_deps} \
 	${binon_idgen_hpp_deps} \
 	${binon_iterable_hpp_deps} \
-	${binon_listhelpers_hpp_deps}
+	${binon_listhelpers_hpp_deps} \
+	headers/binon/seedsource.hpp \
 	touch ${HDR}/binon.hpp
 
 ${OBJ_DIR}/binonobj${SUFFIX}.o: source/binonobj.cpp ${binon_objhelpers_hpp_deps}
@@ -167,7 +168,8 @@ ${OBJ_DIR}/dictobj${SUFFIX}.o: source/dictobj.cpp ${binon_packelems_hpp_deps}
 	${CXX} ${FLAGS} source/dictobj.cpp -o ${OBJ_DIR}/dictobj${SUFFIX}.o
 ${OBJ_DIR}/floatobj${SUFFIX}.o: source/floatobj.cpp ${binon_floatobj_hpp_deps}
 	${CXX} ${FLAGS} source/floatobj.cpp -o ${OBJ_DIR}/floatobj${SUFFIX}.o
-${OBJ_DIR}/hashutil${SUFFIX}.o: source/hashutil.cpp ${binon_hashutil_hpp_deps}
+${OBJ_DIR}/hashutil${SUFFIX}.o: source/hashutil.cpp \
+	${binon_hashutil_hpp_deps} headers/binon/seedsource.hpp
 	${CXX} ${FLAGS} source/hashutil.cpp -o ${OBJ_DIR}/hashutil${SUFFIX}.o
 ${OBJ_DIR}/intobj${SUFFIX}.o: source/intobj.cpp ${binon_intobj_hpp_deps}
 	${CXX} ${FLAGS} source/intobj.cpp -o ${OBJ_DIR}/intobj${SUFFIX}.o
