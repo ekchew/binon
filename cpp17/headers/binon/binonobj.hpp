@@ -38,7 +38,7 @@ namespace binon {
 	//	variants.
 	template<typename T>
 		constexpr bool kIsObj
-			= kIsVariantMember<std::decay_t<T>,BinONVariant>;
+			= VariantMember<std::decay_t<T>,BinONVariant>;
  BINON_IF_CONCEPTS(
 	template<typename T> concept ObjType = kIsObj<T>;
  )

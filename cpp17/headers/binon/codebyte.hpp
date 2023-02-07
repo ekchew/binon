@@ -15,7 +15,7 @@ namespace binon {
 
 	class CodeByte {
 		std::byte _value;
-	
+
 	public:
 
 		//---- Factory Functions ----------------------------------------------
@@ -27,7 +27,7 @@ namespace binon {
 		//
 		static constexpr auto FromInt(std::integral auto i) noexcept
 			{ return CodeByte(ToByte(i)); }
-		
+
 		//	Read class method
 		//
 		//	Reads a CodeByte from an input stream.
@@ -50,7 +50,7 @@ namespace binon {
 
 		constexpr CodeByte(std::byte value=0x00_byte) noexcept:
 			_value{value} {}
-		
+
 		//---- Accessors ------------------------------------------------------
 
 		//	A CodeByte implicitly converts to std::byte in a read-only
@@ -64,9 +64,9 @@ namespace binon {
 		//
 		template<typename Int=unsigned int> constexpr
 			auto asInt() const noexcept -> Int {
-				return std::to_integer<I>(_value);
+				return std::to_integer<Int>(_value);
 			}
-		
+
 		//	baseType, subtype methods
 		//
 		//	These extract the 2 values making up a CodeByte in unsigned int
@@ -126,7 +126,7 @@ namespace binon {
 		void printRepr(std::ostream& stream) const;
 
 	};
-	
+
 	//	CodeByte's << operator is overloaded to call printRepr() when printing
 	//	to a std::ostream.
 	auto operator << (
@@ -168,7 +168,7 @@ namespace binon {
 	public:
 		using details::CodeBaseField<BaseType>::CodeBaseField;
 		constexpr operator unsigned int() const noexcept
-			{ return mCodeByte.toInt<unsigned int>() >> 4; }
+			{ return mCodeByte.asInt<unsigned int>() >> 4; }
 		constexpr auto operator = (unsigned int value) noexcept -> BaseType&
 			{ return mCodeByte = ToByte(value << 4), *this; }
 	};
@@ -183,7 +183,7 @@ namespace binon {
 
 		using details::CodeBaseField<Subtype>::CodeBaseField;
 		constexpr operator unsigned int() const noexcept
-			{ return mCodeByte.toInt<unsigned int>() & 0x0fu; }
+			{ return mCodeByte.asInt<unsigned int>() & 0x0fu; }
 		constexpr auto operator = (unsigned int value) noexcept -> Subtype& {
 				return mCodeByte =
 					mCodeByte     & 0xF0_byte |
@@ -230,7 +230,7 @@ namespace std {
 	template<> struct hash<binon::CodeByte> {
 		inline auto operator () (const binon::CodeByte& v) const noexcept
 			-> std::size_t {
-				return std::hash<std::uint8_t>{}(v.toInt<std::uint8_t>());
+				return std::hash<std::uint8_t>{}(v.asInt<std::uint8_t>());
 			}
 	};
 }

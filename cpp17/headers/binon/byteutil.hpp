@@ -102,7 +102,7 @@ namespace binon {
 	//		implementations should not allocate any dynamic memory for a
 	//		string as short as this, but this cannot be guaranteed.
 	//
-	template<bool Capitalize=false> constexpr
+	template<bool Capitalize=false>
 		auto AsHex(std::byte value) -> std::string {
 			auto hexDigit = [](unsigned i) constexpr -> char {
 				if constexpr(Capitalize) {
@@ -130,7 +130,7 @@ namespace binon {
 	//
 	template<typename T>
 		concept Number = std::is_arithmetic_v<T>;
-	
+
 	//	ByteIt concept
 	//
 	//	This matches any iterator whose value_type is a single byte type like
@@ -159,7 +159,7 @@ namespace binon {
 	//	Args:
 	//		num: the number to pack
 	//		it: an output iterator whose value_type is std::byte
-	//	
+	//
 #if BINON_BIT_CAST
 	constexpr void PackNumber(Number auto num, ByteIt auto it) noexcept {
 			using T = typename std::iterator_traits<It>::value_type;
@@ -172,7 +172,7 @@ namespace binon {
 		}
 #else
 	void PackNumber(Number auto num, ByteIt auto it) noexcept {
-			using T = typename std::iterator_traits<It>::value_type;
+			using T = typename std::iterator_traits<decltype(it)>::value_type;
 			alignas(decltype(num)) std::array<T, sizeof num> tmp;
 			std::memcpy(tmp.data(), &num, sizeof num);
 			if constexpr(LittleEndian()) {
@@ -181,7 +181,7 @@ namespace binon {
 			else std::copy(tmp.begin(), tmp.end(), it);
 		}
 #endif
-	
+
 	//	UnpackNumber function
 	//
 	//	This function unpacks a number from a sequence of bytes after having
@@ -242,7 +242,7 @@ namespace binon {
 		void WriteNumber(
 			TOStream& stream, Number auto num, bool requireIO = true)
 		{
-			std::array tmp<TStreamByte, sizeof num> tmp;
+			std::array<TStreamByte, sizeof num> tmp;
 			PackNumber(num, tmp.begin());
 			RequireIO rio(stream, requireIO);
 			stream.write(tmp.data(), tmp.size());
@@ -251,10 +251,10 @@ namespace binon {
 		template<Number Num>
 			auto ReadNumber(TIStream& stream, bool requireIO = true) -> Num
 		{
-			std::array tmp<TStreamByte, sizeof(Num)> tmp;
+			std::array<TStreamByte, sizeof(Num)> tmp;
 			RequireIO rio(stream, requireIO);
 			stream.read(tmp.data(), tmp.szie());
-			return UnpackNum<decltype(num)>(tmp.begin());
+			return UnpackNum<Num>(tmp.begin());
 		}
 
 }

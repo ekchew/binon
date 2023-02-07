@@ -14,73 +14,73 @@ namespace binon {
 		return varObj;
 	}
 	auto BinONObj::FromTypeCode(CodeByte typeCode) -> BinONObj {
-		switch(typeCode.asUInt()) {
-			case kNullObjCode.asUInt():
+		switch(typeCode.asInt()) {
+			case kNullObjCode.asInt():
 				return NullObj{};
-			case kBoolObjCode.asUInt():
+			case kBoolObjCode.asInt():
 				return BoolObj{};
-			case kTrueObjCode.asUInt():
+			case kTrueObjCode.asInt():
 				return BoolObj{true};
-			case kIntObjCode.asUInt():
+			case kIntObjCode.asInt():
 				return IntObj{};
-			case kUIntCode.asUInt():
+			case kUIntCode.asInt():
 				return UIntObj{};
-			case kFloatObjCode.asUInt():
+			case kFloatObjCode.asInt():
 				return FloatObj{};
-			case kFloat32Code.asUInt():
+			case kFloat32Code.asInt():
 				return Float32Obj{};
-			case kBufferObjCode.asUInt():
+			case kBufferObjCode.asInt():
 				return BufferObj{};
-			case kStrObjCode.asUInt():
+			case kStrObjCode.asInt():
 				return StrObj{};
-			case kListObjCode.asUInt():
+			case kListObjCode.asInt():
 				return ListObj{};
-			case kSListCode.asUInt():
+			case kSListCode.asInt():
 				return SList{};
-			case kDictObjCode.asUInt():
+			case kDictObjCode.asInt():
 				return DictObj{};
-			case kSKDictCode.asUInt():
+			case kSKDictCode.asInt():
 				return SKDict{};
-			case kSDictCode.asUInt():
+			case kSDictCode.asInt():
 				return SDict{};
 			default:
 				throw BadCodeByte{typeCode};
 		}
 	}
 	auto BinONObj::asTypeCodeObj(CodeByte typeCode) const& -> BinONObj {
-		switch(typeCode.asUInt()) {
-			case kNullObjCode.asUInt():
+		switch(typeCode.asInt()) {
+			case kNullObjCode.asInt():
 				return GetObj<NullObj>(*this);
-			case kBoolObjCode.asUInt():
+			case kBoolObjCode.asInt():
 				return GetObj<BoolObj>(*this);
-			case kTrueObjCode.asUInt(): {
+			case kTrueObjCode.asInt(): {
 				auto boolObj{GetObj<BoolObj>(*this)};
 				if(!boolObj.value()) {
 					throw BadTypeConv{"BoolObj could not convert to TrueObj"};
 				}
 				return boolObj;
 			}
-			case kIntObjCode.asUInt():
+			case kIntObjCode.asInt():
 				return GetObj<IntObj>(*this);
-			case kUIntCode.asUInt():
+			case kUIntCode.asInt():
 				return GetObj<UIntObj>(*this);
-			case kFloatObjCode.asUInt():
+			case kFloatObjCode.asInt():
 				return GetObj<FloatObj>(*this);
-			case kFloat32Code.asUInt():
+			case kFloat32Code.asInt():
 				return GetObj<Float32Obj>(*this);
-			case kBufferObjCode.asUInt():
+			case kBufferObjCode.asInt():
 				return GetObj<BufferObj>(*this);
-			case kStrObjCode.asUInt():
+			case kStrObjCode.asInt():
 				return GetObj<StrObj>(*this);
-			case kListObjCode.asUInt():
+			case kListObjCode.asInt():
 				return GetObj<ListObj>(*this);
-			case kSListCode.asUInt():
+			case kSListCode.asInt():
 				return GetObj<SList>(*this);
-			case kDictObjCode.asUInt():
+			case kDictObjCode.asInt():
 				return GetObj<DictObj>(*this);
-			case kSKDictCode.asUInt():
+			case kSKDictCode.asInt():
 				return GetObj<SKDict>(*this);
-			case kSDictCode.asUInt():
+			case kSDictCode.asInt():
 				return GetObj<SDict>(*this);
 			default:
 				throw BadCodeByte{typeCode};
@@ -88,39 +88,39 @@ namespace binon {
 	}
 	auto BinONObj::asTypeCodeObj(CodeByte typeCode) && -> BinONObj {
 		using std::move;
-		switch(typeCode.asUInt()) {
-			case kNullObjCode.asUInt():
+		switch(typeCode.asInt()) {
+			case kNullObjCode.asInt():
 				return GetObj<NullObj>(move(*this));
-			case kBoolObjCode.asUInt():
+			case kBoolObjCode.asInt():
 				return GetObj<BoolObj>(move(*this));
-			case kTrueObjCode.asUInt(): {
+			case kTrueObjCode.asInt(): {
 				auto boolObj{GetObj<BoolObj>(move(*this))};
 				if(!boolObj.value()) {
 					throw BadTypeConv{"BoolObj could not convert to TrueObj"};
 				}
 				return move(boolObj);
 			}
-			case kIntObjCode.asUInt():
+			case kIntObjCode.asInt():
 				return GetObj<IntObj>(move(*this));
-			case kUIntCode.asUInt():
+			case kUIntCode.asInt():
 				return GetObj<UIntObj>(move(*this));
-			case kFloatObjCode.asUInt():
+			case kFloatObjCode.asInt():
 				return GetObj<FloatObj>(move(*this));
-			case kFloat32Code.asUInt():
+			case kFloat32Code.asInt():
 				return GetObj<Float32Obj>(move(*this));
-			case kBufferObjCode.asUInt():
+			case kBufferObjCode.asInt():
 				return GetObj<BufferObj>(move(*this));
-			case kStrObjCode.asUInt():
+			case kStrObjCode.asInt():
 				return GetObj<StrObj>(move(*this));
-			case kListObjCode.asUInt():
+			case kListObjCode.asInt():
 				return GetObj<ListObj>(move(*this));
-			case kSListCode.asUInt():
+			case kSListCode.asInt():
 				return GetObj<SList>(move(*this));
-			case kDictObjCode.asUInt():
+			case kDictObjCode.asInt():
 				return GetObj<DictObj>(move(*this));
-			case kSKDictCode.asUInt():
+			case kSKDictCode.asInt():
 				return GetObj<SKDict>(move(*this));
-			case kSDictCode.asUInt():
+			case kSDictCode.asInt():
 				return GetObj<SDict>(move(*this));
 			default:
 				throw BadCodeByte{typeCode};

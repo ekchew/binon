@@ -21,11 +21,11 @@ namespace binon {
 	auto BoolObj::decode(CodeByte cb, TIStream& stream, bool requireIO)
 		-> BoolObj&
 	{
-		switch(cb.asUInt()) {
-			case kBoolObjCode.asUInt():
+		switch(cb.asInt()) {
+			case kBoolObjCode.asInt():
 				mValue = ReadWord<std::byte>(stream, requireIO) != 0x00_byte;
 				break;
-			case kTrueObjCode.asUInt():
+			case kTrueObjCode.asInt():
 				mValue = true;
 				break;
 			default: // assume default BoolObj (code 0x10)
