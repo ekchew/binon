@@ -9,5 +9,6 @@
 #include "idgen.hpp"
 #include "iterable.hpp"
 #include "listhelpers.hpp"
+#include "seedsource.hpp"
 
 #endif
