@@ -2,6 +2,7 @@
 #define BINON_BYTEUTIL_HPP
 
 #include "errors.hpp"
+#include "floattypes.hpp"
 #include "ioutil.hpp"
 
 #include <algorithm>
@@ -11,6 +12,7 @@
 #include <iterator>
 #include <limits>
 #include <type_traits>
+#include <utility>
 
 #if !BINON_BIT_CAST
 	#include <cstring>
@@ -100,7 +102,7 @@ namespace binon {
 	//	Note:
 	//		Thanks to the small-string optimization, most standard library
 	//		implementations should not allocate any dynamic memory for a
-	//		string as short as this, but this cannot be guaranteed.
+	//		string as short as this, though this cannot be guaranteed.
 	//
 	template<bool Capitalize=false>
 		auto AsHex(std::byte value) -> std::string {
@@ -115,31 +117,59 @@ namespace binon {
 			unsigned i = std::to_integer<unsigned>(value);
 			return {hexDigit(i >> 4), hexDigit(i)};
 		}
+	
+	//-------------------------------------------------------------------------
+	//
+	//	Byte-Like Type Handling
+	//
+	//	Byte-like types include std::byte and any integral types with a size of
+	//	1, such as char.
+	//
+	//-------------------------------------------------------------------------
+
+	template<typename T>
+		concept ByteLike = std::same_as<T, std::byte> or
+			std::integral<T> and (sizeof(T) == 1);
+	
+	//	ConvByteLike function:
+	//		Converts a value from one byte-like type to another.
+	template<ByteLike To, ByteLike From> constexpr
+		auto ConvByteLike(From v) noexcept -> To {
+			using std::byte, std::same_as;
+			if constexpr(same_as<From,byte>) {
+				if constexpr(same_as<To,byte>) {
+					return v;
+				}
+				else {
+					return std::to_integer<To>(v);
+				}
+			}
+			else
+				if constexpr(same_as<To,byte>) {
+					return static_cast<unsigned char>(v);
+				}
+				else {
+					return static_cast<To>(v);
+				}
+		}
+
+	//	ByteLikeIt concept:
+	//		This matches any iterator whose value_type is byte-like.
+	template<typename T>
+		concept ByteLikeIt =
+			ByteLike<typename std::iterator_traits<T>::value_type>;
+	
+	//	ByteLikeContigIt concept:
+	//		A byte-like contiguous iterator type.
+	template<typename T>
+		concept ByteLikeContigIt =
+			ByteLikeIt<T> and std::contiguous_iterator<T>;
 
 	//-------------------------------------------------------------------------
 	//
-	//	Byte Packing Functions
+	//	Byte Order Checking
 	//
 	//-------------------------------------------------------------------------
-
-	//	Number concept
-	//
-	//	This matches any integral or floating-point type. It is used in
-	//	conjunction with the PackNumber() and UnpackNumber() functions defined
-	//	further down.
-	//
-	template<typename T>
-		concept Number = std::is_arithmetic_v<T>;
-
-	//	ByteIt concept
-	//
-	//	This matches any iterator whose value_type is a single byte type like
-	//	char, std::byte, etc. Again, this is used by PackNumber() and
-	//	UnpackNumber().
-	//
-	template<typename T>
-		concept ByteIt =
-			(sizeof(typename std::iterator_traits<T>::value_type) == 1U);
 
 	//	LittleEndian function
 	//
@@ -149,113 +179,247 @@ namespace binon {
 	constexpr auto LittleEndian() noexcept -> bool
 		{ return std::endian::native == std::endian::little; }
 
-	//	PackNumber function
+	//-------------------------------------------------------------------------
 	//
-	//	This function takes an integer or floating-point number and packs it
-	//	into a binary sequence following a big-endian byte order convention.
-	//	It is strongly recommended that you call it with types that have a
-	//	well-defined size, such as std::int32_t.
+	//	Byte Packing Functions
 	//
-	//	Args:
-	//		num: the number to pack
-	//		it: an output iterator whose value_type is std::byte
+	//	These are core to BinON's encoding of various numeric values into
+	//	byte sequences following a big-endian ordering convention.
 	//
-#if BINON_BIT_CAST
-	constexpr void PackNumber(Number auto num, ByteIt auto it) noexcept {
-			using T = typename std::iterator_traits<It>::value_type;
-			alignas(decltype(num)) std::array<T, sizeof num> tmp;
-			tmp = std::bit_cast<decltype(tmp)>(num);
-			if constexpr(LittleEndian()) {
-				std::reverse_copy(tmp.begin(), tmp.end(), it);
-			}
-			else std::copy(tmp.begin(), tmp.end(), it);
-		}
-#else
-	void PackNumber(Number auto num, ByteIt auto it) noexcept {
-			using T = typename std::iterator_traits<decltype(it)>::value_type;
-			alignas(decltype(num)) std::array<T, sizeof num> tmp;
-			std::memcpy(tmp.data(), &num, sizeof num);
-			if constexpr(LittleEndian()) {
-				std::reverse_copy(tmp.begin(), tmp.end(), it);
-			}
-			else std::copy(tmp.begin(), tmp.end(), it);
-		}
-#endif
-
-	//	UnpackNumber function
+	//-------------------------------------------------------------------------	
+	
+	//	BytePack function
 	//
-	//	This function unpacks a number from a sequence of bytes after having
-	//	been packed by PackNumber().
+	//	Packs a numeric value into a sequence of bytes following a big-endian
+	//	byte order convention.
+	//
+	//	For example, if you wanted to pack the integer 1000 into 2 bytes, it
+	//	would encode as {'\x03', '\xe8'}.
 	//
 	//	Template args:
-	//		Num: the numeric return type
-	//		It: inferred from the functin arg: it
+	//		Size: number of bytes to pack or 0
+	//			The default 0 means the size of the input value "v" will
+	//			represent the number of bytes. (If you go with the default,
+	//			you should use a type with a well-defined size such as
+	//			std::int32_t.)
+	//		BL: a byte-like type (see above)
+	//			Defaults to TStreamByte (usually char).
+	//		T: inferring from the "v" function arg
 	//
 	//	Function args:
-	//		it: an input iterator whose value_type is std::byte
+	//		v: a numeric value to pack
+	//			This may be an integer or a floating-point value. In the latter
+	//			case, the number of bytes to pack must evaluate to either 4 or
+	//			8 (corresponding to the IEEE 754 binary32 and binary64 formats
+	//			supported by BinON, respectively).
 	//
 	//	Returns:
-	//		a number read from the input iterator's bytes
+	//		std::array<BL, N>, where N is the number of bytes packed
 	//
-#if BINON_BIT_CAST
-	template<Number Num, ByteIt It> constexpr
-		auto UnpackNumber(It it) noexcept -> Num {
-			using T = typename std::iterator_traits<It>::value_type;
-			alignas(Num) std::array<T, sizeof(Num)> tmp;
-			if constexpr(LittleEndian()) {
-				if constexpr(std::random_access_iterator<It>) {
-					std::reverse_copy(it, it + sizeof(Num), tmp.begin());
-				}
-				else {
-					std::copy_n(it, sizeof(Num), tmp.begin());
-					std::reverse(tmp.begin(), tmp.end());
-				}
+	template<
+		std::size_t Size=0, ByteLike BL=TStreamByte,
+		std::integral T
+		>
+		constexpr auto BytePack(T v) noexcept
+			-> std::array<BL, Size ? Size : sizeof(T)>
+		{
+			constexpr std::size_t N = Size ? Size : sizeof(T);
+			if constexpr(N == 1U) {
+				return std::array<BL,1U>{ConvByteLike<BL>(v)};
 			}
 			else {
-				std::copy_n(it, sizeof(Num), tmp.begin());
+				using U8 = std::underlying_type_t<std::byte>;
+				std::array<BL, N> arr;
+				auto end = arr.rend();
+				for(auto it = arr.rbegin(); it != end; ++it, v >>= 8) {
+					*it = ConvByteLike<BL>(static_cast<U8>(v & 0xffU));
+				}
+				return arr;
 			}
-			return std::bit_cast<Num>(tmp);
 		}
-#else
-	template<Number Num, ByteIt It>
-  		auto UnpackNumber(It it) noexcept -> Num {
-			using T = typename std::iterator_traits<It>::value_type;
-			alignas(Num) std::array<T, sizeof(Num)> tmp;
-			if constexpr(LittleEndian()) {
-				if constexpr(std::random_access_iterator<It>) {
-					std::reverse_copy(it, it + sizeof(Num), tmp.begin());
+	template<
+		std::size_t Size=0, ByteLike BL=TStreamByte,
+		std::floating_point T
+		>
+		BINON_BIT_CAST_CONSTEXPR auto BytePack(T v) noexcept
+			-> std::array<BL, Size ? Size : sizeof(T)>
+		{
+			using std::array;
+			constexpr std::size_t N = Size ? Size : sizeof(T);
+			static_assert(N == 4 or N == 8,
+				"BinON expects binary32 or binary64 floating-point types");
+			using U8 = std::underlying_type_t<std::byte>;
+			BINON_BIT_CAST_CONSTEXPR auto pack =
+				[](auto v) BINON_BIT_CAST_CONSTEXPR noexcept
+			{
+				using Arr = array<BL, sizeof v>;
+			 #if BINON_BIT_CAST
+				if constexpr(LittleEndian()) {
+					auto arr = std::bit_cast<Arr>(v);
+					std::reverse(arr.begin(), arr.end());
+					return arr;
 				}
 				else {
-					std::copy_n(it, sizeof(Num), tmp.begin());
-					std::reverse(tmp.begin(), tmp.end());
+					return std::bit_cast<Arr>(v);
 				}
+			 #else
+				Arr arr;
+				std::memcpy(arr.data(), &v, sizeof v);
+				if constexpr(LittleEndian()) {
+					std::reverse(arr.begin(), arr.end());
+				}
+				return arr;
+			 #endif
+			};
+			if constexpr(N == 4) {
+				return pack(static_cast<types::TFloat32>(v));
 			}
 			else {
-				std::copy_n(it, sizeof(Num), tmp.begin());
+				return pack(static_cast<types::TFloat64>(v));
 			}
-			Num num;
-			std::memcpy(&num, tmp.data(), sizeof num);
-			return num;
 		}
-#endif
-
-		void WriteNumber(
-			TOStream& stream, Number auto num, bool requireIO = true)
+	
+	//	ByteUnpack function
+	//
+	//	Unpacks data packed earlier by BytePack().
+	//
+	//	Template args:
+	//		T: the numeric type to unpack
+	//			See notes regarding BytePack's "v" function arg.
+	//		Size: number of bytes to unpack
+	//			Default to sizeof(T). (If you go with the default, you should
+	//			use a type with a well-defined size such as std::int32_t.)
+	//		BL: a byte-like type (see above)
+	//			Defaults to TStreamByte (usually char).
+	//
+	//	Function args:
+	//		arr: L-value reference to a std::array<BL, Size>
+	//			This should contain the byte data to unpack.
+	//			WARNING:
+	//				ByteUnpack may modify the data in arr. Specifically, it may
+	//				reverse the byte order if the compiler target is a
+	//				little-endian CPU. (In the current implementation, this
+	//				only happens in the floating-point case.)
+	//
+	//	Returns:
+	//		unpacked value of type T
+	//
+	template<
+		std::unsigned_integral T, std::size_t Size=sizeof(T),
+		ByteLike BL=TStreamByte
+		>
+		constexpr auto ByteUnpack(const std::array<BL, Size>& arr) noexcept
+			-> T
 		{
-			std::array<TStreamByte, sizeof num> tmp;
-			PackNumber(num, tmp.begin());
-			RequireIO rio(stream, requireIO);
-			stream.write(tmp.data(), tmp.size());
+			T v{};
+			for(auto b: arr) {
+				v <<= 8;
+				v |= ConvByteLike<BL>(static_cast<unsigned char>(b & 0xffU));
+			}
+			return v;
+		}
+	template<
+		std::signed_integral T, std::size_t Size=sizeof(T),
+		ByteLike BL=TStreamByte
+		>
+		constexpr auto ByteUnpack(const std::array<BL, Size>& arr) noexcept
+			-> T
+		{
+			using U = std::make_unsigned_t<T>;
+			auto u = ByteUnpack<U, Size, BL>(arr);
+			if constexpr(Size >= sizeof(T)) {
+				return static_cast<T>(u);
+			}
+			else {
+				U m = U{1} << (Size * 8U - 1U);
+				T v = static_cast<T>(u & (m - 1U));
+				if(u & m) {
+					v -= static_cast<T>(m);
+				}
+				return v;
+			}
+		}
+	template<
+		std::floating_point T, std::size_t Size=sizeof(T),
+		ByteLike BL=TStreamByte
+		>
+		BINON_BIT_CAST_CONSTEXPR
+			auto ByteUnpack(std::array<BL, Size>& arr) noexcept -> T
+		{
+			using std::memcpy;
+			static_assert(Size == 4 or Size == 8,
+				"BinON expects binary32 or binary64 floating-point types");
+			if constexpr(LittleEndian()) {
+				std::reverse(arr.begin(), arr.end());
+			}
+			if constexpr(Size == 4) {
+				types::TFloat32 v;
+			 #if BINON_BIT_CAST
+				v = bit_cast<decltype(v)>(arr);
+			 #else
+				memcpy(&v, arr.data(), Size);
+			 #endif
+				return static_cast<T>(v);
+			}
+			else {
+				types::TFloat64 v;
+			 #if BINON_BIT_CAST
+				v = bit_cast<decltype(v)>(arr);
+			 #else
+				memcpy(&v, arr.data(), Size);
+			 #endif
+				return static_cast<T>(v);
+			}
 		}
 
-		template<Number Num>
-			auto ReadNumber(TIStream& stream, bool requireIO = true) -> Num
-		{
-			std::array<TStreamByte, sizeof(Num)> tmp;
-			RequireIO rio(stream, requireIO);
-			stream.read(tmp.data(), tmp.szie());
-			return UnpackNum<Num>(tmp.begin());
-		}
+		//	WriteAsBytes function
+		//
+		//	This function calls BytePack to pack a numeric value before
+		//	writing the byte sequence to a binary output stream.
+		//
+		//	Template args:
+		//		Size: see BytePack function
+		//		T: inferred from function "v" arg
+		//
+		//	Function args:
+		//		stream: a binary output stream
+		//		v: the value to write (see BytePack function)
+		//		requireIO: throw exception on I/O error (defaults to true)
+		//
+		template<std::size_t Size=0, typename T>
+			void ByteWrite(TOStream& stream, T v, bool requireIO=true) {
+				auto arr = BytePack<Size>(v);
+				RequireIO rio(stream, requireIO);
+				stream.write(arr.data(), arr.size());
+			}
+		
+		//	ReadAsBytes function
+		//
+		//	This function reads a byte sequence from a binary input stream and
+		//	unpacks it into a numeric value by calling the ByteUnpack function.
+		//
+		//	Template args:
+		//		T: the numeric type to unpack
+		//			See notes regarding BytePack's "v" function arg.
+		//		Size: number of bytes to unpack (defaults to sizeof(T))
+		//			See ByteUnpack function.
+		//	
+		//	Function args:
+		//		stream: a binary input stream
+		//		requireIO: throw exception on I/O error (defaults to true)
+		//			If false, the returned value may be corrupt. You should
+		//			check the stream error flags before using it.
+		//
+		//	Returns:
+		//		unpacked value of type T
+		//
+		template<typename T, std::size_t Size=sizeof(T)>
+			auto ReadAsBytes(TIStream& stream, bool requireIO=true) -> T {
+				std::array<TStreamByte, Size> arr;
+				RequireIO rio(stream, requireIO);
+				stream.read(arr.data(), arr.size());
+				return ByteUnpack<T, Size>(arr);
+			}
 
 }
 

@@ -54,8 +54,10 @@ static_assert(__cplusplus > 201703L, "BinON requires C++20 or later");
 //	version of clang does not support it.
 #if BINON_CPP20 and defined(__cpp_lib_bit_cast)
     #define BINON_BIT_CAST true
+	#define BINON_BIT_CAST_CONSTEXPR constexpr
 #else
     #define BINON_BIT_CAST false
+	#define BINON_BIT_CAST_CONSTEXPR
 #endif
 
 //	BinON I/O is currently hard-wired to the default char-based iostreams.
