@@ -23,7 +23,7 @@ namespace binon {
 	{
 		switch(cb.asInt()) {
 			case kBoolObjCode.asInt():
-				mValue = ReadWord<std::byte>(stream, requireIO) != 0x00_byte;
+				mValue = ReadAsBytes<TStreamByte>(stream, requireIO) != 0;
 				break;
 			case kTrueObjCode.asInt():
 				mValue = true;
@@ -36,14 +36,13 @@ namespace binon {
 	auto BoolObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const BoolObj&
 	{
-		std::byte byt = mValue ? 0x01_byte : 0x00_byte;
-		WriteWord(byt, stream, requireIO);
+		WriteAsBytes<1U>(stream, mValue ? 1 : 0, requireIO);
 		return *this;
 	}
 	auto BoolObj::decodeData(TIStream& stream, bool requireIO)
 		-> BoolObj&
 	{
-		mValue = ReadWord<std::byte>(stream, requireIO) != 0x00_byte;
+		mValue = ReadAsBytes<TStreamByte>(stream, requireIO) != 0;
 		return *this;
 	}
 	void BoolObj::printArgs(std::ostream& stream) const {

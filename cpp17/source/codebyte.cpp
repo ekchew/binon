@@ -18,56 +18,54 @@ namespace binon {
 	}
 
 	void CodeByte::printRepr(std::ostream& stream) const {
-		switch(typeCode()) {
-		 case kNullObjCode.asUInt():
+		switch(typeCode().asInt()) {
+		 case kNullObjCode.asInt():
 			stream << "kNullObjCode";
 			break;
-		 case kBoolObjCode.asUInt():
+		 case kBoolObjCode.asInt():
 			stream << "kBoolObjCode";
 			break;
-		 case kTrueObjCode.asUInt():
+		 case kTrueObjCode.asInt():
 			stream << "kTrueObjCode";
 			break;
-		 case kIntObjCode.asUInt():
+		 case kIntObjCode.asInt():
 			stream << "kIntObjCode";
 			break;
-		 case kUIntCode.asUInt():
+		 case kUIntCode.asInt():
 			stream << "kUIntCode";
 			break;
-		 case kFloatObjCode.asUInt():
+		 case kFloatObjCode.asInt():
 			stream << "kFloatObjCode";
 			break;
-		 case kFloat32Code.asUInt():
+		 case kFloat32Code.asInt():
 			stream << "kFloat32Code";
 			break;
-		 case kBufferObjCode.asUInt():
+		 case kBufferObjCode.asInt():
 			stream << "kBufferObjCode";
 			break;
-		 case kStrObjCode.asUInt():
+		 case kStrObjCode.asInt():
 			stream << "kStrObjCode";
 			break;
-		 case kListObjCode.asUInt():
+		 case kListObjCode.asInt():
 			stream << "kListObjCode";
 			break;
-		 case kSListCode.asUInt():
+		 case kSListCode.asInt():
 			stream << "kSListCode";
 			break;
-		 case kDictObjCode.asUInt():
+		 case kDictObjCode.asInt():
 			stream << "kDictObjCode";
 			break;
-		 case kSKDictCode.asUInt():
+		 case kSKDictCode.asInt():
 			stream << "kSKDictCode";
 			break;
-		 case kSDictCode.asUInt():
+		 case kSDictCode.asInt():
 			stream << "kSDictCode";
 			break;
-		 case kNoObjCode.asUInt():
+		 case kNoObjCode.asInt():
 			stream << "kNoObjCode";
 			break;
 		 default:
-			stream << "CodeByte{";
-			PrintByte(_value, stream);
-			stream << '}';
+			stream << "CodeByte{0x" << AsHex(_value) << "_byte}";
 		}
 	}
 

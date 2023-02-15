@@ -360,37 +360,37 @@ namespace binon {
 		if(mValue.isScalar()) {
 			auto v = mValue.scalar(kSkipNormalize);
 			if(-0x40 <= v && v < 0x40) {
-				WriteWord(ToByte(v & 0x7f), stream, kSkipRequireIO);
+				WriteAsBytes(stream, ToByte(v & 0x7f), kSkipRequireIO);
 			}
 			else if(-0x2000 <= v && v < 0x2000) {
-				WriteWord(
-					static_cast<std::int16_t>(0x8000 | (v & 0x3fff)),
-					stream, kSkipRequireIO
+				WriteAsBytes(
+					stream, static_cast<std::int16_t>(0x8000 | (v & 0x3fff)),
+					kSkipRequireIO
 					);
 			}
 			else if(-0x10000000 <= v && v < 0x10000000) {
-				WriteWord(
-					static_cast<std::int32_t>(0xC0000000 | (v & 0x1fffffff)),
-					stream, kSkipRequireIO
+				WriteAsBytes(
+					stream, static_cast<std::int32_t>(0xC0000000 | (v & 0x1fffffff)),
+					kSkipRequireIO
 					);
 			}
 			else if(-0x08000000'00000000 <= v && v < 0x08000000'00000000)
 			{
-				WriteWord(
-					0xE0000000'00000000 | (v & 0x0fffffff'ffffffff),
-					stream, kSkipRequireIO
+				WriteAsBytes(
+					stream, 0xE0000000'00000000 | (v & 0x0fffffff'ffffffff),
+					kSkipRequireIO
 					);
 			}
 			else {
-				WriteWord('\xf0', stream, kSkipRequireIO);
-				WriteWord(v, stream, kSkipRequireIO);
+				WriteAsBytes(stream, '\xf0', kSkipRequireIO);
+				WriteAsBytes(stream, v, kSkipRequireIO);
 			}
 		}
 		else {
-			WriteWord('\xf1', stream, kSkipRequireIO);
+			WriteAsBytes(stream, '\xf1', kSkipRequireIO);
 			auto& u = mValue.vect();
 			for(auto b: u) {
-				WriteWord(b, stream, kSkipRequireIO);
+				WriteAsBytes(stream, b, kSkipRequireIO);
 			}
 		}
 		return *this;
@@ -497,36 +497,36 @@ namespace binon {
 		if(mValue.isScalar()) {
 			auto v = mValue.scalar(kSkipNormalize);
 			if(v < 0x80) {
-				WriteWord(ToByte(v), stream, kSkipRequireIO);
+				WriteAsBytes(stream, ToByte(v), kSkipRequireIO);
 			}
 			else if(v < 0x4000) {
-				WriteWord(
-					static_cast<std::uint16_t>(0x8000 | v),
-					stream, kSkipRequireIO
+				WriteAsBytes(
+					stream, static_cast<std::uint16_t>(0x8000 | v),
+					kSkipRequireIO
 					);
 			}
 			else if(v < 0x20000000) {
-				WriteWord(
-					static_cast<std::uint32_t>(0xC0000000 | v),
-					stream, kSkipRequireIO
+				WriteAsBytes(
+					stream, static_cast<std::uint32_t>(0xC0000000 | v),
+					kSkipRequireIO
 					);
 			}
 			else if(v < 0x10000000'00000000) {
-				WriteWord(
-					0xE0000000'00000000 | v,
-					stream, kSkipRequireIO
+				WriteAsBytes(
+					stream, 0xE0000000'00000000 | v,
+					kSkipRequireIO
 					);
 			}
 			else {
-				WriteWord('\xf0', stream, kSkipRequireIO);
-				WriteWord(v, stream, kSkipRequireIO);
+				WriteAsBytes(stream, '\xf0', kSkipRequireIO);
+				WriteAsBytes(stream, v, kSkipRequireIO);
 			}
 		}
 		else {
-			WriteWord('\xf1', stream, kSkipRequireIO);
+			WriteAsBytes(stream, '\xf1', kSkipRequireIO);
 			auto& u = mValue.vect();
 			for(auto b: u) {
-				WriteWord(b, stream, kSkipRequireIO);
+				WriteAsBytes(stream, b, kSkipRequireIO);
 			}
 		}
 		return *this;
