@@ -15,13 +15,13 @@ namespace binon {
 	auto FloatObj::encodeData(TOStream& stream, bool requireIO) const
 		-> const FloatObj&
 	{
-		WriteWord(mValue, stream, requireIO);
+		BytePack(mValue, stream, requireIO);
 		return *this;
 	}
 	auto FloatObj::decodeData(TIStream& stream, bool requireIO)
 		-> FloatObj&
 	{
-		mValue = ReadWord<TValue>(stream, requireIO);
+		mValue = ByteUnpack<TValue>(stream, requireIO);
 		return *this;
 	}
 
@@ -34,13 +34,13 @@ namespace binon {
 	auto Float32Obj::encodeData(TOStream& stream, bool requireIO) const
 		-> const Float32Obj&
 	{
-		WriteWord(mValue, stream, requireIO);
+		BytePack(mValue, stream, requireIO);
 		return *this;
 	}
 	auto Float32Obj::decodeData(TIStream& stream, bool requireIO)
 		-> Float32Obj&
 	{
-		mValue = ReadWord<TValue>(stream, requireIO);
+		mValue = ByteUnpack<TValue>(stream, requireIO);
 		return *this;
 	}
 }

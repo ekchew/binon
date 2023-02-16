@@ -4,6 +4,7 @@
 #include "errors.hpp"
 #include "floattypes.hpp"
 #include "ioutil.hpp"
+#include "typeutil.hpp"
 
 #include <algorithm>
 #include <array>
@@ -180,7 +181,9 @@ namespace binon {
 			}
 			else
 				if constexpr(is_same_v<To, byte>) {
-					return static_cast<std::underlying_type_t<byte>>(v);
+					return std::byte{
+						static_cast<std::underlying_type_t<byte>>(v)
+						};
 				}
 				else {
 					return static_cast<To>(v);
@@ -272,34 +275,32 @@ namespace binon {
 				}
 			}
 
-		template<
-			typename UInt, std::size_t Size=sizeof(UInt),
-			typename Byte=TStreamByte
-			>
+		template<typename UInt, typename Byte, std::size_t Size>
 			constexpr auto ByteUnpackUInt(const std::array<Byte, Size>& arr)
 				noexcept -> UInt
 			{
 				static_assert(std::is_unsigned_v<UInt>);
-				using UC = unsigned char;
-				UInt i{};
-				for(auto b: arr) {
-					i <<= 8;
-					i |= ConvByteLike<Byte>(static_cast<UC>(b & 0xffU));
+				if constexpr(Size == 1U) {
+					return ConvByteLike<unsigned char>(arr[0]);
 				}
-				return i;
+				else {
+					UInt i{};
+					for(auto b: arr) {
+						i <<= 8;
+						i |= ConvByteLike<unsigned char>(b);
+					}
+					return i;
+				}
 			}
 
-		template<
-			typename SInt, std::size_t Size=sizeof(SInt),
-			typename Byte=TStreamByte
-			>
+		template<typename SInt, typename Byte, std::size_t Size>
 			auto ByteUnpackSInt(const std::array<Byte, Size>& arr) noexcept
 				-> SInt
 			{
 				static_assert(
 					std::is_integral_v<SInt> and not std::is_unsigned_v<SInt>);
 				using UInt = std::make_unsigned_t<SInt>;
-				UInt u = ByteUnpackUInt(arr);
+				UInt u = ByteUnpackUInt<UInt, Byte, Size>(arr);
 				if constexpr(Size >= sizeof(SInt)) {
 					return static_cast<SInt>(u);
 				}
@@ -313,10 +314,7 @@ namespace binon {
 				}
 			}
 
-		template<
-			typename Flt, std::size_t Size=sizeof(Flt),
-			typename Byte=TStreamByte
-			>
+		template<typename Flt, typename Byte, std::size_t Size>
 			auto ByteUnpackFloat(std::array<Byte, Size> arr) noexcept -> Flt {
 				static_assert(
 					std::is_floating_point_v<Flt> and (Size == 4 or Size == 8),
@@ -337,9 +335,10 @@ namespace binon {
 			}
 	}
 
-	//	BytePack function
+	//	BytePack function -- array version
 	//
-	//	Packs a numeric value into an array of bytes.
+	//	Packs a value into an array of bytes. (Note that this is the
+	//	lowest-level version of BytePack. All overloads call this internally.)
 	//
 	//	Template args:
 	//		Size: number of bytes to pack or the default 0
@@ -354,10 +353,12 @@ namespace binon {
 	//			BinON only supports binary32 and binary64 values.
 	//		Byte: a byte-like type (defaults to TStreamByte)
 	//			This is the element type of the returned std::array.
-	//		T (inferred from function arg "v"): type of the numeric value
+	//		T (inferred from function arg "v"): type of value to pack
+	//			This can be an integral type, floating-point type,
+	//			or std::byte.
 	//
 	//	Function args:
-	//		v: a numeric value
+	//		v: the value to pack
 	//
 	//	Returns:
 	//		a std::array of Byte elements containing the packed "v" value
@@ -368,20 +369,78 @@ namespace binon {
 			if constexpr(std::is_floating_point_v<T>) {
 				return details::BytePackFloat<Size, Byte, T>(v);
 			}
-			else {
+			else if constexpr(std::is_integral_v<T>) {
 				return details::BytePackInt<Size, Byte, T>(v);
+			}
+			else {
+				static_assert(std::is_same_v<T, std::byte> and Size <= 1U);
+				return std::array<Byte, 1>{ConvByteLike<Byte>(v)};
 			}
 		}
 
-	//	ByteUnpack
+	//	BytePack function -- iterator version
 	//
-	//	Unpack a numeric value packed into an array earlier by BytePack().
+	//	This overloaded version of BytePack writes the byte data to an output
+	//	iterator rather than returning it in a std::array.
 	//
 	//	Template args:
-	//		T: type of the numeric value
-	//		Size (inferred from "arr" function arg): number of bytes to unpack
+	//		Size: see array version
+	//		T (inferred): see array version
+	//		OutputIt (inferred from "it" function arg):
+	//			This should be an output iterator to a byte-like type.
+	//
+	//	Function args:
+	//		v: the value to pack
+	//		it: output iterator destination for packed bytes
+	//
+	template<std::size_t Size=0, typename T, typename OutputIt>
+		auto BytePack(T v, OutputIt it) noexcept
+			-> std::enable_if_t<kIsIterator<OutputIt>>
+		{
+			using Byte = typename std::iterator_traits<OutputIt>::value_type;
+			auto arr = BytePack<Size, Byte, T>(v);
+			std::copy(arr.begin(), arr.end(), it);
+		}
+
+	//	BytePack function -- stream version
+	//
+	//	This overloaded version of BytePack writes the byte data to an
+	//	output stream rather than returning it in a std::array.
+	//
+	//	Template args:
+	//		Size: see array version
+	//		T (inferred): see array version
+	//
+	//	Function args:
+	//		v: the value to stream out
+	//		stream: a binary output stream of byte-likes
+	//		requireIO: throw exception if write fails? (defaults to true)
+	//			Setting this false does not necessarily mean exceptions are
+	//			disabled. The stream may have exceptions enabled already?
+	//			true will ensure that they are indeed enabled for the duration
+	//			of this function before being restored to their original state.
+	//
+	template<std::size_t Size=0, typename T>
+		void BytePack(T v, TOStream& stream, bool requireIO=true) {
+			auto arr = BytePack<Size>(v);
+			RequireIO rio(stream, requireIO);
+			stream.write(arr.data(), arr.size());
+		}
+
+	//	ByteUnpack function -- array version
+	//
+	//	Unpack a numeric value packed into an array earlier by BytePack().
+	//	(Note that this is the lowest-level version of ByteUnpack. All
+	//	overloads call this internally.)
+	//
+	//	Template args:
+	//		T: type of value to unpack
+	//			This may be an integral type, a floating-point type, or
+	//			std::byte. (Clearly, you should pick the one that matches
+	//			whatever was used to pack the bytes in the first place.)
 	//		Byte (inferred from "arr" function arg): array element type
 	//			This should a byte-like type.
+	//		Size (inferred from "arr" function arg): number of bytes to unpack
 	//
 	//	Function args:
 	//		arr: array of type Byte and size Size containing packed bytes
@@ -392,72 +451,81 @@ namespace binon {
 	template<typename T, typename Byte, std::size_t Size>
 		auto ByteUnpack(const std::array<Byte, Size>& arr) noexcept -> T {
 			if constexpr(std::is_floating_point_v<T>) {
-				return details::ByteUnpackFloat<T, Size, Byte>(arr);
+				return details::ByteUnpackFloat<T, Byte, Size>(arr);
 			}
 			else if constexpr(std::is_unsigned_v<T>) {
-				return details::ByteUnpackUInt<T, Size, Byte>(arr);
+				return details::ByteUnpackUInt<T, Byte, Size>(arr);
+			}
+			else if constexpr(std::is_integral_v<T>) {
+				return details::ByteUnpackSInt<T, Byte, Size>(arr);
 			}
 			else {
-				return details::ByteUnpackSInt<T, Size, Byte>(arr);
+				static_assert(std::is_same_v<T, std::byte> and Size == 1);
+				return ConvByteLike<T>(arr[0]);
 			}
 		}
 
-	//	WriteAsBytes function
+	//	ByteUnpack function -- iterator version
 	//
-	//	Calls BytePack to pack a numeric value into bytes before writing the
-	//	bytes to a binary output stream.
-	//
-	//	Template args:
-	//		Size: see PackBytes
-	//		T (inferred from "v" function arg): type the numeric value
-	//
-	//	Function args:
-	//		stream: a binary output stream
-	//		v: the value to stream out
-	//		requireIO: throw exception if write fails? (defaults to true)
-	//			Setting this false does not necessarily mean exceptions are
-	//			disabled. The stream will be accessed as-is in that case.
-	//
-	template<std::size_t Size=0, typename T>
-		void WriteAsBytes(TOStream& stream, T v, bool requireIO=true) {
-			auto arr = BytePack<Size>(v);
-			RequireIO rio(stream, requireIO);
-			stream.write(arr.data(), arr.size());
-		}
-
-	//	ReadAsBytes function
-	//
-	//	Calls ByteUnpack to unpack a numeric value from a byte sequence read
-	//	from a binary input stream.
+	//	This overloaded version of ByteUnpack reads the byte data from an input
+	//	iterator rather than taking it from a std::array.
 	//
 	//	Template args:
-	//		T: type of numeric value
-	//		Size: number of bytes to read and unpack (default to sizeof(T))
+	//		T: see array version
+	//		Size: number of bytes to unpack (defaults to sizeof(T))
+	//		InputIt (inferred from "it" function arg):
+	//			This should be an input iterator to a byte-like type.
 	//
 	//	Function args:
-	//		stream: a binary input stream
-	//		requireIO: throw exception if read fails? (defaults to true)
-	//			Setting this false does not necessarily mean exceptions are
-	//			disabled. The stream will be accessed as-is in that case.
-	//
-	//			If exceptions ARE disabled, the return value may be corrupt.
-	//			You should check the iostate bits of the stream to determine
-	//			whether the value can be trusted?
+	//		it: input iterator source of the packed bytes
 	//
 	//	Returns:
-	//		numeric value of type T read from stream and unpacked
+	//		value of type T unpacked from the iterator bytes
+	//
+	template<typename T, std::size_t Size=sizeof(T), typename InputIt>
+		auto ByteUnpack(InputIt it) noexcept
+			-> std::enable_if_t<kIsIterator<InputIt>, T>
+		{
+			using Byte = typename std::iterator_traits<InputIt>::value_type;
+			std::array<Byte, Size> arr;
+			std::copy_n(it, Size, arr.begin());
+			return ByteUnpack<T, Byte, Size>(arr);
+		}
+
+	//	ByteUnpack function -- stream version
+	//
+	//	This overloaded version of ByteUnpack reads the byte data from an input
+	//	stream rather than taking it from a std::array.
+	//
+	//	Template args:
+	//		T: see array version
+	//		Size: number of bytes to unpack (defaults to sizeof(T))
+	//
+	//	Function args:
+	//		stream: a binary input stream of byte-likes
+	//		requireIO: throw exception if read fails? (defaults to true)
+	//			See note about this arg under BytePack's stream version.
+	//			Note that if exceptions are actually disabled, your return
+	//			value may be corrupt after an I/O error. You should check the
+	//			iostate bit of the stream to determine if the value can be
+	//			trusted in that case.
+	//
+	//	Returns:
+	//		value of type T unpacked from the input stream bytes
 	//
 	template<typename T, std::size_t Size=sizeof(T)>
-		auto ReadAsBytes(TIStream& stream, bool requireIO=true) -> T {
+		auto ByteUnpack(TIStream& stream, bool requireIO=true) -> T {
 			std::array<TStreamByte, Size> arr;
 			RequireIO rio(stream, requireIO);
 			stream.read(arr.data(), arr.size());
-			return ByteUnpack<T, Size>(arr);
+			return ByteUnpack<T, TStreamByte, Size>(arr);
 		}
 
 	//-------------------------------------------------------------------------
 	//
-	//	Legacy Read/WriteWord functions
+	//	Read/WriteWord functions: DEPRECATED
+	//
+	//	Use BytePack/Unpack instead.
 	//
 	//-------------------------------------------------------------------------
 
@@ -582,6 +650,7 @@ namespace binon {
 			}
 			return word;
 		}
+
 }
 
 #endif

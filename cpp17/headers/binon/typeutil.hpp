@@ -2,12 +2,15 @@
 #define BINON_TYPEUTIL_HPP
 
 #include "macros.hpp"
+#include <iterator>
 #include <type_traits>
 #include <utility>
 #include <variant>
 
 namespace binon {
 
+	//---- kArgsOfType constant -----------------------------------------------
+	//
 	//	kArgsOfType helps check if all the arguments you pass to a variadic
 	//	template function match the type you specify. Consider the example:
 	//
@@ -32,6 +35,7 @@ namespace binon {
 	//		{
 	//			return (0 + ... + ints);
 	//		}
+
 	template<typename T, typename... Args>
 		constexpr bool kArgsOfType =
 			(std::is_convertible_v<Args,T> && ... && true);
@@ -202,6 +206,27 @@ namespace binon {
 		{
 			return CustomFold<T,Fn>{std::forward<U>(value), functor};
 		}
+
+	//---- IsIterator struct --------------------------------------------------
+	//
+	//	An type_traits-style struct that determines whether a given type is
+	//	some sort of iterator.
+
+	template<typename T, typename=void>
+		struct IsIterator: std::false_type {};
+	template<typename T>
+		struct IsIterator<T,
+			std::void_t<
+				typename std::iterator_traits<T>::difference_type,
+				typename std::iterator_traits<T>::pointer,
+				typename std::iterator_traits<T>::reference,
+				typename std::iterator_traits<T>::value_type,
+				typename std::iterator_traits<T>::iterator_category
+				>
+			>: std::true_type {};
+
+	template<typename T>
+		constexpr bool kIsIterator = IsIterator<T>::value;
 
 }
 

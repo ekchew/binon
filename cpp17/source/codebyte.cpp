@@ -5,10 +5,10 @@
 namespace binon {
 
 	auto CodeByte::Read(TIStream& stream, bool requireIO) -> CodeByte {
-		return ReadWord<std::byte>(stream, requireIO);
+		return ByteUnpack<std::byte>(stream, requireIO);
 	}
 	void CodeByte::write(TOStream& stream, bool requireIO) const {
-		WriteWord(mValue, stream, requireIO);
+		BytePack(mValue, stream, requireIO);
 	}
 	void CodeByte::printRepr(std::ostream& stream) const {
 		switch(asUInt()) {

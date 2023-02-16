@@ -2,7 +2,6 @@
 #define BINON_HASHUTIL_HPP
 
 #include "byteutil.hpp" // for the CHAR_BIT assertion
-#include "typeutil.hpp"
 
 #include <concepts>
 #include <functional>
