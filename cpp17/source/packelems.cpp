@@ -33,7 +33,7 @@ namespace binon {
 				mByte |= 0x01_byte;
 			}
 			if((++mIndex & 0x7u) == 0x0u) {
-				WriteWord(mByte, mStream, kSkipRequireIO);
+				BytePack<kSkipRequireIO>(mStream, mByte);
 				mByte = 0x00_byte;
 			}
 		}
@@ -46,7 +46,7 @@ namespace binon {
 		if(mElemCode == kBoolObjCode) {
 			auto n = mIndex & 0x7u;
 			if(n != 0x0u) {
-				WriteWord(mByte << (0x8u - n), mStream);
+				BytePack(mStream, mByte << (0x8u - n));
 			}
 		}
 	}
@@ -64,7 +64,7 @@ namespace binon {
 		RequireIO rio{mStream, requireIO};
 		if(mElemCode == kBoolObjCode) {
 			if((mIndex & 0x7u) == 0x0) {
-				mByte = ReadWord<std::byte>(mStream, kSkipRequireIO);
+				mByte = ByteUnpack<std::byte, kSkipRequireIO>(mStream);
 			}
 			BoolObj boolObj{(mByte & 0x80_byte) != 0x00_byte};
 			mByte <<= 1;

@@ -360,37 +360,37 @@ namespace binon {
 		if(mValue.isScalar()) {
 			auto v = mValue.scalar(kSkipNormalize);
 			if(-0x40 <= v && v < 0x40) {
-				WriteAsBytes(stream, ToByte(v & 0x7f), kSkipRequireIO);
+				BytePack(stream, ToByte(v & 0x7f), kSkipRequireIO);
 			}
 			else if(-0x2000 <= v && v < 0x2000) {
-				WriteAsBytes(
+				BytePack(
 					stream, static_cast<std::int16_t>(0x8000 | (v & 0x3fff)),
 					kSkipRequireIO
 					);
 			}
 			else if(-0x10000000 <= v && v < 0x10000000) {
-				WriteAsBytes(
+				BytePack(
 					stream, static_cast<std::int32_t>(0xC0000000 | (v & 0x1fffffff)),
 					kSkipRequireIO
 					);
 			}
 			else if(-0x08000000'00000000 <= v && v < 0x08000000'00000000)
 			{
-				WriteAsBytes(
+				BytePack(
 					stream, 0xE0000000'00000000 | (v & 0x0fffffff'ffffffff),
 					kSkipRequireIO
 					);
 			}
 			else {
-				WriteAsBytes(stream, '\xf0', kSkipRequireIO);
-				WriteAsBytes(stream, v, kSkipRequireIO);
+				BytePack(stream, '\xf0', kSkipRequireIO);
+				BytePack(stream, v, kSkipRequireIO);
 			}
 		}
 		else {
-			WriteAsBytes(stream, '\xf1', kSkipRequireIO);
+			BytePack(stream, '\xf1', kSkipRequireIO);
 			auto& u = mValue.vect();
 			for(auto b: u) {
-				WriteAsBytes(stream, b, kSkipRequireIO);
+				BytePack(stream, b, kSkipRequireIO);
 			}
 		}
 		return *this;
@@ -398,6 +398,7 @@ namespace binon {
 	auto IntObj::decodeData(TIStream& stream, bool requireIO)
 		-> IntObj&
 	{
+		using TScalar = typename TValue::TScalar;
 		auto signExtend = [](std::int64_t v, std::int64_t msbMask) {
 			auto sigBits = msbMask | msbMask - 1;
 			if(v & msbMask) {
@@ -410,9 +411,10 @@ namespace binon {
 		};
 		RequireIO rio{stream, requireIO};
 		TValue v;
-		auto byte0 = ReadWord<std::byte>(stream, kSkipRequireIO);
+		auto byte0 = ByteUnpack<std::byte>(stream, kSkipRequireIO);
 		if((byte0 & 0x80_byte) == 0x00_byte) {
-			v = signExtend(ReadWord<std::int8_t>(&byte0), 0x40);
+			auto [v0, it] = ByteUnpack<TScalar, 1>(&byte0);
+			v = signExtend(v0, 0x40);
 		}
 		else if(byte0 == 0xf1_byte) {
 			UIntObj sizeObj;
@@ -421,7 +423,7 @@ namespace binon {
 			UIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
-				u.push_back(ReadWord<std::byte>(stream));
+				u.push_back(ByteUnpack<std::byte>(stream));
 			}
 			v = std::move(u);
 		}
@@ -431,26 +433,22 @@ namespace binon {
 			buffer[0] = byte0;
 			if((byte0 & 0x40_byte) == 0x00_byte) {
 				stream.read(bufPlus1, 1);
-				v = signExtend(
-					ReadWord<std::int16_t>(buffer.data()), 0x2000
-					);
+				auto [v0, it] = ByteUnpack<TScalar, 2>(buffer.begin());
+				v = signExtend(v0, 0x2000);
 			}
 			else if((byte0 & 0x20_byte) == 0x00_byte) {
 				stream.read(bufPlus1, 3);
-				v = signExtend(
-					ReadWord<std::int32_t>(buffer.data()), 0x10000000
-					);
+				auto [v0, it] = ByteUnpack<TScalar, 4>(buffer.begin());
+				v = signExtend(v0, 0x10000000);
 			}
 			else if((byte0 & 0x10_byte) == 0x00_byte) {
 				stream.read(bufPlus1, 7);
-				v = signExtend(
-					ReadWord<std::int64_t>(buffer.data()),
-					0x08000000'00000000
-					);
+				auto [v0, it] = ByteUnpack<TScalar, 8>(buffer.begin());
+				v = signExtend(v0, 0x08000000'00000000);
 			}
 			else // ((byte0 & 0x01_byte) == 0x00_byte)
 			{
-				v = ReadWord<std::int64_t>(stream, kSkipRequireIO);
+				v = ByteUnpack<std::int64_t, kSkipRequireIO>(stream);
 			}
 		}
 		mValue = v;
@@ -497,36 +495,36 @@ namespace binon {
 		if(mValue.isScalar()) {
 			auto v = mValue.scalar(kSkipNormalize);
 			if(v < 0x80) {
-				WriteAsBytes(stream, ToByte(v), kSkipRequireIO);
+				BytePack(stream, ToByte(v), kSkipRequireIO);
 			}
 			else if(v < 0x4000) {
-				WriteAsBytes(
+				BytePack(
 					stream, static_cast<std::uint16_t>(0x8000 | v),
 					kSkipRequireIO
 					);
 			}
 			else if(v < 0x20000000) {
-				WriteAsBytes(
+				BytePack(
 					stream, static_cast<std::uint32_t>(0xC0000000 | v),
 					kSkipRequireIO
 					);
 			}
 			else if(v < 0x10000000'00000000) {
-				WriteAsBytes(
+				BytePack(
 					stream, 0xE0000000'00000000 | v,
 					kSkipRequireIO
 					);
 			}
 			else {
-				WriteAsBytes(stream, '\xf0', kSkipRequireIO);
-				WriteAsBytes(stream, v, kSkipRequireIO);
+				BytePack(stream, '\xf0', kSkipRequireIO);
+				BytePack(stream, v, kSkipRequireIO);
 			}
 		}
 		else {
-			WriteAsBytes(stream, '\xf1', kSkipRequireIO);
+			BytePack(stream, '\xf1', kSkipRequireIO);
 			auto& u = mValue.vect();
 			for(auto b: u) {
-				WriteAsBytes(stream, b, kSkipRequireIO);
+				BytePack(stream, b, kSkipRequireIO);
 			}
 		}
 		return *this;
@@ -534,11 +532,13 @@ namespace binon {
 	auto UIntObj::decodeData(TIStream& stream, bool requireIO)
 		-> UIntObj&
 	{
+		using TScalar = typename TValue::TScalar;
 		RequireIO rio{stream, requireIO};
 		TValue v;
-		auto byte0 = ReadWord<std::byte>(stream, kSkipRequireIO);
+		auto byte0 = ByteUnpack<std::byte>(stream, kSkipRequireIO);
 		if((byte0 & 0x80_byte) == 0x00_byte) {
-			v = ReadWord<std::uint8_t>(&byte0);
+			auto [v0, it] = ByteUnpack<TScalar, 1>(&byte0);
+			v = v0;
 		}
 		else if(byte0 == 0xf1_byte) {
 			UIntObj sizeObj;
@@ -547,7 +547,7 @@ namespace binon {
 			UIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
-				u.push_back(ReadWord<std::byte>(stream));
+				u.push_back(ByteUnpack<std::byte>(stream));
 			}
 			v = std::move(u);
 		}
@@ -557,22 +557,22 @@ namespace binon {
 			buffer[0] = byte0;
 			if((byte0 & 0x40_byte) == 0x00_byte) {
 				stream.read(bufPlus1, 1);
-				v = ReadWord<std::uint16_t>(buffer.data())
-					& 0x3fffu;
+				auto [v0, it] = ByteUnpack<TScalar, 2>(buffer.begin());
+				v = v0 & 0x3fffu;
 			}
 			else if((byte0 & 0x20_byte) == 0x00_byte) {
 				stream.read(bufPlus1, 3);
-				v = ReadWord<std::uint32_t>(buffer.data())
-					& 0x1fffffffu;
+				auto [v0, it] = ByteUnpack<TScalar, 4>(buffer.begin());
+				v = v0 & 0x1fffffffu;
 			}
 			else if((byte0 & 0x10_byte) == 0x00_byte) {
 				stream.read(bufPlus1, 7);
-				v = ReadWord<std::uint64_t>(buffer.data())
-					& 0x0fffffff'ffffffffu;
+				auto [v0, it] = ByteUnpack<TScalar, 8>(buffer.begin());
+				v = v0 & 0x0fffffff'ffffffffu;
 			}
 			else // ((byte0 & 0x01_byte) == 0x00_byte)
 			{
-				v = ReadWord<std::uint64_t>(stream, kSkipRequireIO);
+				v = ByteUnpack<std::uint64_t>(stream, kSkipRequireIO);
 			}
 		}
 		mValue = std::move(v);

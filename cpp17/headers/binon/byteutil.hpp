@@ -117,7 +117,7 @@ namespace binon {
 			unsigned i = std::to_integer<unsigned>(value);
 			return {hexDigit(i >> 4), hexDigit(i)};
 		}
-	
+
 	//-------------------------------------------------------------------------
 	//
 	//	Byte-Like Type Handling
@@ -127,29 +127,44 @@ namespace binon {
 	//
 	//-------------------------------------------------------------------------
 
+	//	ByteLike concept:
+	//		Matches a std::byte or any 1-byte integral type.
 	template<typename T>
 		concept ByteLike = std::same_as<T, std::byte> or
-			std::integral<T> and (sizeof(T) == 1);
-	
+			std::integral<T> and (sizeof(T) == 1U);
+
+	//	ByteOrInt concept:
+	//		Matches a std::byte or any integral type.
+	template<typename T>
+		concept ByteOrInt = std::same_as<T, std::byte> or std::integral<T>;
+
+	//	NonbyteInt concept:
+	//		Matches all integral types that are NOT ByteLike. In other words,
+	//		they must be at least 2 bytes in size.
+	template<typename T>
+		concept NonbyteInt = std::integral<T> and (sizeof(T) > 1U);
+
+	//	NonbyteSInt and NonbyteUInt concepts:
+	//		These are like NonbyteInt except they narrow the integral type to
+	//		either signed or unsigned, respectively.
+	template<typename T>
+		concept NonbyteSInt = std::signed_integral<T> and (sizeof(T) > 1U);
+	template<typename T>
+		concept NonbyteUInt = std::unsigned_integral<T> and (sizeof(T) > 1U);
+
 	//	ByteLikeIt concept:
 	//		This matches any iterator whose value_type is byte-like.
 	template<typename T>
 		concept ByteLikeIt =
 			ByteLike<typename std::iterator_traits<T>::value_type>;
-	
-	//	ByteLikeContigIt concept:
-	//		A byte-like contiguous iterator type.
-	template<typename T>
-		concept ByteLikeContigIt =
-			ByteLikeIt<T> and std::contiguous_iterator<T>;
 
-	//	ConvByteLike function:
-	//		Converts a value from one byte-like type to another.
-	template<ByteLike To, ByteLike From> constexpr
-		auto ConvByteLike(From v) noexcept -> To {
+	//	ByteLikeCast function:
+	//		Casts a value to a byte-like type. (Narrowing may occur.)
+	template<ByteLike To, typename From>
+		constexpr auto ByteLikeCast(From v) noexcept -> To {
 			using std::byte, std::same_as;
-			if constexpr(same_as<From,byte>) {
-				if constexpr(same_as<To,byte>) {
+			if constexpr(same_as<From, byte>) {
+				if constexpr(same_as<To, byte>) {
 					return v;
 				}
 				else {
@@ -157,8 +172,8 @@ namespace binon {
 				}
 			}
 			else
-				if constexpr(same_as<To,byte>) {
-					return static_cast<unsigned char>(v);
+				if constexpr(same_as<To, byte>) {
+					return byte{static_cast<unsigned char>(v)};
 				}
 				else {
 					return static_cast<To>(v);
@@ -183,277 +198,222 @@ namespace binon {
 	//
 	//	Serialization
 	//
-	//	The functions defined here help serialize fundamental data types
-	//	(integral or floating-point) into byte sequences and vice versa.
-	//
-	//	For example, you could encode the integer 1000 into 2 bytes with:
-	//
-	//		auto arr = BytePack<2>(1000);
-	//
-	//	Here, arr will be a std::array<TStreamByte,2> containing:
-	//
-	//		{'\x03','\xf8'}
-	//
-	//	As you can see, serialization follows a big-endian byte ordering
-	//	convention.
-	//
-	//	Later, you can unpack the serialized bytes with:
-	//
-	//		auto i = ByteUnpack<int,2>(arr);  // i = 1000
-	//
-	//	There are also WriteAsBytes() and ReadAsBytes() functions that
-	//	serialize data to/from TOStream and TIStream streams, respectively.
-	//
-	//	Regarding floating-point values, BinON currently only supports IEEE 754
-	//	binary32 and binary64 formats, so the size needs to be either 4 or 8
-	//	bytes. binon::types::TFloat32 and binon::types::TFloat64 are meant to
-	//	map onto these two data types.
-	//
 	//-------------------------------------------------------------------------
 
-	//	kBytePackSize constant:
-	//		This evaluates how large the std::array returned by BytePack()
-	//		should be dimensioned.
-	template<typename T, std::size_t Size>
-		inline constexpr std::size_t kBytePackSize = Size ? Size : sizeof(T);
-	
-	//	BytePack function
-	//
-	//	Packs a numeric value into an array of bytes.
-	//
-	//	Template args:
-	//		Size: number of bytes to pack or the default 0
-	//			In the 0 case, the number of bytes is determined from the size
-	//			of the type T. (This works best if you use a type with of well-
-	//			defined size such as std::int32_t.)
-	//
-	//			For integral types, if Size is set too small to accommodate the
-	//			entire value, the most-significant bytes will be discarded.
-	//
-	//			For floating-point types, the size must be either 4 or 8, since
-	//			BinON only supports binary32 and binary64 values.
-	//		Byte: a byte-like type (defaults to TStreamByte)
-	//			This is the element type of the returned std::array.
-	//		T (inferred from function arg "v"): type of the numeric value
-	//
-	//	Function args:
-	//		v: a numeric value
-	//
-	//	Returns:
-	//		a std::array of Byte elements containing the packed "v" value
-	//
-	template<
-		std::size_t Size=0, ByteLike Byte=TStreamByte,
-		std::integral T
-		>
-		constexpr auto BytePack(T v) noexcept
-			-> std::array<Byte, kBytePackSize<T, Size>>
-		{
-			constexpr std::size_t N = kBytePackSize<T, Size>;
-			if constexpr(N == 1U) {
-				return std::array<Byte,1U>{
-					ConvByteLike<Byte>(static_cast<unsigned char>(v))
-					};
+	template<typename T>
+		concept BytePackable = std::same_as<T, std::byte> or
+			std::integral<T> or std::floating_point<T>;
+
+	template<typename T, std::size_t N>
+		constexpr std::size_t kBytePackSize = N == 0 ? sizeof(T) : N;
+
+	template<ByteLike B, BytePackable T, std::size_t N>
+		using ByteArray = std::array<B, kBytePackSize<T, N>>;
+
+	namespace details {
+		template<std::input_iterator It>
+			constexpr auto AdvanceIt(It it, std::size_t n) noexcept -> It {
+				if constexpr(std::random_access_iterator<It>) {
+					it += n;
+				}
+				else { for(; n > 0; --n, ++it) {} }
+				return it;
 			}
-			else {
-				using U8 = std::underlying_type_t<std::byte>;
-				std::array<Byte, N> arr;
-				auto end = arr.rend();
-				for(auto it = arr.rbegin(); it != end; ++it, v >>= 8) {
-					*it = ConvByteLike<Byte>(static_cast<U8>(v & 0xffU));
+
+		template<std::size_t N=0, ByteLikeIt It, BytePackable T>
+			constexpr auto BytePackPad(It it, T v) noexcept -> It {
+				using B = typename std::iterator_traits<It>::value_type;
+				constexpr auto n = kBytePackSize<T, N>;
+				if constexpr(n > sizeof(T)) {
+					B pad = ByteLikeCast<B>('\x00');
+					if constexpr(std::signed_integral<T>) {
+						if(v < 0) {
+							pad = ByteLikeCast<B>('\xff');
+						}
+					}
+					it = std::fill_n(it, n - sizeof(T), pad);
+				}
+				return it;
+			}
+
+		template<ByteLike B, std::floating_point T> BINON_BIT_CAST_CONSTEXPR
+			auto BytePackFP(T v) noexcept -> std::array<B, sizeof(T)> {
+				using Arr = std::array<B, sizeof(T)>;
+				alignas(T) Arr arr;
+			 #if BINON_BIT_CAST
+				arr = std::bit_cast<Arr>(v);
+			 #else
+			 	std::memcpy(arr.data(), &v, sizeof(T));
+			 #endif
+			 	if constexpr(LittleEndian()) {
+					std::reverse(arr.begin(), arr.end());
 				}
 				return arr;
 			}
-		}
-	template<
-		std::size_t Size=0, ByteLike Byte=TStreamByte,
-		std::floating_point T
-		>
-		BINON_BIT_CAST_CONSTEXPR auto BytePack(T v) noexcept
-			-> std::array<Byte, kBytePackSize<T, Size>>
-		{
-			using std::array;
-			constexpr std::size_t N = kBytePackSize<T, Size>;
-			static_assert(N == 4 or N == 8,
-				"BinON expects binary32 or binary64 floating-point types");
-			using U8 = std::underlying_type_t<std::byte>;
-			BINON_BIT_CAST_CONSTEXPR auto pack =
-				[](auto v) BINON_BIT_CAST_CONSTEXPR noexcept
+
+		template<std::floating_point T, ByteLikeIt It>
+			BINON_BIT_CAST_CONSTEXPR auto ByteUnpackFP(It it) noexcept
+				-> std::pair<T, It>
 			{
-				using Arr = array<Byte, sizeof v>;
+				using B = typename std::iterator_traits<It>::value_type;
+				using Arr = std::array<B, sizeof(T)>;
+				constexpr bool randAcc = std::random_access_iterator<It>;
+				alignas(T) Arr arr;
+				if constexpr(LittleEndian()) {
+					if constexpr(randAcc) {
+						std::reverse_copy(it, it + sizeof(T), arr.begin());
+					}
+					else {
+						std::copy_n(it, sizeof(T), arr.begin());
+						std::reverse(arr.begin(), arr.end());
+					}
+				}
+				else { std::copy_n(it, sizeof(T), arr.begin()); }
 			 #if BINON_BIT_CAST
-				if constexpr(LittleEndian()) {
-					auto arr = std::bit_cast<Arr>(v);
-					std::reverse(arr.begin(), arr.end());
-					return arr;
-				}
-				else {
-					return std::bit_cast<Arr>(v);
-				}
+			 	T v = std::bit_cast<T>(arr);
 			 #else
-				Arr arr;
-				std::memcpy(arr.data(), &v, sizeof v);
-				if constexpr(LittleEndian()) {
-					std::reverse(arr.begin(), arr.end());
-				}
-				return arr;
+			 	T v;
+			 	std::memcpy(&v, arr.data(), sizeof(T));
 			 #endif
+				return {v, AdvanceIt(it, sizeof(T))};
+			}
+	}
+
+	template<std::size_t N=0, ByteLikeIt It, ByteLike T>
+		constexpr auto BytePack(It it, T v) noexcept -> It {
+			using B = typename std::iterator_traits<It>::value_type;
+			it = details::BytePackPad<N, It, T>(it, v);
+			return *it = ByteLikeCast<B>(v), ++it;
+		}
+	template<std::size_t N=0, ByteLikeIt It, NonbyteInt T>
+		constexpr auto BytePack(It it, T v) noexcept -> It {
+			using B = typename std::iterator_traits<It>::value_type;
+			it = details::BytePackPad<N, It, T>(it, v);
+			constexpr auto n = std::min(kBytePackSize<T, N>, sizeof(T));
+			auto i = (static_cast<int>(n) - 1) * 8;
+			do { *it++ = ByteLikeCast<B>(v >> i); }
+			while((i -= 8) >= 0);
+			return it;
+		}
+	template<std::size_t N=0, ByteLike B=TStreamByte, ByteOrInt T>
+		constexpr auto BytePack(T v) noexcept -> ByteArray<B, T, N> {
+			ByteArray<B, T, N> arr;
+			return BytePack<N>(arr.begin(), v), arr;
+		}
+	template<std::size_t N=0, ByteLike B=TStreamByte, std::floating_point T>
+		BINON_BIT_CAST_CONSTEXPR auto BytePack(T v) noexcept
+			-> ByteArray<B, T, N>
+		{
+			using namespace details;
+			using namespace types;
+			constexpr auto n = kBytePackSize<T, N>;
+			static_assert(n == 4 or n == 8,
+				"BinON floating-point values must be encoded in 32 or 64 bits"
+				);
+			if constexpr(n == 4) {
+				return BytePackFP<B>(static_cast<TFloat32>(v));
+			}
+			else {
+				return BytePackFP<B>(static_cast<TFloat64>(v));
+			}
+		}
+	template<std::size_t N=0, ByteLikeIt It, std::floating_point T>
+		BINON_BIT_CAST_CONSTEXPR auto BytePack(It it, T v) noexcept -> It {
+			using B = typename std::iterator_traits<It>::value_type;
+			alignas(T) auto arr = BytePack<N, B, T>(v);
+			return std::copy(arr.begin(), arr.end(), it);
+		}
+	template<bool ReqIO=kRequireIO, std::size_t N=0, BytePackable T>
+		void BytePack(TOStream& stream, T v) {
+			auto pack = [&] {
+				alignas(T) auto arr = BytePack<N, TStreamByte, T>(v);
+				stream.write(arr.data(), arr.size());
 			};
-			if constexpr(N == 4) {
-				return pack(static_cast<types::TFloat32>(v));
+			if constexpr(ReqIO) {
+				RequireIO reqIO{stream};
+				pack();
+			}
+			else { pack(); }
+		}
+	template<std::size_t N=0, BytePackable T>
+		void BytePack(TOStream& stream, T v, bool reqIO) {
+			if(reqIO) {
+				BytePack<kRequireIO, N, T>(stream, v);
 			}
 			else {
-				return pack(static_cast<types::TFloat64>(v));
+				BytePack<kSkipRequireIO, N, T>(stream, v);
 			}
-		}
-	template<ByteLike Byte=TStreamByte> constexpr
-		auto BytePack(std::byte v) noexcept -> std::array<std::byte, 1U> {
-			return std::array<Byte,1U>{ConvByteLike<Byte>(v)};
-		}
-	
-	//	ByteUnpack
-	//
-	//	Unpack a numeric value packed into an array earlier by BytePack().
-	//
-	//	Template args:
-	//		T: type of the numeric value
-	//		Size (inferred from "arr" function arg): number of bytes to unpack
-	//		Byte (inferred from "arr" function arg): array element type
-	//			This should a byte-like type.
-	//
-	//	Function args:
-	//		arr: array of type Byte and size Size containing packed bytes
-	//
-	//	Returns:
-	//		value of type T unpacked from array
-	//
-	template<std::unsigned_integral T, ByteLike Byte, std::size_t Size>
-		constexpr auto ByteUnpack(const std::array<Byte, Size>& arr) noexcept
-			-> T
-		{
-			if constexpr(Size == 1U) {
-				return ConvByteLike<unsigned char>(arr[0]);
-			}
-			else {
-				T v{};
-				for(auto b: arr) {
-					v <<= 8;
-					v |= ConvByteLike<unsigned char>(b);
-				}
-				return v;
-			}
-		}
-	template<
-		std::signed_integral T, std::size_t Size=sizeof(T),
-		ByteLike Byte=TStreamByte
-		>
-		constexpr auto ByteUnpack(const std::array<Byte, Size>& arr) noexcept
-			-> T
-		{
-			using U = std::make_unsigned_t<T>;
-			auto u = ByteUnpack<U>(arr);
-			if constexpr(Size >= sizeof(T)) {
-				return static_cast<T>(u);
-			}
-			else {
-				U m = U{1} << (Size * 8U - 1U);
-				T v = static_cast<T>(u & (m - 1U));
-				if(u & m) {
-					v -= static_cast<T>(m);
-				}
-				return v;
-			}
-		}
-	template<
-		std::floating_point T, std::size_t Size=sizeof(T),
-		ByteLike Byte=TStreamByte
-		>
-		BINON_BIT_CAST_CONSTEXPR
-			auto ByteUnpack(std::array<Byte, Size> arr) noexcept -> T
-		{
-			using std::memcpy;
-			static_assert(Size == 4 or Size == 8,
-				"BinON expects binary32 or binary64 floating-point types");
-			if constexpr(LittleEndian()) {
-				std::reverse(arr.begin(), arr.end());
-			}
-			if constexpr(Size == 4) {
-				types::TFloat32 v;
-			 #if BINON_BIT_CAST
-				v = bit_cast<decltype(v)>(arr);
-			 #else
-				memcpy(&v, arr.data(), Size);
-			 #endif
-				return static_cast<T>(v);
-			}
-			else {
-				types::TFloat64 v;
-			 #if BINON_BIT_CAST
-				v = bit_cast<decltype(v)>(arr);
-			 #else
-				memcpy(&v, arr.data(), Size);
-			 #endif
-				return static_cast<T>(v);
-			}
-		}
-	template<std::same_as<std::byte> T, ByteLike Byte, std::size_t Size>
-		constexpr auto ByteUnpack(const std::array<Byte, Size>& arr) noexcept
-			-> std::byte
-		{
-			return ConvByteLike<std::byte>(arr[0]);
 		}
 
-	//	WriteAsBytes function
-	//
-	//	Calls BytePack to pack a numeric value into bytes before writing the
-	//	bytes to a binary output stream.
-	//
-	//	Template args:
-	//		Size: see PackBytes
-	//		T (inferred from "v" function arg): type the numeric value
-	//
-	//	Function args:
-	//		stream: a binary output stream
-	//		v: the value to stream out
-	//		requireIO: throw exception if write fails? (defaults to true)
-	//			Setting this false does not necessarily mean exceptions are
-	//			disabled. The stream will be accessed as-is in that case.
-	//
-	template<std::size_t Size=0, typename T>
-		void WriteAsBytes(TOStream& stream, T v, bool requireIO=true) {
-			auto arr = BytePack<Size>(v);
-			RequireIO rio(stream, requireIO);
-			stream.write(arr.data(), arr.size());
+	template<ByteLike T, std::size_t N=sizeof(T), ByteLikeIt It>
+		constexpr auto ByteUnpack(It it) noexcept -> std::pair<T, It> {
+			static_assert(N > 0U);
+			if constexpr(N > 1U) {
+				it = details::AdvanceIt(it, N - 1U);
+			}
+			T v = ByteLikeCast<T>(*it);
+			return {v, ++it};
 		}
-		
-	//	ReadAsBytes function
-	//
-	//	Calls ByteUnpack to unpack a numeric value from a byte sequence read
-	//	from a binary input stream.
-	//
-	//	Template args:
-	//		T: type of numeric value
-	//		Size: number of bytes to read and unpack (default to sizeof(T))
-	//
-	//	Function args:
-	//		stream: a binary input stream
-	//		requireIO: throw exception if read fails? (defaults to true)
-	//			Setting this false does not necessarily mean exceptions are
-	//			disabled. The stream will be accessed as-is in that case.
-	//
-	//			If exceptions ARE disabled, the return value may be corrupt.
-	//			You should check the iostate bits of the stream to determine
-	//			whether the value can be trusted?
-	//
-	//	Returns:
-	//		numeric value of type T read from stream and unpacked
-	//
-	template<typename T, std::size_t Size=sizeof(T)>
-		auto ReadAsBytes(TIStream& stream, bool requireIO=true) -> T {
-			std::array<TStreamByte, Size> arr;
-			RequireIO rio(stream, requireIO);
-			stream.read(arr.data(), arr.size());
-			return ByteUnpack<T>(arr);
+	template<NonbyteUInt T, std::size_t N=sizeof(T), ByteLikeIt It>
+		constexpr auto ByteUnpack(It it) noexcept -> std::pair<T, It> {
+			static_assert(N > 0U);
+			T v{};
+			for(auto i = N; i > 0U; --i, ++it) {
+				v <<= 8;
+				v |= ByteLikeCast<unsigned char>(*it);
+			}
+			return {v, it};
+		}
+	template<NonbyteSInt T, std::size_t N=sizeof(T), ByteLikeIt It>
+		constexpr auto ByteUnpack(It it) noexcept -> std::pair<T, It> {
+			using U = std::make_unsigned_t<T>;
+			auto [u, it2] = ByteUnpack<U, N, It>(it);
+			auto v = static_cast<T>(u);
+			if constexpr(sizeof(T) > N) {
+				constexpr auto m = T{1} << (N * 8 - 1);
+				if(v & m) {
+					v -= m << 1;
+				}
+			}
+			return {v, it2};
+		}
+	template<std::floating_point T, std::size_t N=sizeof(T), ByteLikeIt It>
+		BINON_BIT_CAST_CONSTEXPR auto ByteUnpack(It it) noexcept
+			-> std::pair<T, It>
+		{
+			using namespace details;
+			using namespace types;
+			static_assert(N == 4 or N == 8,
+				"BinON floating-point values must be encoded in 32 or 64 bits"
+				);
+			if constexpr(N == 4) {
+				auto [v, it2] = ByteUnpackFP<TFloat32>(it);
+				return {static_cast<T>(v), it2};
+			}
+			else {
+				auto [v, it2] = ByteUnpackFP<TFloat64>(it);
+				return {static_cast<T>(v), it2};
+			}
+		}
+	template<BytePackable T, bool ReqIO=kRequireIO, std::size_t N=sizeof(T)>
+		auto ByteUnpack(TIStream& stream) -> T {
+			auto unpack = [&] {
+				alignas(T) std::array<TStreamByte, N> arr;
+				stream.read(arr.data(), arr.size());
+				auto [v, it] = ByteUnpack<T, N>(arr.begin());
+				return v;
+			};
+			if constexpr(ReqIO) {
+				RequireIO reqIO{stream};
+				return unpack();
+			}
+			else { return unpack(); }
+		}
+	template<BytePackable T, std::size_t N=sizeof(T)>
+		auto ByteUnpack(TIStream& stream, bool reqIO) -> T {
+			return reqIO ?
+				ByteUnpack<T, kRequireIO, N>(stream) :
+				ByteUnpack<T, kSkipRequireIO, N>(stream);
 		}
 
 }

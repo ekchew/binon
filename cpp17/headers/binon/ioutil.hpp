@@ -92,6 +92,7 @@ namespace binon {
 		TIOS::iostate mEx0;
 	};
 	constexpr bool kSkipRequireIO = false;
+	constexpr bool kRequireIO = true;
 }
 
 #endif
