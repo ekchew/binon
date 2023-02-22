@@ -360,37 +360,30 @@ namespace binon {
 		if(mValue.isScalar()) {
 			auto v = mValue.scalar(kSkipNormalize);
 			if(-0x40 <= v && v < 0x40) {
-				BytePack(stream, ToByte(v & 0x7f), kSkipRequireIO);
+				BytePack<kSkipRequireIO, 1>(stream, v & 0x7f);
 			}
 			else if(-0x2000 <= v && v < 0x2000) {
-				BytePack(
-					stream, static_cast<std::int16_t>(0x8000 | (v & 0x3fff)),
-					kSkipRequireIO
-					);
+				BytePack<kSkipRequireIO, 2>(stream, 0x8000 | (v & 0x3fff));
 			}
 			else if(-0x10000000 <= v && v < 0x10000000) {
-				BytePack(
-					stream, static_cast<std::int32_t>(0xC0000000 | (v & 0x1fffffff)),
-					kSkipRequireIO
-					);
+				BytePack<kSkipRequireIO, 4>(stream,
+					0xC0000000 | (v & 0x1fffffff));
 			}
 			else if(-0x08000000'00000000 <= v && v < 0x08000000'00000000)
 			{
-				BytePack(
-					stream, 0xE0000000'00000000 | (v & 0x0fffffff'ffffffff),
-					kSkipRequireIO
-					);
+				BytePack<kSkipRequireIO, 8>(stream,
+					0xE0000000'00000000 | (v & 0x0fffffff'ffffffff));
 			}
 			else {
-				BytePack(stream, '\xf0', kSkipRequireIO);
-				BytePack(stream, v, kSkipRequireIO);
+				BytePack<kSkipRequireIO>(stream, '\xf0');
+				BytePack<kSkipRequireIO, 8>(stream, v);
 			}
 		}
 		else {
-			BytePack(stream, '\xf1', kSkipRequireIO);
+			BytePack<kSkipRequireIO>(stream, '\xf1');
 			auto& u = mValue.vect();
 			for(auto b: u) {
-				BytePack(stream, b, kSkipRequireIO);
+				BytePack<kSkipRequireIO>(stream, b);
 			}
 		}
 		return *this;
@@ -411,7 +404,7 @@ namespace binon {
 		};
 		RequireIO rio{stream, requireIO};
 		TValue v;
-		auto byte0 = ByteUnpack<std::byte>(stream, kSkipRequireIO);
+		auto byte0 = ByteUnpack<std::byte, kSkipRequireIO>(stream);
 		if((byte0 & 0x80_byte) == 0x00_byte) {
 			auto [v0, it] = ByteUnpack<TScalar, 1>(&byte0);
 			v = signExtend(v0, 0x40);
@@ -423,7 +416,7 @@ namespace binon {
 			UIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
-				u.push_back(ByteUnpack<std::byte>(stream));
+				u.push_back(ByteUnpack<std::byte, kSkipRequireIO>(stream));
 			}
 			v = std::move(u);
 		}
@@ -495,36 +488,27 @@ namespace binon {
 		if(mValue.isScalar()) {
 			auto v = mValue.scalar(kSkipNormalize);
 			if(v < 0x80) {
-				BytePack(stream, ToByte(v), kSkipRequireIO);
+				BytePack<kSkipRequireIO, 1>(stream, v);
 			}
 			else if(v < 0x4000) {
-				BytePack(
-					stream, static_cast<std::uint16_t>(0x8000 | v),
-					kSkipRequireIO
-					);
+				BytePack<kSkipRequireIO, 2>(stream, 0x8000 | v);
 			}
 			else if(v < 0x20000000) {
-				BytePack(
-					stream, static_cast<std::uint32_t>(0xC0000000 | v),
-					kSkipRequireIO
-					);
+				BytePack<kSkipRequireIO, 4>(stream, 0xC0000000 | v);
 			}
 			else if(v < 0x10000000'00000000) {
-				BytePack(
-					stream, 0xE0000000'00000000 | v,
-					kSkipRequireIO
-					);
+				BytePack<kSkipRequireIO, 8>(stream, 0xE0000000'00000000 | v);
 			}
 			else {
-				BytePack(stream, '\xf0', kSkipRequireIO);
-				BytePack(stream, v, kSkipRequireIO);
+				BytePack<kSkipRequireIO>(stream, '\xf0');
+				BytePack<kSkipRequireIO, 8>(stream, v);
 			}
 		}
 		else {
-			BytePack(stream, '\xf1', kSkipRequireIO);
+			BytePack<kSkipRequireIO>(stream, '\xf1');
 			auto& u = mValue.vect();
 			for(auto b: u) {
-				BytePack(stream, b, kSkipRequireIO);
+				BytePack<kSkipRequireIO>(stream, b);
 			}
 		}
 		return *this;
@@ -535,7 +519,7 @@ namespace binon {
 		using TScalar = typename TValue::TScalar;
 		RequireIO rio{stream, requireIO};
 		TValue v;
-		auto byte0 = ByteUnpack<std::byte>(stream, kSkipRequireIO);
+		auto byte0 = ByteUnpack<std::byte, kSkipRequireIO>(stream);
 		if((byte0 & 0x80_byte) == 0x00_byte) {
 			auto [v0, it] = ByteUnpack<TScalar, 1>(&byte0);
 			v = v0;
@@ -572,7 +556,7 @@ namespace binon {
 			}
 			else // ((byte0 & 0x01_byte) == 0x00_byte)
 			{
-				v = ByteUnpack<std::uint64_t>(stream, kSkipRequireIO);
+				v = ByteUnpack<TScalar, kSkipRequireIO, 8>(stream);
 			}
 		}
 		mValue = std::move(v);
