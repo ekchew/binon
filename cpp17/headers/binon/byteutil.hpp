@@ -196,21 +196,57 @@ namespace binon {
 
 	//-------------------------------------------------------------------------
 	//
-	//	Serialization
+	//	Binary Serialization
+	//
+	//	The byte-packing functions defined here can take a value of basic type
+	//	and encode it into a sequence of byte elements or vice versa, following
+	//	a big-endian byte ordering convention.
+	//
+	//	Supported types include:
+	//
+	//	-	std::byte
+	//	-	integral
+	//		-	Both signed and unsigned built-in types are supported.
+	//		-	Signed integers are assumed to take two's complement form.
+	//			(This is a generally safe assumption in C++ implementations.)
+	//	-	floating-point
+	//		-	BinON only supports IEEE 754 binary32 and binary64 encodings.
+	//		-	It assumes the BINON_FLOAT32 and BINON_FLOAT64 macros map onto
+	//			types that encode this way when written to memory. (They
+	//			default to the float and double types, respectively.)
 	//
 	//-------------------------------------------------------------------------
 
+	//	BytePackable concept
+	//
+	//	This covers the value types that can be used with the BytePack() and
+	//	ByteUnpack() functions defined below; namely:
+	//
+	//		std::byte
+	//		any integral type
+	//		any floating-point type
+	//
 	template<typename T>
 		concept BytePackable = std::same_as<T, std::byte> or
 			std::integral<T> or std::floating_point<T>;
 
+	//	kBytePackSize constant:
+	//		This sorts out the actual number of bytes BytePack() packs from its
+	//		template args.
 	template<typename T, std::size_t N>
 		constexpr std::size_t kBytePackSize = N == 0 ? sizeof(T) : N;
 
+	//	ByteArray class
+	//		This is the return type from the BytePack() overload that returns
+	//		a std::array.
 	template<ByteLike B, BytePackable T, std::size_t N>
 		using ByteArray = std::array<B, kBytePackSize<T, N>>;
 
 	namespace details {
+
+		//	AdvanceIt() is called when ByteUnpack() is reading more bytes than
+		//	it needs for the return value type to discard the most-significant
+		//	bytes from the input stream.
 		template<std::input_iterator It>
 			constexpr auto AdvanceIt(It it, std::size_t n) noexcept -> It {
 				if constexpr(std::random_access_iterator<It>) {
@@ -220,6 +256,10 @@ namespace binon {
 				return it;
 			}
 
+		//	BytePackPad() is sort of the counterpart to AdvanceIt() for
+		//	BytePack(). When there are more bytes to write than are available
+		//	in the source value, it writes pad bytes that may be either '\x00'
+		//	or '\xff' depending on whether sign-extension is warranted.
 		template<std::size_t N=0, ByteLikeIt It, BytePackable T>
 			constexpr auto BytePackPad(It it, T v) noexcept -> It {
 				using B = typename std::iterator_traits<It>::value_type;
@@ -236,6 +276,9 @@ namespace binon {
 				return it;
 			}
 
+		//	This function is called by the floating-point std::array version of
+		//	BytePack(). The type T in this case needs to be one of
+		//	types::TFloat32 or types::TFloat64.
 		template<ByteLike B, std::floating_point T> BINON_BIT_CAST_CONSTEXPR
 			auto BytePackFP(T v) noexcept -> std::array<B, sizeof(T)> {
 				using Arr = std::array<B, sizeof(T)>;
@@ -251,6 +294,9 @@ namespace binon {
 				return arr;
 			}
 
+		//	This function is called by the floating-point std::array version of
+		//	ByteUnpack(). The type T in this case needs to be one of
+		//	types::TFloat32 or types::TFloat64.
 		template<std::floating_point T, ByteLikeIt It>
 			BINON_BIT_CAST_CONSTEXPR auto ByteUnpackFP(It it) noexcept
 				-> std::pair<T, It>
@@ -279,6 +325,90 @@ namespace binon {
 			}
 	}
 
+	//	BytePack function
+	//
+	//	This function packs a BytePackable value into a sequence of ByteLike
+	//	elements.
+	//
+	//	std::array version:
+	//		This version returns the packed elements in a std::array.
+	//
+	//		Template args:
+	//			N: number of bytes to pack or 0
+	//				The default 0 causes BytePack() to take the number of bytes
+	//				from the size of the T value type. (If you go with the
+	//				default, you should supply a value of well-defined size,
+	//				such as a std::int32_t.)
+	//			B: the ByteLike value type of the returned std::array
+	//			T (inferred from "v" function arg): a BytePackable type
+	//
+	//		Function args:
+	//			v: value to pack
+	//
+	//		Returns:
+	//			std::array of value type B containing the packed bytes
+	//
+	//		(Implementation note: For floating-point values, this is the
+	//		lowest-level version of BytePack. That's because std::bit_cast
+	//		works well with std::array.)
+	//
+	//	iterator version:
+	//		This version writes the packed elements out to an iterator of
+	//		ByteLike elements.
+	//
+	//		Template args:
+	//			N: number of bytes of pack or 0
+	//			It (inferred from "it" function arg): a ByteLikeIt type
+	//			T (inferred from "v" function arg): a BytePackable type
+	//
+	//		Function args:
+	//			it: destination byte iterator
+	//			v: value to pack
+	//
+	//		Returns:
+	//			updated "it" function arg pointing to end of destination range
+	//
+	//		(Implementation note: For std::byte and integral values, this is
+	//		the lowest-version of BytePack. Unlike with floating-point values,
+	//		these do not call on std::bit_cast().)
+	//
+	//	stream version 1:
+	//		This version writes the packed bytes to an output stream.
+	//
+	//		Template args:
+	//			ReqIO: require successful I/O?
+	//				When this flag set to the default kRequireIO (true),
+	//				the exception bits of the "stream" function arg get set for
+	//				the duration of this call. That means if any I/O error
+	//				occurs, BytePack() will throw an exception rather than
+	//				return normally.
+	//
+	//				Note that the kSkipRequireIO (false) option does not
+	//				necesarily disable the exception bits. It just ignores
+	//				them. If you go with kRequireIO, the bits will be restored
+	//				to their original values (be they set or not) before the
+	//				function returns/throws.
+	//			N: number of bytes of pack or 0
+	//			T (inferred from "v" function arg): a BytePackable type
+	//
+	//		Function args:
+	//			stream: output byte stream
+	//			v: value to pack
+	//
+	//	stream version 2:
+	//		This version is equivalent to the other stream version except that
+	//		the require I/O flag is passed in as a function (rather than
+	//		template) arg.
+	//
+	//		Template args:
+	//			N: number of bytes of pack or 0
+	//			T (inferred from "v" function arg): a BytePackable type
+	//
+	//		Function args:
+	//			stream: output byte stream
+	//			v: value to pack
+	//			reqIO: require successful I/O?
+	//
 	template<std::size_t N=0, ByteLikeIt It, ByteLike T>
 		constexpr auto BytePack(It it, T v) noexcept -> It {
 			using B = typename std::iterator_traits<It>::value_type;
@@ -345,6 +475,67 @@ namespace binon {
 			}
 		}
 
+	//	ByteUnpack function
+	//
+	//	This function unpacks byte sequences packed by BytePack().
+	//
+	//	iterator version:
+	//		This version sources the byte sequence from an input iterator.
+	//
+	//		Note that ByteUnpack() does not include a version that takes a
+	//		std::array as input. If you want to unpack an array as returned
+	//		by BytePack, you can write:
+	//
+	//			auto arr = BytePack<2>(1000);  // arr = {'\x03', '\xe8'}
+	//			auto [thousand, it] = ByteUnpack<int, 2>(arr.begin());
+	//				// thousand = 1000, it = arr.end()
+	//
+	//		Template args:
+	//			T: a BytePackable return value type
+	//			N: number of bytes to unpack (defaults to sizeof(T))
+	//			It (inferred from "it" function arg): source iterator type
+	//
+	//		Function args:
+	//			it: iterator to N bytes
+	//
+	//		Returns:
+	//			std::pair containing the unpacked value and the "it" iterator
+	//			updated to the end of the range
+	//
+	//	stream version 1:
+	//		This version reads the byte sequence from an input stream.
+	//
+	//		Template args:
+	//			T: a BytePackable return value type
+	//			ReqIO: require successful I/O? (see BytePack())
+	//			N: number of bytes to unpack (defaults to sizeof(T))
+	//
+	//		Function args:
+	//			stream: input byte stream of at least N bytes
+	//
+	//		Returns:
+	//			unpacked value of type T
+	//				Note that if you have intentionally disabled setting the
+	//				exception bits on "stream", the return value may be
+	//				undefined after an I/O error. You should check the iostate
+	//				bits if there is a risk of this before trusting the value.
+	//
+	//	stream version 2:
+	//		This version is equivalent to the other stream version except that
+	//		the require I/O flag is passed in as a function (rather than
+	//		template) arg.
+	//
+	//		Template args:
+	//			T: a BytePackable return value type
+	//			N: number of bytes to unpack (defaults to sizeof(T))
+	//
+	//		Function args:
+	//			stream: input byte stream of at least N bytes
+	//			reqIO: require successful I/O?
+	//
+	//		Returns:
+	//			unpacked value of type T
+	//
 	template<ByteLike T, std::size_t N=sizeof(T), ByteLikeIt It>
 		constexpr auto ByteUnpack(It it) noexcept -> std::pair<T, It> {
 			static_assert(N > 0U);
