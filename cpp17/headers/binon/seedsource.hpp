@@ -274,7 +274,7 @@ namespace binon {
 			template<typename It> constexpr
 				void param(It it) const { *it = this->flags; }
 		};
-	};
+	}
 
 	//---- MTEngine -----------------------------------------------------------
 	//
