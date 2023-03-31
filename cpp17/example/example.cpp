@@ -26,9 +26,9 @@ template<typename T>
 		cout << "before encoding:\n\t" << v << '\n';
 		ostringstream oss;
 		v.encode(oss);
-		auto s{move(oss).str()};
+		auto s{std::move(oss).str()};
 		DumpBinON(s);
-		istringstream iss{move(s)};
+		istringstream iss{std::move(s)};
 		v.decode(iss);
 		cout << "after decoding:\n\t" << v << '\n';
 	}
