@@ -87,41 +87,40 @@ namespace binon {
 		}
 	}
 	auto BinONObj::asTypeCodeObj(CodeByte typeCode) && -> BinONObj {
-		using std::move;
 		switch(typeCode.asUInt()) {
 			case kNullObjCode.asUInt():
-				return GetObj<NullObj>(move(*this));
+				return GetObj<NullObj>(std::move(*this));
 			case kBoolObjCode.asUInt():
-				return GetObj<BoolObj>(move(*this));
+				return GetObj<BoolObj>(std::move(*this));
 			case kTrueObjCode.asUInt(): {
-				auto boolObj{GetObj<BoolObj>(move(*this))};
+				auto boolObj{GetObj<BoolObj>(std::move(*this))};
 				if(!boolObj.value()) {
 					throw BadTypeConv{"BoolObj could not convert to TrueObj"};
 				}
-				return move(boolObj);
+				return std::move(boolObj);
 			}
 			case kIntObjCode.asUInt():
-				return GetObj<IntObj>(move(*this));
+				return GetObj<IntObj>(std::move(*this));
 			case kUIntCode.asUInt():
-				return GetObj<UIntObj>(move(*this));
+				return GetObj<UIntObj>(std::move(*this));
 			case kFloatObjCode.asUInt():
-				return GetObj<FloatObj>(move(*this));
+				return GetObj<FloatObj>(std::move(*this));
 			case kFloat32Code.asUInt():
-				return GetObj<Float32Obj>(move(*this));
+				return GetObj<Float32Obj>(std::move(*this));
 			case kBufferObjCode.asUInt():
-				return GetObj<BufferObj>(move(*this));
+				return GetObj<BufferObj>(std::move(*this));
 			case kStrObjCode.asUInt():
-				return GetObj<StrObj>(move(*this));
+				return GetObj<StrObj>(std::move(*this));
 			case kListObjCode.asUInt():
-				return GetObj<ListObj>(move(*this));
+				return GetObj<ListObj>(std::move(*this));
 			case kSListCode.asUInt():
-				return GetObj<SList>(move(*this));
+				return GetObj<SList>(std::move(*this));
 			case kDictObjCode.asUInt():
-				return GetObj<DictObj>(move(*this));
+				return GetObj<DictObj>(std::move(*this));
 			case kSKDictCode.asUInt():
-				return GetObj<SKDict>(move(*this));
+				return GetObj<SKDict>(std::move(*this));
 			case kSDictCode.asUInt():
-				return GetObj<SDict>(move(*this));
+				return GetObj<SDict>(std::move(*this));
 			default:
 				throw BadCodeByte{typeCode};
 		}
