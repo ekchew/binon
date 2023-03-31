@@ -11,7 +11,7 @@ namespace binon {
 	{
 		std::array<char,3> buffer;
 		auto format = capitalize ? "%02X" : "%02x";
-		std::sprintf(buffer.data(), format, value);
+		std::snprintf(buffer.data(), buffer.size(), format, value);
 		return buffer;
 	}
 	auto AsHex(std::byte value, bool capitalize) -> std::string {
