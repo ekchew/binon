@@ -164,12 +164,11 @@ namespace binon {
 			List&
 		)
 	{
-		using std::move;
 		if constexpr(std::is_base_of_v<SList,List>) {
-			list.value().push_back(MakeTypeCodeObj(list.mElemCode, move(v)));
+			list.value().push_back(MakeTypeCodeObj(list.mElemCode, std::move(v)));
 		}
 		else {
-			list.value().push_back(MakeObj(move(v)));
+			list.value().push_back(MakeObj(std::move(v)));
 		}
 
 		return list;

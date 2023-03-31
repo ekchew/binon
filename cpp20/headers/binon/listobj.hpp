@@ -23,14 +23,14 @@ namespace binon {
 		ListBase(const ListBase&) = default;
 		ListBase(ListBase&&) noexcept = default;
 		ListBase() = default;
-		auto operator= (const ListBase&) -> ListBase& = default;
-		auto operator= (ListBase&&) noexcept -> ListBase& = default;
+		auto operator = (const ListBase&) -> ListBase& = default;
+		auto operator = (ListBase&&) noexcept -> ListBase& = default;
 		auto operator == (const ListBase& rhs) const -> bool;
 		auto operator != (const ListBase& rhs) const -> bool;
 		auto value() & -> TValue& { return mValue; }
 		auto value() && -> TValue { return std::move(mValue); }
 		auto value() const& -> const TValue& { return mValue; }
-		auto size() const -> std::size_t { return mValue.size(); }
+		auto size() const -> std::size_t;
 		auto hasDefVal() const -> bool { return size() == 0; }
 
 	 protected:

@@ -14,9 +14,15 @@ namespace binon {
 			a.begin(), a.end(), b.begin(), b.end()
 		);
 	}
+	
 	auto ListBase::operator != (const ListBase& rhs) const -> bool {
 		return !(*this == rhs);
 	}
+
+	auto ListBase::size() const -> std::size_t {
+		return mValue.size();
+	}
+	
 	auto ListBase::calcHash(std::size_t seed) const -> std::size_t {
 		for(auto& elem: value()) {
 			seed = HashCombine(seed, std::hash<BinONObj>{}(elem));

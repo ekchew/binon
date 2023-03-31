@@ -138,9 +138,8 @@ namespace binon {
 						)
 					)
 			{
-				using std::move;
 				return CustomFold{
-					this->functor(move(this->value), move(rhs.value)),
+					this->functor(std::move(this->value), std::move(rhs.value)),
 					this->functor
 					};
 			}
