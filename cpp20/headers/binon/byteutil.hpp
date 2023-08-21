@@ -9,6 +9,7 @@
 #include <array>
 #include <bit>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <type_traits>
