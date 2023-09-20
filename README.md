@@ -196,7 +196,7 @@ All list objects begin with an element count, encoded as `UInt` data (without th
 
 An `SList`, or simple list, is a list in which all elements share the same data type. In this case, a single code byte identifying said type is followed by the data for each element without its code byte.
 
-`SList` handles boolean elements in a special way. It packs 8 to a byte to save space. (See 
+`SList` handles boolean elements in a special way. It packs 8 to a byte to save space. (See
 [Boolean Objects](#bool).)
 
 The auto-optimization logic for lists checks all the elements in your list to see if they share a common type and substitutes an `SList` for a `ListObj` if that is the case. It is smart enough to select the more general data type when necessary. For example, if all elements are unsigned integers, an `SList` of `UInt` will be selected, but if even one of the elements is negative, the element type will be the more general `IntObj` instead.
@@ -339,7 +339,7 @@ Let's try encoding the number 100 and decoding it again.
 	>>> BinONObj.Encode(100, outF, optimize=True)
 	>>> binon = outF.getvalue()
 	>>> for byte in binon: print(f"0x{byte:02x}")
-	... 
+	...
 	0x22
 	0x64
 	>>> inF = io.BytesIO(binon)
@@ -442,7 +442,10 @@ For example, if you wrote:
 <a name="cpp_bufferobj"></a>
 #### BufferObj and BufferVal
 
-The `TValue` type for a `BufferObj` is `BufferVal`. This data structure is similar to the `HyStr` used by [StrObj](#cpp_strobj) but uses `std::byte` rather than `char` for its "character" type.
+The `TValue` type for a `BufferObj` is `BufferVal`. In the current
+implementation, this is a HyStr just as in the StrObj case. (In earlier
+implementations, it used to be a string of std::byte, but this has been
+deprecated on account of std::char_traits not )
 
 `BufferVal`s also print to `std::ostream`s as hexadecimal codes rather
 than regular characters.
@@ -461,8 +464,7 @@ As with [list containers](#cpp_listobj), dictionaries have helper functions that
 
 The `TValue` types for `IntObj` and `UIntObj` are `IntVal` and `UIntVal`, respectively. The latter are also BinON data structures as opposed to a built-in C++ integer type.
 
-The reason for this is that BinON allows for big integers as can appear in Python at times. `IntVal`, then, can contain either a `std::int64_t` or a `std::basic_string<std::byte>` for cases in which the internal
-value would not fit in 64 bits.
+The reason for this is that BinON allows for big integers as can appear in Python at times. `IntVal`, then, can contain either a `std::int64_t` or a `std::string` of bytes for cases in which the internal value would not fit in 64 bits.
 
 Look at the documentation in "intobj.hpp" for info on how this works. Of particular note, while both the `scalar()` and `asScalar()` methods of `IntVal` and `UIntVal` return a 64-bit integer, `scalar()` may throw an exception if it must be truncated down from a big integer while `asScalar()` will simply return the truncated int. (Note: helper functions like `GetObjVal()` will use `asScalar()` internally. The idea here is if you wrote `GetObjVal<std::int16_t>(obj)`, it's assumed to behave like a `static_cast<std::int16_t>(val)`, so you are effectively authorizing the truncation.)
 

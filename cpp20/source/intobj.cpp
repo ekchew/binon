@@ -70,7 +70,7 @@ namespace binon {
 			byt <<= 4;
 			byt |= digit;
 			if(flush) {
-				v.push_back(byt);
+				v.push_back(std::to_integer<IntVal::TVect::value_type>(byt));
 				byt = 0x00_byte;
 			}
 			flush = !flush;
@@ -86,7 +86,7 @@ namespace binon {
 		IntVal::TVect u;
 		u.reserve(reqByt);
 		while(padByt-->0u) {
-			u.push_back(0x00_byte);
+			u.push_back(std::to_integer<IntVal::TVect::value_type>(0x00_byte));
 		}
 		BytesFromHex(u, hex, sigHex);
 		return u;
@@ -118,7 +118,7 @@ namespace binon {
 					if(iter == vect.end()) {
 						return nullopt;
 					}
-					return *iter++;
+					return ToByte(*iter++);
 				};
 			}
 		}
@@ -344,8 +344,10 @@ namespace binon {
 		}
 		if(!mValue.isScalar()) {
 			auto& vect = mValue.vect();
-			if(vect.size() == 0u || (vect[0] & 0x80_byte) != 0x00_byte) {
-				vect.insert(0, 1, 0x00_byte);
+			if(	vect.size() == 0u ||
+				(ToByte(vect[0]) & 0x80_byte) != 0x00_byte)
+			{
+				vect.insert(0, 1, '\0');
 			}
 		}
 	}
@@ -416,7 +418,8 @@ namespace binon {
 			UIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
-				u.push_back(ByteUnpack<std::byte, kSkipRequireIO>(stream));
+				u.push_back(std::to_integer<UIntVal::TVect::value_type>(
+					ByteUnpack<std::byte, kSkipRequireIO>(stream)));
 			}
 			v = std::move(u);
 		}
@@ -464,7 +467,7 @@ namespace binon {
 		}
 		else {
 			auto vc = v.vect();
-			if((vc[0] & 0x80_byte) != 0x00_byte) {
+			if((ToByte(vc[0]) & 0x80_byte) != 0x00_byte) {
 				neg = true;
 			}
 			else {
@@ -531,7 +534,8 @@ namespace binon {
 			UIntVal::TVect u;
 			u.reserve(n);
 			while(n-->0u) {
-				u.push_back(ByteUnpack<std::byte>(stream));
+				u.push_back(std::to_integer<UIntVal::TVect::value_type>(
+					ByteUnpack<std::byte>(stream)));
 			}
 			v = std::move(u);
 		}

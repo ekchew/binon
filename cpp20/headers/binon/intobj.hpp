@@ -15,8 +15,8 @@ namespace binon {
 	//
 	//	The value types contain take 2 forms internally: scalar or vector. This
 	//	is done using a std::variant between a 64-bit integer (std::int64_t or
-	//	std::uint64_t for IntVal or UIntVal, respectively) and a
-	//	std::basic_string<std::byte> for the vector form.
+	//	std::uint64_t for IntVal or UIntVal, respectively) and a std::string
+	//	for the vector form.
 	//
 	//	The vector form is needed to represent values that are too large to fit
 	//	in 64 bits. When used, the byte string should follow the big-endian byte
@@ -36,10 +36,10 @@ namespace binon {
 	//	public functionality (including constructors) from a std::variant of the
 	//	scalar and vector forms described earlier.
 	template<typename Child, typename Scalar>
-		struct IntBase: std::variant<Scalar, std::basic_string<std::byte>>
+		struct IntBase: std::variant<Scalar, std::string>
 		{
 			using TScalar = Scalar; // std::int64_t or std::uint64_t
-			using TVect = std::basic_string<std::byte>;
+			using TVect = std::string;
 
 			using std::variant<TScalar,TVect>::variant;
 
@@ -334,7 +334,7 @@ namespace binon {
 				v.reserve(sizeof(TScalar));
 				auto n = sizeof(TScalar) << 3;
 				while((n -= 8u) > 0u) {
-					v.push_back(ToByte(i >> n & 0xff));
+					v.push_back(static_cast<TVect::value_type>(i >> n & 0xff));
 				}
 				if constexpr(std::is_same_v<ReturnType,void>) {
 					callback(v);
@@ -360,10 +360,10 @@ namespace binon {
 		}
 		TVect::size_type trim = 0, sigBytes;
 		if constexpr(std::is_unsigned_v<TScalar>) {
-			for(auto& byt: *pVect) {
+			for(auto& c: *pVect) {
 
 				//	In an unsigned integer, any 0x00 bytes in the most-significant positions can be trimmed off.
-				if(byt != 0x00_byte) {
+				if(ToByte(c) != 0x00_byte) {
 					break;
 				}
 				++trim;
@@ -382,10 +382,10 @@ namespace binon {
 			//	series of 0x00 or 0xff bytes. We need to track which ones we are
 			//	seeing.
 			std::byte padByte = 0x00_byte;
-			for(auto& byt: *pVect) {
-				switch(std::to_integer<unsigned>(byt)) {
+			for(auto& c: *pVect) {
+				switch(c) {
 				 case 0x00u:
-					if(byt != padByte) {
+					if(ToByte(c) != padByte) {
 						goto endFor;
 					}
 					break;
@@ -393,7 +393,7 @@ namespace binon {
 					if(trim == 0) {
 						padByte = 0xff_byte;
 					}
-					else if(byt != padByte) {
+					else if(ToByte(c) != padByte) {
 						goto endFor;
 					}
 				}

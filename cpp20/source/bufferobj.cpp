@@ -13,8 +13,8 @@ namespace binon {
 	}
 	auto operator<< (std::ostream& stream, const BufferVal& v) -> std::ostream&
 	{
-		for(auto byt: v) {
-			stream << "\\x" << AsHex(byt);
+		for(auto c: v) {
+			stream << "\\x" << AsHex(ToByte(c));
 		}
 		return stream;
 	}

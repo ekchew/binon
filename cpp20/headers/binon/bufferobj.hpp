@@ -7,13 +7,12 @@
 namespace binon {
 
 	//	The value of a BufferObj is implemented as hybrid string (see hystr.hpp)
-	//	similar to StrObj except that each "character" is a std::byte rather
-	//	than a char.
+	//	similar to StrObj except that the character type is unsigned char.
 	//
 	//	Printing a BufferVal will display the string as escaped hexadecimal
 	//	codes along the lines "\xc0\xff\xee".
-	struct BufferVal: BasicHyStr<std::byte> {
-		using BasicHyStr<std::byte>::BasicHyStr;
+	struct BufferVal: BasicHyStr<char> {
+		using BasicHyStr<char>::BasicHyStr;
 		BufferVal(const HyStr& hyStr);
 	};
 	auto operator<< (std::ostream& stream, const BufferVal& v)
