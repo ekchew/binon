@@ -22,6 +22,10 @@ namespace binon {
 	}
 	RequireIO::~RequireIO() {
 		if(mPStream) {
+			//	We should clear any existing iostate bits before restoring the
+			//	original exception bits, since an exception may get thrown
+			//	otherwise, and destructor should never throw as a rule.
+			mPStream->clear();
 			mPStream->exceptions(mEx0);
 		}
 	}
