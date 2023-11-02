@@ -17,7 +17,7 @@
 
 namespace binon {
 
-	//	BinONVariant is a std::variant of all the BinON object types.
+	//	BinONVariant is a std::variant of all the specific BinON object types.
 	using BinONVariant = std::variant<
 		NullObj,
 		BoolObj,
@@ -35,23 +35,18 @@ namespace binon {
 		>;
 
 	//	kIsObj<T> tells you if your type T is one of the above BinON object
-	//	variants.
+	//	variants. ObjType<T> is a concept that requires kIsObj<T> be true.
 	template<typename T>
 		constexpr bool kIsObj
 			= VariantMember<std::decay_t<T>,BinONVariant>;
- BINON_IF_CONCEPTS(
 	template<typename T> concept ObjType = kIsObj<T>;
- )
 
-	// he BinONObj struct is central to the BinON C++ implementation. As a
-	// BinONVariant, it can be any of the object types. BinONObjs are managed by
-	// many of the APIs in this library, and the struct itself comes with some
-	// convenience methods for encoding/decoding BinON and so forth.
+	// The BinONObj struct is central to the BinON C++ implementation. As a
+	// BinONVariant, it can be any of the specific object types. BinONObjs are
+	// managed by many of the APIs in this library, and the struct itself comes
+	// with some convenience methods for encoding/decoding BinON and so forth.
 	struct BinONObj: BinONVariant {
 		using TValue = BinONVariant;
-		auto& value() & { return *static_cast<TValue*>(this); }
-		const auto& value() const& { return *static_cast<const TValue*>(this); }
-		auto value() && { return std::move(*static_cast<TValue*>(this)); }
 
 		//	The Decode() class method can decode an arbitrary BinON object from
 		//	an input binary stream.
@@ -59,41 +54,54 @@ namespace binon {
 		//	Args:
 		//		stream: a std::istream from which raw bytes can be read as char
 		//		requireIO: throw exception if a read operation fails?
-		//			This argument is common to all encoding/decoding methods and
-		//			always defaults to true. It sets the various std::ios
-		//			exception flags. Generally, you want this.
+		//			Decode() relies on std::ios_base::failure exceptions to
+		//			report any I/O errors while decoding the BinONObj. The
+		//			default true for this argument will cause the exception
+		//			bits to be set temporarily on stream. This is done
+		//			internally through an instance of binon::RequireIO: a RAII
+		//			class that sets the bits until its destructor restores them
+		//			to previous values.
 		//
-		//			If you are doing several encoding/decoding operations in a
-		//			row, however, you might consider declaring a RequireIO
-		//			object (see ioutil.hpp). This will set the flags while it
-		//			exists and restore them when it destructs. Then you can call
-		//			BinONObj::Decode(stream, kSkipRequireIO) since you know the
-		//			exception bits have already been set.
+		//			If you know the bits are already set going into this call
+		//			(perhaps because you have aready instantiated a RequireIO
+		//			on the stream in an outer context?), you can pass
+		//			binon::kSkipRequireIO (false) in for this argument.
+		//
+		//	Returns:
+		//		A BinONObj constructed out of binary data read from stream
+		//			Note that this may be a container, in which case Decode()
+		//			will get called recursively to load all of its elements.
+		//
+		//	Throws:
+		//		std::ios_base::failure if anything goes wrong
 		static auto Decode(TIStream& stream, bool requireIO = true) -> BinONObj;
 
 		//	FromTypeCode() returns a new object of the type specified by type
 		//	code (see codebyte.hpp for a list of possible codes). This object
 		//	type will be default-constructed.
 		//
-		//	Decode() calls FromTypeCode() internally after reading the type code
-		//	byte from the data stream. You may never need to call it yourself.
+		//	Decode() calls FromTypeCode() internally after reading the type
+		//	code byte from the data stream. You may never need to call it
+		//	yourself.
 		static auto FromTypeCode(CodeByte typeCode) -> BinONObj;
 
-		//	A BinON object can be instantiated in several ways. Any std::variant
-		//	constructors should work. For example, you could have it contain a
-		//	string with:
+		//	A BinON object can be instantiated in several ways. Any
+		//	std::variant constructors should work. For example, you could have
+		//	it contain a string with:
 		//
 		//		BinONObj obj{StrObj{"foo"}};
 		//
-		//	Using FromTypeCode(), this would look like:
+		//	Using FromTypeCode(), this might look like:
 		//
 		//		auto obj = BinONObj::FromTypeCode{kStrObjCode};
-		//		std::get<StrObj>(obj).value() = "foo";
+		//		std::get<StrObj>(obj.value()).value() = "foo";
 		//
-		//	Perhaps the easiest way is to call MakeObj() (see
-		//	typeconv.hpp):
+		//	Perhaps the easiest way is to call MakeObj() (see objhelpers.hpp):
 		//
-		//	auto obj = MakeObj("foo");
+		//		auto obj = MakeObj("foo");
+		//
+		//	See also listhelpers.hpp and dicthelpers.hpp for easy ways to make
+		//	and populate containers.
 		using BinONVariant::variant;
 
 		//	typeCode() returns the BinON type code associated with the current
@@ -101,16 +109,17 @@ namespace binon {
 		//
 		//		bool isStrObj = obj.typeCode() == kStrObjCode;
 		//
-		//	Alternatively, you could use std::holds_alternative():
+		//	Alternatively, you could use std::holds_alternative() on the
+		//	variant value:
 		//
-		//		bool isStrObj = std::holds_alternative<StrObj>(obj);
+		//		bool isStrObj = std::holds_alternative<StrObj>(obj.value());
 		auto typeCode() const -> CodeByte;
 
 		//	As you would expect, the encode() method encodes a BinON
 		//	representation of the current object to an output binary stream.
 		//
-		//	Note that each specific BinON object class (e.g. StrObj) has its own
-		//	specialized encode() method. This encode() simply calls the
+		//	Note that each specific BinON object class (e.g. StrObj) has its
+		//	own specialized encode() method. This encode() simply calls the
 		//	appropriate one.
 		auto encode(TOStream& stream, bool requireIO = true) const
 			-> const BinONObj&;
@@ -118,15 +127,15 @@ namespace binon {
 		//	encodeData() omits encoding the type code and goes straight to the
 		//	object data. You can call this if the object type is clear by
 		//	context. For example, the ListObj class encodes the length of the
-		//	list with UIntObj's encodeData(). It doesn't need to encode the type
-		//	since the size of a list will always be an unsigned integer.
+		//	list with UIntObj's encodeData(). It doesn't need to encode the
+		//	type since the size of a list will always be an unsigned integer.
 		auto encodeData(TOStream& stream, bool requireIO = true) const
 			-> const BinONObj&;
 
 		//	decodeData() reads back what encodeData() wrote. Note how it is an
 		//	instance method--not a class method like Decode(). That means you
-		//	need to have allocated a BinONObj of the correct type before you can
-		//	call decodeData() on it.
+		//	need to have allocated a BinONObj of the correct type before you
+		//	can call decodeData() on it.
 		auto decodeData(TIStream& stream, bool requireIO = true)
 			-> BinONObj&;
 
@@ -152,11 +161,11 @@ namespace binon {
 		//	and only required template argument) can be moved. To request a
 		//	primary object move, try something like this:
 		//
-		//		auto list = std::move(myBinONObj).asObj<ListObj,SList>;
+		//		auto list = std::move(myBinONObj).asObj<ListObj,SList>();
 		//
 		//	Note that asObj() is called automatically by TypeConv and the
-		//	various helper functions that depend on it, so you may never need to
-		//	call it directly.
+		//	various helper functions that depend on it, so you may never need
+		//	to call it directly.
 		//
 		//	asObj() may throw BadObjConv if the conversion fails.
 		template<typename Obj, typename... Alts>
@@ -173,8 +182,8 @@ namespace binon {
 			);
 
 		//	asTypeCodeObj() is like asObj() except it uses a type code to
-		//	determine what type of BinONObj to return. It may perform any of the
-		//	officially supported type conversions automatically.
+		//	determine what type of BinONObj to return. It may perform any of
+		//	the officially supported type conversions automatically.
 		auto asTypeCodeObj(CodeByte typeCode) const& -> BinONObj;
 		auto asTypeCodeObj(CodeByte typeCode) && -> BinONObj;
 
