@@ -144,6 +144,10 @@ namespace binon {
 			constexpr auto at(TSize i) const -> TChr;
 			auto operator [] (TSize i) -> TChr&;
 			constexpr auto operator [] (TSize i) const -> TChr;
+			constexpr auto front() const -> const TChr&;
+			auto front() -> TChr&;
+			constexpr auto back() const -> const TChr&;
+			auto back() -> TChr&;
 			auto operator += (const BasicHyStr& hs) -> BasicHyStr&;
 			auto data() -> TChr*;
 			constexpr auto data() const noexcept -> const TChr*;
@@ -161,10 +165,16 @@ namespace binon {
 			auto rend() { return asStr().rend(); }
 			constexpr auto rend() const noexcept { return asView().rend(); }
 			constexpr auto crend() const noexcept { return asView().crend(); }
-			void clear() noexcept;
 			constexpr auto empty() const noexcept -> bool;
 			constexpr auto size() const noexcept -> TSize;
 			constexpr auto length() const noexcept -> TSize;
+			constexpr auto max_size() const noexcept -> TSize;
+			void reserve(TSize newCap);
+			constexpr auto capacity() const noexcept -> TSize;
+			constexpr void shrink_to_fit();
+			void clear() noexcept;
+			void push_back(TChr c);
+			void pop_back();
 			void resize(TSize n);
 			void resize(TSize n, TChr c);
 
@@ -294,6 +304,24 @@ namespace binon {
 				}, mV);
 		}
 	template<typename C, typename T, typename A>
+		constexpr auto BasicHyStr<C,T,A>::front() const -> const TChr& {
+			return std::visit(
+				[](const auto& v) -> const TChr& { return v.front(); }, mV);
+		}
+	template<typename C, typename T, typename A>
+		auto BasicHyStr<C,T,A>::front() -> TChr& {
+			return asStr().front();
+		}
+	template<typename C, typename T, typename A>
+		constexpr auto BasicHyStr<C,T,A>::back() const -> const TChr& {
+			return std::visit(
+				[](const auto& v) -> const TChr& { return v.back(); }, mV);
+		}
+	template<typename C, typename T, typename A>
+		auto BasicHyStr<C,T,A>::back() -> TChr& {
+			return asStr().back();
+		}
+	template<typename C, typename T, typename A>
 		auto BasicHyStr<C,T,A>::operator += (const BasicHyStr& hs)
 			-> BasicHyStr&
 		{
@@ -311,6 +339,46 @@ namespace binon {
 				, mV);
 		}
 	template<typename C, typename T, typename A>
+		constexpr auto BasicHyStr<C,T,A>::empty() const noexcept -> bool {
+			return std::visit(
+				[](const auto& v)->bool { return v.empty(); }, mV);
+		}
+	template<typename C, typename T, typename A>
+		constexpr auto BasicHyStr<C,T,A>::size() const noexcept -> TSize {
+			return std::visit(
+				[](const auto& v) -> TSize { return v.size(); }, mV);
+		}
+	template<typename C, typename T, typename A>
+		constexpr auto BasicHyStr<C,T,A>::length() const noexcept -> TSize {
+			return size();
+		}
+	template<typename C, typename T, typename A>
+		constexpr auto BasicHyStr<C,T,A>::max_size() const noexcept -> TSize {
+			return std::visit(
+				[](const auto& v) -> TSize { return v.max_size(); }, mV);
+		}
+	template<typename C, typename T, typename A>
+		void BasicHyStr<C,T,A>::reserve(TSize newCap) {
+			asStr().reserve(newCap);
+		}
+	template<typename C, typename T, typename A>
+		constexpr auto BasicHyStr<C,T,A>::capacity() const noexcept -> TSize {
+			auto pStr = std::get_if<TStr>(&mV);
+			if(pStr) {
+				return pStr->capacity();
+			}
+			else {
+				return size();
+			}
+		}
+	template<typename C, typename T, typename A>
+		constexpr void BasicHyStr<C,T,A>::shrink_to_fit() {
+			auto pStr = std::get_if<TStr>(&mV);
+			if(pStr) {
+				pStr->shrink_to_fit();
+			}
+		}
+	template<typename C, typename T, typename A>
 		void BasicHyStr<C,T,A>::clear() noexcept {
 			if(isStr()) {
 				std::get<1>(mV).clear();
@@ -320,18 +388,19 @@ namespace binon {
 			}
 		}
 	template<typename C, typename T, typename A>
-		constexpr auto BasicHyStr<C,T,A>::empty() const noexcept -> bool {
-			return std::visit(
-				[](const auto& v)->bool { return v.empty(); }, mV);
+		void BasicHyStr<C,T,A>::push_back(TChr c) {
+			asStr().push_back(c);
 		}
 	template<typename C, typename T, typename A>
-		constexpr auto BasicHyStr<C,T,A>::size() const noexcept -> TSize {
-			return std::visit(
-				[](const auto& v)->TSize { return v.size(); }, mV);
-		}
-	template<typename C, typename T, typename A>
-		constexpr auto BasicHyStr<C,T,A>::length() const noexcept -> TSize {
-			return size();
+		void BasicHyStr<C,T,A>::pop_back() {
+			auto pStr = std::get_if<TStr>(&mV);
+			if(pStr) {
+				pStr->pop_back();
+			}
+			else {
+				std::visit(
+					[](auto& v) { v = v.substr(0u, v.size() - 1u); }, mV);
+			}
 		}
 	template<typename C, typename T, typename A>
 		void BasicHyStr<C,T,A>::resize(TSize n) {
