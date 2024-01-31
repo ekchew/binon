@@ -135,10 +135,11 @@ namespace binon {
 		auto MakeOpt(bool hasValue, GetT&& getValue, GetTArgs&&... args)
 			-> std::optional<T>
 		{
-			using std::forward;
 			return hasValue
 				? std::optional<T>{
-					forward<GetT>(getValue)(forward<GetTArgs>(args)...)}
+					std::forward<GetT>(getValue)(
+						std::forward<GetTArgs>(args)...)
+					}
 				: std::nullopt;
 		}
 }
