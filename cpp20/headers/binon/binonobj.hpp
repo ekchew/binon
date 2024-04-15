@@ -168,18 +168,8 @@ namespace binon {
 		//	to call it directly.
 		//
 		//	asObj() may throw BadObjConv if the conversion fails.
-		template<typename Obj, typename... Alts>
-			auto asObj() const& BINON_CONCEPTS_FN(
-				ObjType<Obj> && (ObjType<Alts> && ...),
-				kIsObj<Obj> && (kIsObj<Alts> && ...),
-				Obj // return type
-			);
-		template<typename Obj, typename... Alts>
-			auto asObj() && BINON_CONCEPTS_FN(
-				ObjType<Obj> && (ObjType<Alts> && ...),
-				kIsObj<Obj> && (kIsObj<Alts> && ...),
-				Obj // return type
-			);
+		template<ObjType Obj, ObjType... Alts>
+			auto asObj() const -> Obj;
 
 		//	asTypeCodeObj() is like asObj() except it uses a type code to
 		//	determine what type of BinONObj to return. It may perform any of
@@ -210,16 +200,10 @@ namespace binon {
 		void print(OptRef<std::ostream> stream = std::nullopt) const;
 
 	private:
-		template<typename Obj>
-			auto tryAlts() const& BINON_CONCEPTS_FN(
-				ObjType<Obj>, kIsObj<Obj>, Obj
-			);
-		template<typename Obj, typename Alt, typename... Alts>
-			auto tryAlts() const& BINON_CONCEPTS_FN(
-				ObjType<Obj> && ObjType<Alt> && (ObjType<Alts> && ...),
-				kIsObj<Obj> && kIsObj<Alt> && (kIsObj<Alts> && ...),
-				Obj
-			);
+		template<ObjType Obj>
+			auto tryAlts() const -> Obj;
+		template<ObjType Obj, ObjType Alt, ObjType... Alts>
+			auto tryAlts() const -> Obj;
 	};
 	auto operator<< (std::ostream& stream, const BinONObj& obj)
 		-> std::ostream&;
@@ -249,12 +233,8 @@ namespace std {
 
 namespace binon {
 
-	template<typename Obj, typename... Alts>
-		auto BinONObj::asObj() const& BINON_CONCEPTS_FN(
-			ObjType<Obj> && (ObjType<Alts> && ...),
-			kIsObj<Obj> && (kIsObj<Alts> && ...),
-			Obj
-		)
+	template<ObjType Obj, ObjType... Alts>
+		auto BinONObj::asObj() const -> Obj
 	{
 		if(auto pObj = std::get_if<Obj>(this); pObj) {
 			return *pObj;
@@ -263,24 +243,8 @@ namespace binon {
 			return tryAlts<Obj,Alts...>();
 		}
 	}
-	template<typename Obj, typename... Alts>
-		auto BinONObj::asObj() && BINON_CONCEPTS_FN(
-			ObjType<Obj> && (ObjType<Alts> && ...),
-			kIsObj<Obj> && (kIsObj<Alts> && ...),
-			Obj
-		)
-	{
-		if(auto pObj = std::get_if<Obj>(this); pObj) {
-			return std::move(*pObj);
-		}
-		else {
-			return tryAlts<Obj,Alts...>();
-		}
-	}
-	template<typename Obj>
-		auto BinONObj::tryAlts() const& BINON_CONCEPTS_FN(
-			ObjType<Obj>, kIsObj<Obj>, Obj
-		)
+	template<ObjType Obj>
+		auto BinONObj::tryAlts() const -> Obj
 	{
 		std::ostringstream oss;
 		oss << "unsupported BinON type conversion (from type code ";
@@ -290,12 +254,8 @@ namespace binon {
 		oss << ')';
 		throw BadObjConv{oss.str()};
 	}
-	template<typename Obj, typename Alt, typename... Alts>
-		auto BinONObj::tryAlts() const& BINON_CONCEPTS_FN(
-			ObjType<Obj> && ObjType<Alt> && (ObjType<Alts> && ...),
-			kIsObj<Obj> && kIsObj<Alt> && (kIsObj<Alts> && ...),
-			Obj
-		) {
+	template<ObjType Obj, ObjType Alt, ObjType... Alts>
+		auto BinONObj::tryAlts() const -> Obj {
 			auto pAlt = std::get_if<Alt>(this);
 			if(pAlt) {
 				if constexpr(std::is_same_v<Obj, SKDict>) {
