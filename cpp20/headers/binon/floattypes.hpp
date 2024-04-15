@@ -23,10 +23,6 @@
 //
 //	somewhere in your own code before including this header.
 
-#include <cfloat>
-
-static_assert(FLT_RADIX == 2, "binon expects IEEE 754 floating-point types");
-
 #ifndef BINON_FLOAT32
 	#define BINON_FLOAT32 float
 #endif
@@ -39,12 +35,21 @@ namespace binon {
 		using TFloat32 = BINON_FLOAT32;
 		using TFloat64 = BINON_FLOAT64;
 
-		static_assert(sizeof(TFloat32) == 4,
+		static_assert(
+			sizeof(TFloat32) * std::numeric_limits<unsigned char>::digits
+				== 32u,
 			"#define BINON_FLOAT32 to be a 32-bit floating-point type"
 		);
-		static_assert(sizeof(TFloat64) == 8,
+		static_assert(
+			sizeof(TFloat64) * std::numeric_limits<unsigned char>::digits
+				== 64u,
 			"#define BINON_FLOAT64 to be a 64-bit floating-point type"
 		);
+		static_assert(
+			std::numeric_limits<TFloat32>::is_iec559 &&
+			std::numeric_limits<TFloat64>::is_iec559,
+			"binon expects IEEE 754 floating-point types");
+
 	}
 }
 
