@@ -10,14 +10,14 @@ namespace binon {
 	//	kIsCStr tells you whether a given type is a C string. It evaluates true
 	//	if the decayed version of your type T is either char* or const char*.
 	//	The TypeConv class uses kIsCStr to specialize for C strings.
+	//	CStrType is kIsCStr in concept form.
 	template<typename T>
 		constexpr bool kIsCStr =
 			std::is_same_v<std::decay_t<T>,char*> ||
 			std::is_same_v<std::decay_t<T>,const char*>;
- BINON_IF_CONCEPTS(
 	template<typename T>
 		concept CStrType = kIsCStr<T>;
- )
+
 
 	/*
 	The TypeConv struct maps common types onto BinON object types for easy
@@ -82,15 +82,14 @@ namespace binon {
 	rather than value. Provided the BinONObj in question is not a constant, you
 	can even modify the value in-place.
 	*/
-	template<typename T, typename Enable = void>
+	template<typename T>
 		struct TypeConv {
 			//	The base definition of TypeConv is actually illegal. Finding
-			//				yourself here means TypeConv does not recognize your
-			//				type T. All the work is done in template
-			//				specializations of this class.
+			//	yourself here means TypeConv does not recognize your type T.
+			//	All the work is done in template specializations of this class.
 			//
-			//				Here is a rough outline of what you would find in
-			//				particular specialization:
+			//	Here is a rough outline of what you would find in particular
+			//	specialization:
 			//
 			//	using TObj = ...
 			//	using TVal = ...
@@ -136,8 +135,10 @@ namespace binon {
 			//	GetObjVal() instead, which would call TypeConv::GetVal()
 			//	internally.
 
-			using TObj = void;
 			using TVal = void;
+			struct TObj {
+				using TValue = TVal;
+			};
 			static auto ValTypeName() -> HyStr;
 			[[ noreturn ]] static auto GetObj(const BinONObj&) -> TObj;
 				// throws NonTCType
@@ -148,13 +149,13 @@ namespace binon {
 		};
 
 	//	kIsTCType<T> is true if T is one of the types known to TypeConv.
+	//	TCType is the concept form of kIsTCType.
 	template<typename T>
 		constexpr bool kIsTCType
-			= !std::is_same_v<typename TypeConv<std::decay_t<T>>::TObj, void>;
- BINON_IF_CONCEPTS(
+			= !std::is_same_v<
+				typename TypeConv<std::decay_t<T>>::TObj::TValue, void>;
 	template<typename T>
 		concept TCType = kIsTCType<T>;
- )
 
 	/*
 	TValObj<T> gives you the BinON object type corresponding to your type T.
@@ -174,6 +175,9 @@ namespace binon {
 	modify it in-place, since it's not one of these data types that need to be
 	converted first. BinON value types can also be moved--not just
 	copied--into/out of place.
+
+	The concepts TValueType and NonTValue are also defined based on
+	kIsTValue<T> and !kIsTValue<T>, respectively.
 	*/
 	template<typename T>
 		constexpr bool kIsTValue =
@@ -181,33 +185,31 @@ namespace binon {
 				std::decay_t<T>,
 				typename TypeConv<std::decay_t<T>>::TObj::TValue
 				>;
-	BINON_IF_CONCEPTS(
-		template<typename T> concept TValueType = kIsTValue<T>;
-		template<typename T> concept NonTValue = !kIsTValue<T>;
-	)
+	template<typename T> concept TValueType = kIsTValue<T>;
+	template<typename T> concept NonTValue = !kIsTValue<T>;
 
 
 	//==== Template Implementation =============================================
 
 	//---- TypeConv base -------------------------------------------------------
 
-	template<typename T, typename Enable>
-		auto TypeConv<T,Enable>::ValTypeName() -> HyStr
+	template<typename T>
+		auto TypeConv<T>::ValTypeName() -> HyStr
 	{
 		return "unknown type";
 	}
-	template<typename T, typename Enable>
-		auto TypeConv<T,Enable>::GetObj(const BinONObj& obj) -> TObj
+	template<typename T>
+		auto TypeConv<T>::GetObj(const BinONObj& obj) -> TObj
 	{
 		GetVal(obj);
 	}
-	template<typename T, typename Enable>
-		auto TypeConv<T,Enable>::GetObj(BinONObj&& obj) -> TObj
+	template<typename T>
+		auto TypeConv<T>::GetObj(BinONObj&& obj) -> TObj
 	{
 		GetVal(obj);
 	}
-	template<typename T, typename Enable>
-		auto TypeConv<T,Enable>::GetVal(const BinONObj&) -> TVal
+	template<typename T>
+		auto TypeConv<T>::GetVal(const BinONObj&) -> TVal
 	{
 		std::ostringstream oss;
 		oss << "type " << typeid(T).name() << "unknown to binon::TypeConv";
@@ -217,7 +219,7 @@ namespace binon {
 	//---- TypeConv specializations --------------------------------------------
 
 	template<typename T>
-		struct TypeConv<T, std::reference_wrapper<T>> {
+		struct TypeConv<std::reference_wrapper<T>> {
 			using TObj = typename TypeConv<T>::TObj;
 			using TVal = typename TypeConv<T>::TVal;
 			static auto ValTypeName() -> HyStr {
@@ -233,14 +235,8 @@ namespace binon {
 					return TypeConv<T>::GetVal(obj);
 				}
 		};
- #if BINON_CONCEPTS
 	template<ObjType T>
-		struct TypeConv<T>
- #else
-	template<typename T>
-		struct TypeConv<T, std::enable_if_t<kIsObj<T>>>
- #endif
-		{
+		struct TypeConv<T> {
 			using TObj = T;
 			using TVal = typename TObj::TValue;
 			static auto ValTypeName() -> HyStr { return TObj::kClsName; }
@@ -296,16 +292,8 @@ namespace binon {
 				return GetObj(obj).value();
 			}
 		};
- #if BINON_CONCEPTS
 	template<std::signed_integral T>
-		struct TypeConv<T>
- #else
-	template<typename T>
-		struct TypeConv<
-			T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>>
-			>
- #endif
-		{
+		struct TypeConv<T> {
 			using TObj = IntObj;
 			using TVal = T;
 			static auto ValTypeName() -> HyStr {
@@ -331,16 +319,8 @@ namespace binon {
 					return GetObj(obj).value().asScalar();
 				}
 		};
- #if BINON_CONCEPTS
 	template<std::unsigned_integral T>
-		struct TypeConv<T>
- #else
-	template<typename T>
-		struct TypeConv<
-			T, std::enable_if_t<std::is_unsigned_v<T>>
-			>
- #endif
-		{
+		struct TypeConv<T> {
 			using TObj = UIntObj;
 			using TVal = T;
 			static auto ValTypeName() -> HyStr {
@@ -486,14 +466,8 @@ namespace binon {
 					return GetObj(obj).value().asView();
 				}
 		};
- #if BINON_CONCEPTS
 	template<CStrType T>
-		struct TypeConv<T>
- #else
-	template<typename T>
-		struct TypeConv<T, std::enable_if_t<kIsCStr<T>>>
- #endif
-		{
+		struct TypeConv<T> {
 			using TObj = StrObj;
 			using TVal = std::string_view;
 			static auto ValTypeName() -> HyStr { return "const char*"; }
@@ -554,12 +528,12 @@ namespace binon {
 					return GetObj(obj).value();
 				}
 		};
-	template<typename T>
-		struct TypeConv<T, std::enable_if_t<std::is_base_of_v<BinONObj,T>>> {
-			using TObj = T;
-			using TVal = T;
+	template<>
+		struct TypeConv<BinONObj> {
+			using TObj = BinONObj;
+			using TVal = BinONObj::TValue;
 			static auto ValTypeName() -> HyStr {
-				return "BinONObj (or subclass)";
+				return "BinONObj";
 			}
 			static auto GetObj(const BinONObj& obj) -> TObj {
 					return static_cast<TObj>(obj);
