@@ -1,6 +1,8 @@
 #ifndef BINON_FLOATTYPES_HPP
 #define BINON_FLOATTYPES_HPP
 
+#include <limits>
+
 //	In the absence of a <cstdfloat>, this header attempts to define 32-bit and
 //	64-bit IEEE 754 floating-point data types as binon::types::TFloat32 and
 //	binon::types::TFloat32, respectively.
