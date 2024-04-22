@@ -82,7 +82,7 @@ namespace binon {
 	rather than value. Provided the BinONObj in question is not a constant, you
 	can even modify the value in-place.
 	*/
-	template<typename T, typename Enable=void>
+	template<typename T>
 		struct TypeConv {
 			//	The base definition of TypeConv is actually illegal. Finding
 			//	yourself here means TypeConv does not recognize your type T.
@@ -193,23 +193,23 @@ namespace binon {
 
 	//---- TypeConv base -------------------------------------------------------
 
-	template<typename T, typename E>
-		auto TypeConv<T,E>::ValTypeName() -> HyStr
+	template<typename T>
+		auto TypeConv<T>::ValTypeName() -> HyStr
 	{
 		return "unknown type";
 	}
-	template<typename T, typename E>
-		auto TypeConv<T,E>::GetObj(const BinONObj& obj) -> TObj
+	template<typename T>
+		auto TypeConv<T>::GetObj(const BinONObj& obj) -> TObj
 	{
 		GetVal(obj);
 	}
-	template<typename T, typename E>
-		auto TypeConv<T,E>::GetObj(BinONObj&& obj) -> TObj
+	template<typename T>
+		auto TypeConv<T>::GetObj(BinONObj&& obj) -> TObj
 	{
 		GetVal(obj);
 	}
-	template<typename T, typename E>
-		auto TypeConv<T,E>::GetVal(const BinONObj&) -> TVal
+	template<typename T>
+		auto TypeConv<T>::GetVal(const BinONObj&) -> TVal
 	{
 		std::ostringstream oss;
 		oss << "type " << typeid(T).name() << "unknown to binon::TypeConv";
@@ -218,8 +218,8 @@ namespace binon {
 
 	//---- TypeConv specializations --------------------------------------------
 
-	template<typename T>
-		struct TypeConv<T, std::enable_if_t<std::is_base_of_v<BinONObj, T>>> {
+	template<std::derived_from<BinONObj> T>
+		struct TypeConv<T> {
 			using TObj = T;
 			using TVal = T;
 			static auto ValTypeName() -> HyStr {
@@ -235,8 +235,8 @@ namespace binon {
 					return GetObj(obj);
 				}
 		};
-	template<typename T>
-		struct TypeConv<T, std::enable_if_t<ObjType<T>>>{
+	template<ObjType T>
+		struct TypeConv<T> {
 			using TObj = T;
 			using TVal = typename TObj::TValue;
 			static auto ValTypeName() -> HyStr { return TObj::kClsName; }
