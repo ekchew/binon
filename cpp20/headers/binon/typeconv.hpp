@@ -82,7 +82,7 @@ namespace binon {
 	rather than value. Provided the BinONObj in question is not a constant, you
 	can even modify the value in-place.
 	*/
-	template<typename T>
+	template<typename T, typename Enable=void>
 		struct TypeConv {
 			//	The base definition of TypeConv is actually illegal. Finding
 			//	yourself here means TypeConv does not recognize your type T.
@@ -193,23 +193,23 @@ namespace binon {
 
 	//---- TypeConv base -------------------------------------------------------
 
-	template<typename T>
-		auto TypeConv<T>::ValTypeName() -> HyStr
+	template<typename T, typename E>
+		auto TypeConv<T,E>::ValTypeName() -> HyStr
 	{
 		return "unknown type";
 	}
-	template<typename T>
-		auto TypeConv<T>::GetObj(const BinONObj& obj) -> TObj
+	template<typename T, typename E>
+		auto TypeConv<T,E>::GetObj(const BinONObj& obj) -> TObj
 	{
 		GetVal(obj);
 	}
-	template<typename T>
-		auto TypeConv<T>::GetObj(BinONObj&& obj) -> TObj
+	template<typename T, typename E>
+		auto TypeConv<T,E>::GetObj(BinONObj&& obj) -> TObj
 	{
 		GetVal(obj);
 	}
-	template<typename T>
-		auto TypeConv<T>::GetVal(const BinONObj&) -> TVal
+	template<typename T, typename E>
+		auto TypeConv<T,E>::GetVal(const BinONObj&) -> TVal
 	{
 		std::ostringstream oss;
 		oss << "type " << typeid(T).name() << "unknown to binon::TypeConv";
@@ -218,6 +218,23 @@ namespace binon {
 
 	//---- TypeConv specializations --------------------------------------------
 
+	template<typename T>
+		struct TypeConv<T, std::enable_if_t<std::is_base_of_v<BinONObj, T>>> {
+			using TObj = T;
+			using TVal = T;
+			static auto ValTypeName() -> HyStr {
+				return "BinONObj (or subclass)";
+			}
+			static auto GetObj(const BinONObj& obj) -> TObj {
+					return static_cast<TObj>(obj);
+				}
+			static auto GetObj(BinONObj&& obj) -> TObj {
+					return static_cast<TObj>(std::move(obj));
+				}
+			static auto GetVal(const BinONObj& obj) -> TVal {
+					return GetObj(obj);
+				}
+		};
 	template<typename T>
 		struct TypeConv<std::reference_wrapper<T>> {
 			using TObj = typename TypeConv<T>::TObj;
@@ -526,23 +543,6 @@ namespace binon {
 				}
 			static auto GetVal(const BinONObj& obj) -> TVal {
 					return GetObj(obj).value();
-				}
-		};
-	template<>
-		struct TypeConv<BinONObj> {
-			using TObj = BinONObj;
-			using TVal = BinONObj::TValue;
-			static auto ValTypeName() -> HyStr {
-				return "BinONObj";
-			}
-			static auto GetObj(const BinONObj& obj) -> TObj {
-					return static_cast<TObj>(obj);
-				}
-			static auto GetObj(BinONObj&& obj) -> TObj {
-					return static_cast<TObj>(std::move(obj));
-				}
-			static auto GetVal(const BinONObj& obj) -> TVal {
-					return GetObj(obj);
 				}
 		};
 }
