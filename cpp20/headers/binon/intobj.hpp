@@ -383,7 +383,7 @@ namespace binon {
 			//	seeing.
 			std::byte padByte = 0x00_byte;
 			for(auto& c: *pVect) {
-				switch(c) {
+				switch(static_cast<unsigned int>(c & 0xffu)) {
 				 case 0x00u:
 					if(ToByte(c) != padByte) {
 						goto endFor;
