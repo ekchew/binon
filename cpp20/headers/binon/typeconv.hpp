@@ -236,24 +236,7 @@ namespace binon {
 				}
 		};
 	template<typename T>
-		struct TypeConv<std::reference_wrapper<T>> {
-			using TObj = typename TypeConv<T>::TObj;
-			using TVal = typename TypeConv<T>::TVal;
-			static auto ValTypeName() -> HyStr {
-					return TypeConv<T>::ValTypeName();
-				}
-			static auto GetObj(const BinONObj& obj) -> TObj {
-					return TypeConv<T>::GetVal<(obj);
-				}
-			static auto GetObj(BinONObj&& obj) -> TObj {
-					return TypeConv<T>::GetVal<(std::move(obj));
-				}
-			static auto GetVal(const BinONObj& obj) -> TVal {
-					return TypeConv<T>::GetVal(obj);
-				}
-		};
-	template<ObjType T>
-		struct TypeConv<T> {
+		struct TypeConv<T, std::enable_if_t<ObjType<T>>>{
 			using TObj = T;
 			using TVal = typename TObj::TValue;
 			static auto ValTypeName() -> HyStr { return TObj::kClsName; }
@@ -308,6 +291,23 @@ namespace binon {
 			static auto GetVal(const BinONObj& obj) -> TVal {
 				return GetObj(obj).value();
 			}
+		};
+	template<typename T>
+		struct TypeConv<std::reference_wrapper<T>> {
+			using TObj = typename TypeConv<T>::TObj;
+			using TVal = typename TypeConv<T>::TVal;
+			static auto ValTypeName() -> HyStr {
+					return TypeConv<T>::ValTypeName();
+				}
+			static auto GetObj(const BinONObj& obj) -> TObj {
+					return TypeConv<T>::GetVal<(obj);
+				}
+			static auto GetObj(BinONObj&& obj) -> TObj {
+					return TypeConv<T>::GetVal<(std::move(obj));
+				}
+			static auto GetVal(const BinONObj& obj) -> TVal {
+					return TypeConv<T>::GetVal(obj);
+				}
 		};
 	template<std::signed_integral T>
 		struct TypeConv<T> {
