@@ -34,6 +34,24 @@ namespace binon {
 		SDict
 		>;
 
+	//	Enumerated indices for the variant types. This is not to be confused
+	//	with type codes (see codebyte.hpp).
+	enum BinONVariantIndices {
+		kNullObjIndex,
+		kBoolObjIndex,
+		kIntObjIndex,
+		kUIntObjIndex,
+		kFloatObjIndex,
+		kFloat32ObjIndex,
+		kBufferObjIndex,
+		kStrObjIndex,
+		kListObjIndex,
+		kSListIndex,
+		kDictObjIndex,
+		kSKDictIndex,
+		kSDictIndex
+	};
+
 	//	kIsObj<T> tells you if your type T is one of the above BinON object
 	//	variants. ObjType<T> is a concept that requires kIsObj<T> be true.
 	template<typename T>
