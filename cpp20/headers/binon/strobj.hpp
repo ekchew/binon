@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_STROBJ_HPP
 #define BINON_STROBJ_HPP
 

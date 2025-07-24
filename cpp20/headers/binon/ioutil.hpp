@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_IOUTIL_HPP
 #define BINON_IOUTIL_HPP
 

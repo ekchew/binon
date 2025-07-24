@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_DICTOBJ_HPP
 #define BINON_DICTOBJ_HPP
 

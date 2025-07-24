@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_SEEDSOURCE_HPP
 #define BINON_SEEDSOURCE_HPP
 

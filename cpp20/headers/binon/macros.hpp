@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_MACROS_HPP
 #define BINON_MACROS_HPP
 

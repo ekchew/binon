@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_FLOATTYPES_HPP
 #define BINON_FLOATTYPES_HPP
 

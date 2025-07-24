@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_HASHUTIL_HPP
 #define BINON_HASHUTIL_HPP
 
@@ -13,7 +14,7 @@ namespace binon {
 		concept Hashable = requires(T a) {
 			{ std::hash<T>{}(a) } -> std::convertible_to<std::size_t>;
 		};
- 
+
 	//---- Hash Combination ---------------------------------------------------
 	//
 	//	While the standard library provides std::hash support for common types,

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_TYPECONV_HPP
 #define BINON_TYPECONV_HPP
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_IDGEN_HPP
 #define BINON_IDGEN_HPP
 

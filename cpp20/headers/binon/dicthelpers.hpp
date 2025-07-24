@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_DICTHELPERS__HPP
 #define BINON_DICTHELPERS__HPP
 

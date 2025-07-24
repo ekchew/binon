@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_BYTEUTIL_HPP
 #define BINON_BYTEUTIL_HPP
 

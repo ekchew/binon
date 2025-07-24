@@ -1,3 +1,8 @@
+#pragma once
+#ifndef BINON_ITERABLE_HPP
+#define BINON_ITERABLE_HPP
+
+
 #include "objhelpers.hpp"
 
 namespace binon {
@@ -844,3 +849,6 @@ namespace binon {
 	}
 
 }
+
+
+#endif

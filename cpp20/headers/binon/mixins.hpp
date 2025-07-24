@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_MIXINS_HPP
 #define BINON_MIXINS_HPP
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_FLOATOBJ_HPP
 #define BINON_FLOATOBJ_HPP
 

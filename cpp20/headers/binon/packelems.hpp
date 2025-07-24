@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_PACKELEMS_HPP
 #define BINON_PACKELEMS_HPP
 

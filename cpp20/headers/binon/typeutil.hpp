@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_TYPEUTIL_HPP
 #define BINON_TYPEUTIL_HPP
 
@@ -92,7 +93,7 @@ namespace binon {
 		concept CustomFoldFn = requires(Fn fn, T a, T b) {
 			{ fn(a, b) } -> std::convertible_to<T>;
 		};
- 
+
 	template<typename T, CustomFoldFn<T> Fn>
 		struct CustomFold
 	{

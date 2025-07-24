@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_CODEBYTE_HPP
 #define BINON_CODEBYTE_HPP
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_ERRORS_HPP
 #define BINON_ERRORS_HPP
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_HYSTR_HPP
 #define BINON_HYSTR_HPP
 

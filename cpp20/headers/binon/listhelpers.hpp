@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_LISTHELPERS_HPP
 #define BINON_LISTHELPERS_HPP
 

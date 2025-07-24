@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_NULLOBJ_HPP
 #define BINON_NULLOBJ_HPP
 

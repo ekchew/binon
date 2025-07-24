@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BINON_BOOLOBJ_HPP
 #define BINON_BOOLOBJ_HPP
 
